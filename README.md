@@ -50,8 +50,14 @@ Each microservice in **micros/** is further structured as follows:
 ### Build
 Install the prequisites above, then run the following command in the root of the project
 ```sh
-  ./build.sh
+  ./build.sh build
 ```
+
+To cleanup build artifacts:
+```sh
+  ./build.sh cleanup
+```
+
 ### Run
 * Each microservice reads config from either (preferably) environment variables or from
   .env file in the same directory as the binary. Variable names and default values are

@@ -3,7 +3,6 @@ package router
 import (
 	"bridge/common"
 	"bridge/service-managers/logger"
-	"fmt"
 	"net/http"
 
 	"bridge/micros/core/http/admRouter"
@@ -17,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func initMainRouter(cnf *common.HttpConf) *gin.Engine {
+func InitMainRouter(cnf common.HttpConf) *gin.Engine {
 	router := gin.New()
 
 	// global middlewares...
@@ -50,18 +49,4 @@ func initMainRouter(cnf *common.HttpConf) *gin.Engine {
 	userRouter.Config(router)
 
 	return router
-}
-
-func MkHttpServer(cnf *common.HttpConf) (*http.Server, error) {
-	var err error
-
-	router := initMainRouter(cnf)
-	return &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", cnf.Host, cnf.Port),
-		Handler: router,
-		//	TLSConfig *tls.Config
-		//ReadTimeout:    readTimeout,
-		//WriteTimeout:   writeTimeout,
-		//MaxHeaderBytes: maxHeaderBytes,
-	}, err
 }

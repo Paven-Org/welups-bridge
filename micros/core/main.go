@@ -59,7 +59,8 @@ func main() {
 	/// HTTP server
 	// Router setup
 	// middlewares: TLS, CORS, JWT, secure cookie, json resp body, URL normalization...
-	httpServ, err := router.MkHttpServer(&config.Get().HttpConfig)
+	mainRouter := router.InitMainRouter(config.Get().HttpConfig)
+	httpServ := manager.MkHttpServer(config.Get().HttpConfig, mainRouter)
 	httpServ.ListenAndServe()
 	// system validity check
 
