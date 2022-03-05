@@ -2,10 +2,10 @@ package main
 
 import (
 	"bridge/common/consts"
-	"bridge/logger"
 	"bridge/micros/core/config"
 	router "bridge/micros/core/http"
 	manager "bridge/service-managers"
+	"bridge/service-managers/logger"
 
 	_ "github.com/lib/pq"
 	//"https://github.com/rs/zerolog/log"

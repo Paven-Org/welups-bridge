@@ -2,7 +2,7 @@ package router
 
 import (
 	"bridge/common"
-	"bridge/logger"
+	"bridge/service-managers/logger"
 	"fmt"
 	"net/http"
 

@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"bridge/logger"
+	"bridge/service-managers/logger"
 	"context"
 	"testing"
 	"time"

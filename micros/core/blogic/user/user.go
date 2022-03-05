@@ -2,11 +2,11 @@ package userLogic
 
 import (
 	"bridge/libs"
-	"bridge/logger"
 	"bridge/micros/core/dao"
 	userdao "bridge/micros/core/dao/user"
 	"bridge/micros/core/model"
 	manager "bridge/service-managers"
+	"bridge/service-managers/logger"
 	"context"
 	"fmt"
 	"strconv"

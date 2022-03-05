@@ -3,6 +3,7 @@ package config
 import (
 	"bridge/common"
 	"flag"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,8 +26,9 @@ func parseEnv() Env {
 	if err := viper.ReadInConfig(); err != nil {
 		viper.AutomaticEnv()
 	}
-	CORSstring := common.WithDefault("APP_CORS", "localhost")
+	CORSstring := common.WithDefault("APP_CORS", "*")
 	CORS := strings.Split(CORSstring, ":")
+	fmt.Println(CORS)
 
 	return Env{
 

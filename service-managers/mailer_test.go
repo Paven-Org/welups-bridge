@@ -3,7 +3,7 @@ package manager
 import (
 	"bridge/common"
 	"bridge/libs"
-	"bridge/logger"
+	"bridge/service-managers/logger"
 	"fmt"
 	"testing"
 )

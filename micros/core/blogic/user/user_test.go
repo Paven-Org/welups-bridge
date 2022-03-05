@@ -2,10 +2,10 @@ package userLogic
 
 import (
 	"bridge/libs"
-	"bridge/logger"
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	manager "bridge/service-managers"
+	"bridge/service-managers/logger"
 	"fmt"
 	"testing"
 

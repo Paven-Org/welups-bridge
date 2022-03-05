@@ -3,7 +3,7 @@ package manager
 import (
 	"bridge/common"
 	"bridge/common/consts"
-	"bridge/logger"
+	"bridge/service-managers/logger"
 	"context"
 	"fmt"
 	"sync"

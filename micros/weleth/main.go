@@ -2,9 +2,9 @@ package main
 
 import (
 	"bridge/common/consts"
-	"bridge/db"
-	"bridge/logger"
 	"bridge/micros/weleth/config"
+	manager "bridge/service-managers"
+	"bridge/service-managers/logger"
 
 	_ "github.com/lib/pq"
 	//"https://github.com/rs/zerolog/log"
@@ -24,7 +24,7 @@ func main() {
 	//	zerolog.Ctx(ctx).Info().Msgf("getting log from context: ", ctx)
 	// loading config, secret, key
 	// DB
-	db, err := db.NewDB(config.Get().DBconfig)
+	db, err := manager.MkDB(config.Get().DBconfig)
 	if err != nil {
 		logger.Err(err).Msg("[main] DB initialization failed")
 		panic(err)

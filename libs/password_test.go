@@ -1,7 +1,7 @@
 package libs
 
 import (
-	"bridge/logger"
+	"bridge/service-managers/logger"
 	"testing"
 )
 

@@ -50,7 +50,7 @@ Each microservice in **micros/** is further structured as follows:
 ### Build
 Install the prequisites above, then run the following command in the root of the project
 ```sh
-  go build
+  ./build.sh
 ```
 ### Run
 * Each microservice reads config from either (preferably) environment variables or from

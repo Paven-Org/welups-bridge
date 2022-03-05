@@ -1,9 +1,9 @@
 package userDAO
 
 import (
-	"bridge/logger"
 	"bridge/micros/core/config"
 	"bridge/micros/core/model"
+	"bridge/service-managers/logger"
 	"fmt"
 	"testing"
 

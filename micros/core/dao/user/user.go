@@ -1,8 +1,8 @@
 package userDAO
 
 import (
-	"bridge/logger"
 	"bridge/micros/core/model"
+	"bridge/service-managers/logger"
 	"time"
 
 	"github.com/jmoiron/sqlx"

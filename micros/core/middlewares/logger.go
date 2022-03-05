@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	customLogger "bridge/logger"
+	customLogger "bridge/service-managers/logger"
 	"io"
 	"time"
 

@@ -2,7 +2,7 @@ package manager
 
 import (
 	"bridge/common"
-	"bridge/logger"
+	"bridge/service-managers/logger"
 
 	"gopkg.in/gomail.v2"
 )
