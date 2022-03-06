@@ -1,9 +1,11 @@
 #!/bin/bash
 
-ACTION=$1
+ACTION=${1:-"build"}
+BUILDDIR="./micros"
 
 function build() {
-  cd ./micros
+  cd $BUILDDIR
+  local bd=$(pwd)
   for micro in `ls`; do
     cd $micro
     echo "Building ${micro}:"
@@ -14,17 +16,18 @@ function build() {
     else
       echo " Failed to build ${micro}"
     fi
-    cd -
+    cd $bd
   done
 }
 
 function cleanup() {
-  cd ./micros
+  cd $BUILDDIR
+  local bd=$(pwd)
   for micro in `ls`; do
     cd $micro
     echo "Cleaning ${micro}:"
     rm $micro
-    cd -
+    cd $bd
   done
 }
 
