@@ -45,6 +45,11 @@ type Mailerconf struct {
 	Password string
 }
 
+type EtherumConfig struct {
+	BlockchainRPC string
+	WebSocket     string 
+}
+
 func WithDefault[A any](key string, df A) A {
 	viper.SetDefault(key, df)
 	return viper.Get(key).(A)

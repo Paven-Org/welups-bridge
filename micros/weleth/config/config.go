@@ -14,6 +14,7 @@ type Env struct {
 	DBconfig    common.DBconf
 	RedisConfig common.Redisconf
 	Secrets     common.Secrets
+	EtherumConf common.EtherumConfig
 	Mailerconf  common.Mailerconf
 }
 
@@ -60,6 +61,11 @@ func parseEnv() Env {
 
 		Secrets: common.Secrets{
 			JwtSecret: common.WithDefault("APP_JWT_SECRET", "keepcalmandstaypositive"),
+		},
+
+		EtherumConf: common.EtherumConfig{
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", ""),
+			WebSocket:     common.WithDefault("ETH_WEB_SOCKET", ""),
 		},
 
 		Mailerconf: common.Mailerconf{
