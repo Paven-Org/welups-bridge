@@ -17,6 +17,7 @@ type Env struct {
 	Secrets           common.Secrets
 	Mailerconf        common.Mailerconf
 	TemporalCliConfig common.TemporalCliconf
+	EtherumConf       common.EtherumConfig
 }
 
 func parseEnv() Env {
@@ -72,6 +73,11 @@ func parseEnv() Env {
 		Secrets: common.Secrets{
 			// Ideally this should be retrieved from some secret manager
 			JwtSecret: common.WithDefault("APP_JWT_SECRET", "keepcalmandstaypositive"),
+		},
+
+		EtherumConf: common.EtherumConfig{
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", ""),
+			WebSocket:     common.WithDefault("ETH_WEB_SOCKET", ""),
 		},
 
 		Mailerconf: common.Mailerconf{

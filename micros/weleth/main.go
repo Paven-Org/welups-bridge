@@ -7,6 +7,8 @@ import (
 	"bridge/service-managers/logger"
 
 	_ "github.com/lib/pq"
+
+	"github.com/ethereum/go-ethereum/ethclient"
 	//"https://github.com/rs/zerolog/log"
 )
 
@@ -46,6 +48,12 @@ func main() {
 	// Mailer
 
 	// ETH chain stuff: contract address, prkey, contract event watcher...
+	ethClient, err := ethclient.Dial(config.Get().EtherumConf.BlockchainRPC)
+	if err != nil {
+		logger.Err(err).Msg("[main] Etherum client initialization failed")
+		panic(err)
+	}
+	defer ethClient.Close()
 
 	// WEL chain stuff
 
