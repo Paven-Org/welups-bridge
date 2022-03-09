@@ -40,6 +40,7 @@ func NewEthListener(
 		EthClient:        &ethClient,
 		EventConsumerMap: make(map[string]*EventConsumer),
 		Log:              make(chan types.Log),
+		errC:             make(chan error),
 		Logger:           logger,
 		blockTime:        blockTime,
 		blockOffset:      blockOffset,
@@ -75,7 +76,7 @@ func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon,
 		for {
 			select {
 			case err := <-s.errC:
-				s.Logger.Err(err).Msg("[eth_listener] Etherum client scan block err")
+				s.Logger.Err(err).Msg("[eth_listener] Ethereum client scan block err")
 
 			case vLog := <-s.Log:
 				go func(vLog types.Log) {
@@ -83,7 +84,7 @@ func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon,
 				}(vLog)
 
 			case <-parentContext.Done():
-				s.Logger.Info().Msg("Blockchain listener stop")
+				s.Logger.Info().Msg("[eth_listener] Blockchain listener stop")
 			}
 		}
 
