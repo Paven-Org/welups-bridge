@@ -29,6 +29,7 @@ type Transaction struct {
 	Hash              string      `json:"hash,omitempty"`
 	Timestamp         int64       `json:"timestamp,omitempty"`
 	ContractAddress   string      `json:"contract_address,omitempty"`
+	Topic             [][]byte    `json:"topic"`
 	Type              string      `json:"type,omitempty"`
 	FeeLimit          int64       `json:"fee_limit"`
 	EnergyUsage       int64       `json:"energy_usage,omitempty"`
@@ -63,6 +64,7 @@ func (t *TransHandler) GetTransactionDetails(n string) *Transaction {
 
 	tranDetails, err := t.Client.GetTransactionInfoByID(n)
 	nowBlock, err := t.Client.GetNowBlock()
+	// TODO: get trans topic from tranDetails
 
 	if err != nil {
 		log.Println(err)
@@ -83,9 +85,9 @@ func (t *TransHandler) GetTransactionDetails(n string) *Transaction {
 	}
 
 	tranInfo = t.ToTransaction(tranDetails2, nowBlock)
-
 	tranInfo.Hash = GotronCommon.Bytes2Hex(tranDetails.Id)
 	tranInfo.ContractAddress = GotronCommon.EncodeCheck(tranDetails.GetContractAddress())
+	tranInfo.Topic = tranDetails.Log[0].Topics
 	tranInfo.Result = tranDetails.GetResult().String()
 	tranInfo.EnergyUsage = tranDetails.Receipt.EnergyUsage
 	tranInfo.OriginEnergyUsage = tranDetails.Receipt.OriginEnergyUsage

@@ -5,7 +5,7 @@ type WelDefaultInfo struct {
 }
 
 type IWelInfoRepo interface {
-	Get() (*EthDefaultInfo, error)
-	Create(info *EthDefaultInfo) error
-	Update(info *EthDefaultInfo) error
+	Get() (*WelDefaultInfo, error)
+	Create(info *WelDefaultInfo) error
+	Update(info *WelDefaultInfo) error
 }

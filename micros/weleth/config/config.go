@@ -15,6 +15,7 @@ type Env struct {
 	RedisConfig common.Redisconf
 	Secrets     common.Secrets
 	EtherumConf common.EtherumConfig
+	WelupsConf  common.EtherumConfig
 	Mailerconf  common.Mailerconf
 }
 
@@ -65,7 +66,14 @@ func parseEnv() Env {
 
 		EtherumConf: common.EtherumConfig{
 			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", ""),
-			WebSocket:     common.WithDefault("ETH_WEB_SOCKET", ""),
+			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", 14),
+			BlockOffset:   common.WithDefault("ETH_BLOCK_OFFSET", 5),
+		},
+
+		WelupsConf: common.WelupsConfig{
+			Nodes:       common.WithDefault("WEL_NODES", ""),
+			BlockTime:   common.WithDefault("WEL_BLOCK_TIME", 3),
+			BlockOffset: common.WithDefault("WEL_BLOCK_OFFSET", 20),
 		},
 
 		Mailerconf: common.Mailerconf{

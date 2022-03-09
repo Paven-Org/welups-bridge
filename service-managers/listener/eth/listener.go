@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"bridge/common/consts"
-	"bridge/common/daemon"
+	"bridge/service-managers/daemon"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
