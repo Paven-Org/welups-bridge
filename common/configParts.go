@@ -45,6 +45,12 @@ type Mailerconf struct {
 	Password string
 }
 
+type TemporalCliconf struct {
+	Host      string
+	Port      int
+	Namespace string
+}
+
 func WithDefault[A any](key string, df A) A {
 	viper.SetDefault(key, df)
 	return viper.Get(key).(A)
