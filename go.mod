@@ -21,6 +21,8 @@ require (
 	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	logur.dev/adapter/zerolog v0.6.0
+	logur.dev/logur v0.17.0
 )
 
 require (

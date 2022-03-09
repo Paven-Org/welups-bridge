@@ -6,15 +6,27 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	adapter "logur.dev/adapter/zerolog"
+	"logur.dev/logur"
 )
 
-var logger *zerolog.Logger
+var (
+	logger    *zerolog.Logger
+	stdLogger logur.KVLogger
+)
 
 func Get() *zerolog.Logger {
 	if logger == nil {
 		Init(false)
 	}
 	return logger
+}
+
+func StdLogger() logur.KVLogger {
+	if stdLogger == nil {
+		Init(false)
+	}
+	return stdLogger
 }
 
 func Init(structured bool) {
@@ -44,4 +56,7 @@ func Init(structured bool) {
 		Logger()
 
 	logger.Info().Msg("logger initialized")
+
+	stdLogger = logur.LoggerToKV(adapter.New(*logger))
+	stdLogger.Info("Standard wrapper for logger initialized")
 }
