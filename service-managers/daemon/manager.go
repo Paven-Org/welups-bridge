@@ -12,7 +12,7 @@ import (
 // BootstrapDaemons start daemons and handling os signal.
 func BootstrapDaemons(ctx context.Context, daemonGenerators ...consts.DaemonGenerator) {
 	// os signal handling
-	sigs := make(chan os.Signal, 2)
+	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
 	// create daemon manager

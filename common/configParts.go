@@ -59,7 +59,15 @@ type CasbinCnf struct {
 
 type EtherumConfig struct {
 	BlockchainRPC string
-	WebSocket     string
+	BlockTime     uint64
+	BlockOffSet   int64
+}
+
+type WelupsConfig struct {
+	Nodes         []string
+	BlockTime     uint64
+	BlockOffSet   int64
+	ClientTimeout int64
 }
 
 func WithDefault[A any](key string, df A) A {

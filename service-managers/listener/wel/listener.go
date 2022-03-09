@@ -1,13 +1,14 @@
 package wel
 
 import (
-	"bridge/common/consts"
-	"bridge/common/daemon"
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
+	"bridge/common/consts"
+	"bridge/service-managers/daemon"
+
+	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
 	"github.com/rs/zerolog"
 )
 
@@ -41,12 +42,22 @@ func NewWelListener(
 	}
 }
 
-func KeyFromBEConsumer(address string, topic string) string {
+func (s *WelListener) RegisterConsumer(consumer IEventConsumer) error {
+	consumerHandler, err := consumer.GetConsumer()
+	if err != nil {
+		return err
+	}
+
+	s.EventConsumerMap[KeyFromBEConsumer(GotronCommon.EncodeCheck(consumerHandler.Address))] = consumerHandler
+	return nil
+}
+
+func KeyFromBEConsumer(address string) string {
 	return fmt.Sprintf("%s", address)
 }
 
 func (s *WelListener) Start(ctx context.Context) {
-	daemon.BootstrapDaemons(ctx)
+	daemon.BootstrapDaemons(ctx, s.Handling, s.Scan)
 }
 
 func (s *WelListener) Handling(parentContext context.Context) (fn consts.Daemon, err error) {
@@ -103,15 +114,13 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 }
 
 func (s *WelListener) matchEvent(tran *Transaction) (*EventConsumer, bool) {
-	key := KeyFromBEConsumer(tran.ContractAddress, "")
+	key := KeyFromBEConsumer(tran.ContractAddress)
 	consumer, isExisted := s.EventConsumerMap[key]
-
-	if !isExisted {
-		key = KeyFromBEConsumer(common.Address{}.Hex(), "")
-		consumer, isExisted = s.EventConsumerMap[key]
+	if isExisted {
+		return consumer, isExisted
 	}
 
-	return consumer, isExisted
+	return nil, false
 }
 
 func (s *WelListener) consumeEvent(t *Transaction) {
