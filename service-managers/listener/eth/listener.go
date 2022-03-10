@@ -30,14 +30,14 @@ type EthListener struct {
 
 func NewEthListener(
 	ethInfo consts.IEthInfoRepo,
-	ethClient ethclient.Client,
+	ethClient *ethclient.Client,
 	blockTime uint64,
 	blockOffset int64,
 	logger *zerolog.Logger,
 ) *EthListener {
 	return &EthListener{
 		EthInfo:          ethInfo,
-		EthClient:        &ethClient,
+		EthClient:        ethClient,
 		EventConsumerMap: make(map[string]*EventConsumer),
 		Log:              make(chan types.Log),
 		errC:             make(chan error),
@@ -67,7 +67,7 @@ func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 }
 
 func (s *EthListener) Start(ctx context.Context) {
-	daemon.BootstrapDaemons(ctx, s.Scan, s.Handling)
+	daemon.BootstrapDaemons(ctx, s.Handling, s.Scan)
 }
 
 func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon, err error) {

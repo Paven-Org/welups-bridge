@@ -74,7 +74,7 @@ func (s *WelListener) Handling(parentContext context.Context) (fn consts.Daemon,
 				}(vLog)
 
 			case <-parentContext.Done():
-				s.Logger.Info().Msg("[eth_listener] Blockchain listener stop")
+				s.Logger.Info().Msg("[wel_listener] Blockchain listener stop")
 			}
 		}
 
@@ -96,7 +96,7 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 		}
 		headNum := header.BlockHeader.RawData.Number
 
-		s.Logger.Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", sysInfo.LastScannedBlock, headNum))
+		s.Logger.Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", sysInfo.LastScannedBlock-s.blockOffset+1, headNum))
 		if headNum-sysInfo.LastScannedBlock > 10000 {
 			s.TransHandler.GetInfoListTransactionRange(headNum, 10000, "", s.Trans, s.errC)
 		} else {
