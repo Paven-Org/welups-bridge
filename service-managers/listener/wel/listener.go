@@ -8,7 +8,6 @@ import (
 	"bridge/common/consts"
 	"bridge/service-managers/daemon"
 
-	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
 	"github.com/rs/zerolog"
 )
 
@@ -48,7 +47,7 @@ func (s *WelListener) RegisterConsumer(consumer IEventConsumer) error {
 		return err
 	}
 
-	s.EventConsumerMap[KeyFromBEConsumer(GotronCommon.EncodeCheck(consumerHandler.Address))] = consumerHandler
+	s.EventConsumerMap[KeyFromBEConsumer(consumerHandler.Address)] = consumerHandler
 	return nil
 }
 

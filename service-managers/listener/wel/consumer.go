@@ -1,7 +1,7 @@
 package wel
 
 type EventConsumer struct {
-	Address    []byte
+	Address    string
 	ParseEvent EventParser
 }
 
