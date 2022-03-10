@@ -81,8 +81,28 @@ func main() {
 	welListen := welListener.NewWelListener(welSysDAO, welTransHandler, config.Get().WelupsConf.BlockTime, config.Get().WelupsConf.BlockOffSet, logger)
 	welListen.Start(ctx)
 
-	// GRPC server/client
+	//// Temporal
+	//c, err := manager.MkTemporalClient(config.Get().TemporalCliConfig)
+	//if err != nil {
+	//	logger.Get().Err(err).Msgf("Unable to connect to temporal backend")
+	//	panic(err)
+	//}
+	//defer c.Close()
 
+	//// Should adapt to use with daemon manager
+	//ctx, cancel := context.WithCancel(ctx)
+	//wg := sync.WaitGroup{}
+	//// might spawn multiple temporal workers here
+	//wg.Add(1)
+	//go func() {
+	//	if err := manager.SpawnTemporalWorker(ctx, c, welethQueue, worker.Options{}, RegisterWelethBridgeService); err != nil {
+	//		logger.Get().Err(err).Msg("Unable to spawn worker")
+	//	}
+	//	wg.Done()
+	//	return
+	//}()
+	//////blocking on some channel then cancel()
+	//wg.Wait()
 	// system validity check
 
 	//// layer 2 setup:
