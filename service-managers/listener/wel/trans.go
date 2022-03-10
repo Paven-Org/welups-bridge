@@ -6,7 +6,6 @@ import (
 
 	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
 	"github.com/Clownsss/gotron-sdk/pkg/proto/api"
-	"github.com/Clownsss/gotron-sdk/pkg/proto/core"
 	CoreProto "github.com/Clownsss/gotron-sdk/pkg/proto/core"
 	"github.com/fatih/structs"
 	proto "github.com/golang/protobuf/proto"
@@ -26,23 +25,23 @@ type TransHandler struct {
 
 //Transaction defines the transaction data
 type Transaction struct {
-	Hash              string      `json:"hash,omitempty"`
-	Timestamp         int64       `json:"timestamp,omitempty"`
-	ContractAddress   string      `json:"contract_address,omitempty"`
-	Topic             [][]byte    `json:"topic"`
-	Type              string      `json:"type,omitempty"`
-	FeeLimit          int64       `json:"fee_limit"`
-	EnergyUsage       int64       `json:"energy_usage,omitempty"`
-	OriginEnergyUsage int64       `json:"origin_energy_usage"`
-	EnergyUsageTotal  int64       `json:"energy_usage_total"`
-	NetUsage          int64       `json:"net_usage,omitempty"`
-	RefBlockBytes     string      `json:"refBlockBytes,omitempty"`
-	RefBlockNum       int64       `json:"refBlockNum,omitempty"`
-	RefBlockHash      string      `json:"refBlockHash,omitempty"`
-	Expiration        int64       `json:"expiration,omitempty"`
-	Status            string      `json:"status,omitempty"`
-	Auths             interface{} `json:"auths,omitempty"`
-	Data              string      `json:"data,omitempty"`
+	Hash              string                           `json:"hash,omitempty"`
+	Timestamp         int64                            `json:"timestamp,omitempty"`
+	ContractAddress   string                           `json:"contract_address,omitempty"`
+	Log               []*CoreProto.TransactionInfo_Log `json:"log,omitempty"`
+	Type              string                           `json:"type,omitempty"`
+	FeeLimit          int64                            `json:"fee_limit"`
+	EnergyUsage       int64                            `json:"energy_usage,omitempty"`
+	OriginEnergyUsage int64                            `json:"origin_energy_usage"`
+	EnergyUsageTotal  int64                            `json:"energy_usage_total"`
+	NetUsage          int64                            `json:"net_usage,omitempty"`
+	RefBlockBytes     string                           `json:"refBlockBytes,omitempty"`
+	RefBlockNum       int64                            `json:"refBlockNum,omitempty"`
+	RefBlockHash      string                           `json:"refBlockHash,omitempty"`
+	Expiration        int64                            `json:"expiration,omitempty"`
+	Status            string                           `json:"status,omitempty"`
+	Auths             interface{}                      `json:"auths,omitempty"`
+	Data              string                           `json:"data,omitempty"`
 	Contract          struct {
 		Type      string `json:"type,omitempty"`
 		Name      string `json:"name,omitempty"`
@@ -87,7 +86,7 @@ func (t *TransHandler) GetTransactionDetails(n string) *Transaction {
 	tranInfo = t.ToTransaction(tranDetails2, nowBlock)
 	tranInfo.Hash = GotronCommon.Bytes2Hex(tranDetails.Id)
 	tranInfo.ContractAddress = GotronCommon.EncodeCheck(tranDetails.GetContractAddress())
-	tranInfo.Topic = tranDetails.Log[0].Topics
+	tranInfo.Log = tranDetails.Log
 	tranInfo.Result = tranDetails.GetResult().String()
 	tranInfo.EnergyUsage = tranDetails.Receipt.EnergyUsage
 	tranInfo.OriginEnergyUsage = tranDetails.Receipt.OriginEnergyUsage
@@ -134,7 +133,7 @@ func (t *TransHandler) GetInfoListTransactionRange(blocknum int64, limit int64, 
 	return
 }
 
-func (tr *TransHandler) ToTransaction(tx *core.Transaction, b *api.BlockExtention) *Transaction {
+func (tr *TransHandler) ToTransaction(tx *CoreProto.Transaction, b *api.BlockExtention) *Transaction {
 	trans := &Transaction{
 		Timestamp:     tx.GetRawData().GetTimestamp(),
 		Type:          tx.GetRawData().Contract[0].GetType().String(),

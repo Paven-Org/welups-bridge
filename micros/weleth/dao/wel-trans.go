@@ -9,7 +9,7 @@ import (
 
 type IWelTransDAO interface {
 	CreateTrans(t *model.DoneDepositEvent) error
-	UpdateVerified(txHash string) error
+	UpdateVerified(txHash string, amount, fee string) error
 	UpdateClaimed(id, depositID string) error
 	SelectTransByTxHash(txHash string) (*model.DoneDepositEvent, error)
 }
@@ -27,14 +27,13 @@ func (w *welTransDAO) CreateTrans(t *model.DoneDepositEvent) error {
 			"tx_hash":    t.TxHash,
 			"from_addr":  t.FromAddr,
 			"amount":     t.Amount,
-			"decimal":    t.Decimal,
 			"status":     model.StatusUnknown,
 			"created_at": time.Now(),
 		})
 	return err
 }
 
-func (w *welTransDAO) UpdateVerified(txHash string) error {
+func (w *welTransDAO) UpdateVerified(txHash string, amount, fee string) error {
 	_, err := w.db.NamedExec(`UPDATE wel_eth_deposit_trans SET status = :status WHERE tx_hash = :tx_hash`,
 		map[string]interface{}{
 			"status":  model.StatusSuccess,
