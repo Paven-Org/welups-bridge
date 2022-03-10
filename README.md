@@ -8,7 +8,7 @@ Welups-bridge: a bridge from other blockchains to Welups
 ### Prequisites
   * Go >= 1.18
   * [pressly/goose](https://github.com/pressly/goose): a database migration tool for Golang
-  * [cap'n proto](https://capnproto.org/): gRPC-like data serialization and rpc framework
+  * [Temporal](https://temporal.io): a workflow framework for implementing fault-tolerant distributed systems
   * RMDB: postgres
   * Cache: redis
 ### Structure of the project
@@ -34,7 +34,7 @@ Each microservice in **micros/** is further structured as follows:
   respective domain
 * **blogic/**: business logic for the respective domain. The innermost layer, does most of
   the heavy-lifting computation so that outer layer can stay dumb.
-* **http/** or **rpc/**: the service-providing layer. Also stays as dumb and simple as
+* **http/** or **temporal/**: the service-providing layer. Also stays as dumb and simple as
   possible, mostly just deserializes data from request, call **blogic** to get results,
   then serializes results into response.
 * **migrations/**: database migrations SQL scripts.

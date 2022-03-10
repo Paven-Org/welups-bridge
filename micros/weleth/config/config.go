@@ -3,6 +3,7 @@ package config
 import (
 	"bridge/common"
 	"flag"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,13 +11,14 @@ import (
 )
 
 type Env struct {
-	HttpConfig  common.HttpConf
-	DBconfig    common.DBconf
-	RedisConfig common.Redisconf
-	Secrets     common.Secrets
-	EtherumConf common.EtherumConfig
-	WelupsConf  common.WelupsConfig
-	Mailerconf  common.Mailerconf
+	HttpConfig        common.HttpConf
+	DBconfig          common.DBconf
+	RedisConfig       common.Redisconf
+	Secrets           common.Secrets
+	EtherumConf       common.EtherumConfig
+	WelupsConf        common.WelupsConfig
+	Mailerconf        common.Mailerconf
+	TemporalCliConfig common.TemporalCliconf
 }
 
 func parseEnv() Env {
@@ -27,8 +29,9 @@ func parseEnv() Env {
 	if err := viper.ReadInConfig(); err != nil {
 		viper.AutomaticEnv()
 	}
-	CORSstring := common.WithDefault("APP_CORS", "localhost")
+	CORSstring := common.WithDefault("APP_CORS", "*")
 	CORS := strings.Split(CORSstring, ":")
+	fmt.Println(CORS)
 
 	return Env{
 
@@ -58,6 +61,12 @@ func parseEnv() Env {
 			Port:     common.WithDefault("APP_REDIS_PORT", 6379),
 			Username: common.WithDefault("APP_REDIS_USERNAME", ""),
 			Password: common.WithDefault("APP_REDIS_PASSWORD", ""),
+		},
+
+		TemporalCliConfig: common.TemporalCliconf{
+			Host:      common.WithDefault("APP_TEMPORAL_HOST", "localhost"),
+			Port:      common.WithDefault("APP_TEMPORAL_POST", 7233),
+			Namespace: common.WithDefault("APP_TEMPORAL_NAMESPACE", "default"), // "devWelbridge", "prodWelbridge"
 		},
 
 		Secrets: common.Secrets{

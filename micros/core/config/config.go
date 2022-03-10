@@ -11,11 +11,12 @@ import (
 )
 
 type Env struct {
-	HttpConfig  common.HttpConf
-	DBconfig    common.DBconf
-	RedisConfig common.Redisconf
-	Secrets     common.Secrets
-	Mailerconf  common.Mailerconf
+	HttpConfig        common.HttpConf
+	DBconfig          common.DBconf
+	RedisConfig       common.Redisconf
+	Secrets           common.Secrets
+	Mailerconf        common.Mailerconf
+	TemporalCliConfig common.TemporalCliconf
 }
 
 func parseEnv() Env {
@@ -58,6 +59,12 @@ func parseEnv() Env {
 			Port:     common.WithDefault("APP_REDIS_PORT", 6379),
 			Username: common.WithDefault("APP_REDIS_USERNAME", ""),
 			Password: common.WithDefault("APP_REDIS_PASSWORD", ""),
+		},
+
+		TemporalCliConfig: common.TemporalCliconf{
+			Host:      common.WithDefault("APP_TEMPORAL_HOST", "localhost"),
+			Port:      common.WithDefault("APP_TEMPORAL_POST", 7233),
+			Namespace: common.WithDefault("APP_TEMPORAL_NAMESPACE", "default"), // "devWelbridge", "prodWelbridge"
 		},
 
 		Secrets: common.Secrets{

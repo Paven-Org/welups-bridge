@@ -47,15 +47,21 @@ type Mailerconf struct {
 
 type EtherumConfig struct {
 	BlockchainRPC string
-	BlockTime uint64
-	BlockOffSet int64
+	BlockTime     uint64
+	BlockOffSet   int64
 }
 
 type WelupsConfig struct {
-	Nodes []string 
-        BlockTime uint64
-	BlockOffSet int64
+	Nodes         []string
+	BlockTime     uint64
+	BlockOffSet   int64
 	ClientTimeout int64
+}
+
+type TemporalCliconf struct {
+	Host      string
+	Port      int
+	Namespace string
 }
 
 func WithDefault[A any](key string, df A) A {
