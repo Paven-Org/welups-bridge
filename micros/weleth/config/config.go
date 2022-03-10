@@ -3,6 +3,7 @@ package config
 import (
 	"bridge/common"
 	"flag"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,13 +11,14 @@ import (
 )
 
 type Env struct {
-	HttpConfig  common.HttpConf
-	DBconfig    common.DBconf
-	RedisConfig common.Redisconf
-	Secrets     common.Secrets
-	EtherumConf common.EtherumConfig
-	WelupsConf  common.WelupsConfig
-	Mailerconf  common.Mailerconf
+	HttpConfig        common.HttpConf
+	DBconfig          common.DBconf
+	RedisConfig       common.Redisconf
+	Secrets           common.Secrets
+	EtherumConf       common.EtherumConfig
+	WelupsConf        common.WelupsConfig
+	Mailerconf        common.Mailerconf
+	TemporalCliConfig common.TemporalCliconf
 }
 
 func parseEnv() Env {
@@ -27,8 +29,9 @@ func parseEnv() Env {
 	if err := viper.ReadInConfig(); err != nil {
 		viper.AutomaticEnv()
 	}
-	CORSstring := common.WithDefault("APP_CORS", "localhost")
+	CORSstring := common.WithDefault("APP_CORS", "*")
 	CORS := strings.Split(CORSstring, ":")
+	fmt.Println(CORS)
 
 	return Env{
 
@@ -60,12 +63,18 @@ func parseEnv() Env {
 			Password: common.WithDefault("APP_REDIS_PASSWORD", ""),
 		},
 
+		TemporalCliConfig: common.TemporalCliconf{
+			Host:      common.WithDefault("APP_TEMPORAL_HOST", "localhost"),
+			Port:      common.WithDefault("APP_TEMPORAL_POST", 7233),
+			Namespace: common.WithDefault("APP_TEMPORAL_NAMESPACE", "default"), // "devWelbridge", "prodWelbridge"
+		},
+
 		Secrets: common.Secrets{
 			JwtSecret: common.WithDefault("APP_JWT_SECRET", "keepcalmandstaypositive"),
 		},
 
 		EtherumConf: common.EtherumConfig{
-			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", ""),
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://kovan.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
