@@ -74,7 +74,7 @@ func parseEnv() Env {
 		},
 
 		EtherumConf: common.EtherumConfig{
-			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", ""),
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://kovan.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
