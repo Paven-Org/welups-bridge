@@ -2,12 +2,62 @@ package manager
 
 import (
 	"fmt"
+	"net"
 	"net/http"
-	"net/http/cookiejar"
+	"net/url"
 	"strings"
-
-	"golang.org/x/net/publicsuffix"
+	"sync"
 )
+
+type SimpleJar struct {
+	lock    sync.RWMutex
+	cookies map[string](*http.Cookie)
+}
+
+func (j *SimpleJar) SetCookies(u *url.URL, cookies []*http.Cookie) {
+	if len(cookies) < 1 {
+		return
+	}
+	fmt.Println("[SetCookies] url: ", *u)
+	host, _, _ := net.SplitHostPort(u.Host)
+	fmt.Println("[SetCookies] host: ", host)
+
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	// only keep the last cookie
+	j.cookies[host] = cookies[len(cookies)-1]
+
+	fmt.Println("[SetCookies] ok, result;", j.cookies[host])
+}
+
+func (j *SimpleJar) Cookies(u *url.URL) []*http.Cookie {
+	fmt.Println("[GetCookies] url: ", *u)
+	host, _, _ := net.SplitHostPort(u.Host)
+	fmt.Println("[GetCookies] host: ", host)
+
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	res, ok := j.cookies[host]
+	if !ok {
+		fmt.Println("[GetCookies] not ok, result;", res)
+		return []*http.Cookie{}
+	}
+	fmt.Println("[GetCookies] ok, result;", res)
+
+	return []*http.Cookie{res}
+}
+
+func (j *SimpleJar) GetAllCookies() map[string]*http.Cookie {
+	return j.cookies
+}
+
+func MkSimpleJar() *SimpleJar {
+	return &SimpleJar{
+		lock:    sync.RWMutex{},
+		cookies: make(map[string]*http.Cookie, 20),
+	}
+}
 
 type HttpClient struct {
 	client             *http.Client
@@ -16,11 +66,8 @@ type HttpClient struct {
 }
 
 func MkHttpClient(baseURL string, authToken string) (*HttpClient, error) {
-	jar, err := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	jar := MkSimpleJar()
 
-	if err != nil {
-		return nil, err
-	}
 	client := &http.Client{
 		Jar: jar,
 	}
@@ -52,6 +99,7 @@ func (cli *HttpClient) Get(route string) (resp *http.Response, err error) {
 }
 
 func (cli *HttpClient) Post(route, contentType string, body string) (resp *http.Response, err error) {
+
 	reqURL := fmt.Sprintf("%s%s", cli.baseURL, route)
 	request, err := http.NewRequest("POST", reqURL, strings.NewReader(body))
 	if err != nil {
@@ -65,4 +113,8 @@ func (cli *HttpClient) Post(route, contentType string, body string) (resp *http.
 
 func (cli *HttpClient) PostJSON(route, body string) (*http.Response, error) {
 	return cli.Post(route, "application/json", body)
+}
+
+func (cli *HttpClient) GetCookieJar() http.CookieJar {
+	return cli.client.Jar
 }
