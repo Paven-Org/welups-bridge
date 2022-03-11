@@ -13,7 +13,7 @@ type EventConsumer struct {
 }
 
 type IEventConsumer interface {
-	GetConsumer() (*EventConsumer, error)
+	GetConsumer() ([]*EventConsumer, error)
 	GetFilterQuery() ethereum.FilterQuery
 }
 
