@@ -1,3 +1,11 @@
-g, admin, admin
-p, admin, /admin/*, GET
-p, admin, /admin/*, POST
+g , admin   , admin
+g , admin   , service
+g , service , service
+p , root    , *       , *    , allow
+p , *       , /v1/p/* , GET  , allow
+p , *       , /v1/p/* , POST , allow
+p , admin   , /v1/a/* , GET  , allow
+p , admin   , /v1/a/* , POST , allow
+p , service , /v1/a/* , *    , deny
+p , service , /v1/s/* , GET  , allow
+p , service , /v1/s/* , POST , allow
