@@ -1,4 +1,4 @@
-package publicRouter
+package admRouter
 
 import (
 	"bridge/micros/core/config"
@@ -67,14 +67,16 @@ func logout(t *testing.T) {
 	cli.SetToken("")
 }
 
-// re-logout logged out session should fail
-func TestDoubleLogout(t *testing.T) {
+// actual test
+func TestPing(t *testing.T) {
 	login(t)
-	logout(t)
-	logout(t)
-}
-
-func TestLoginLogout(t *testing.T) {
-	login(t)
+	fmt.Printf("\n\n Test ping...\n")
+	resp, err := cli.Get("/v1/a/ping")
+	if err != nil {
+		t.Fatalf("Error: %s", err.Error())
+	}
+	defer resp.Body.Close()
+	fmt.Println("Response: ", resp)
+	fmt.Printf("\n Test ping done\n\n")
 	logout(t)
 }
