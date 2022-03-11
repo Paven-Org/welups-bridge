@@ -7,9 +7,11 @@ import (
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	router "bridge/micros/core/http"
+	"bridge/micros/core/middlewares"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
 
+	"github.com/casbin/casbin/v2"
 	_ "github.com/lib/pq"
 	//"https://github.com/rs/zerolog/log"
 )
@@ -62,6 +64,13 @@ func main() {
 		rm.CloseAll()
 	}()
 
+	// RBAC enforcer
+	enforcer, err := casbin.NewEnforcer(config.Get().Casbin.ModelPath, config.Get().Casbin.PolicyPath)
+	if err != nil {
+		logger.Err(err).Msg("[main] constructing casbin enforcer failed")
+		return
+	}
+	authMW := middlewares.MkAuthMW(enforcer, rm)
 	// token service
 	ts := libs.MkTokenServ(config.Get().Secrets.JwtSecret)
 
@@ -79,7 +88,7 @@ func main() {
 	/// HTTP server
 	// Router setup
 	// middlewares: TLS, CORS, JWT, secure cookie, json resp body, URL normalization...
-	mainRouter := router.InitMainRouter(config.Get().HttpConfig)
+	mainRouter := router.InitMainRouter(config.Get().HttpConfig, authMW)
 	httpServ := manager.MkHttpServer(config.Get().HttpConfig, mainRouter)
 	httpServ.ListenAndServe()
 	// system validity check

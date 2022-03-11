@@ -51,6 +51,11 @@ type TemporalCliconf struct {
 	Namespace string
 }
 
+type CasbinCnf struct {
+	ModelPath  string
+	PolicyPath string // only support policy file for now
+}
+
 func WithDefault[A any](key string, df A) A {
 	viper.SetDefault(key, df)
 	return viper.Get(key).(A)

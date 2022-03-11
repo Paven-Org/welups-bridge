@@ -5,6 +5,7 @@ go 1.18
 require (
 	capnproto.org/go/capnp/v3 v3.0.0-alpha.1
 	github.com/DATA-DOG/go-txdb v0.1.5
+	github.com/casbin/casbin/v2 v2.42.0
 	github.com/danielkov/gin-helmet v0.0.0-20171108135313-1387e224435e
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ekyoung/gin-nice-recovery v0.0.0-20160510022553-1654dca486db
@@ -20,13 +21,13 @@ require (
 	gitlab.com/rwxrob/uniq v0.0.0-20200325203910-f771e6779384
 	go.temporal.io/sdk v1.13.1
 	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
-	golang.org/x/net v0.0.0-20211109214657-ef0fda0de508
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	logur.dev/adapter/zerolog v0.6.0
 	logur.dev/logur v0.17.0
 )
 
 require (
+	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -68,6 +69,7 @@ require (
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	go.temporal.io/api v1.6.1-0.20211110205628-60c98e9cbfe2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
+	golang.org/x/net v0.0.0-20211109214657-ef0fda0de508 // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect

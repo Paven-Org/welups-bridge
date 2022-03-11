@@ -17,7 +17,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitMainRouter(cnf common.HttpConf) *gin.Engine {
+// Init main router
+// authMW is special and should be constructed separately since it uses certain
+// infrastructures the http server doesn't need to be aware of
+func InitMainRouter(cnf common.HttpConf, authMW gin.HandlerFunc) *gin.Engine {
 	router := gin.New()
 
 	// global middlewares...
@@ -47,7 +50,7 @@ func InitMainRouter(cnf common.HttpConf) *gin.Engine {
 	v1 := versionRouters.MkVRouter("v1", router)
 
 	// add subrouters
-	admRouter.Config(v1)
+	admRouter.Config(v1, authMW)
 
 	// public routes
 	publicRouter.Config(v1)

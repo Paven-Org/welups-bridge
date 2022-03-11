@@ -17,6 +17,7 @@ type Env struct {
 	Secrets           common.Secrets
 	Mailerconf        common.Mailerconf
 	TemporalCliConfig common.TemporalCliconf
+	Casbin            common.CasbinCnf
 }
 
 func parseEnv() Env {
@@ -76,6 +77,11 @@ func parseEnv() Env {
 			SmtpPort: common.WithDefault("APP_MAILER_SMTP_PORT", 587),
 			Address:  common.WithDefault("APP_MAILER_ADDRESS", "bridgemail.welups@gmail.com"),
 			Password: common.WithDefault("APP_MAILER_PASSWORD", "showmethemoney11!1"),
+		},
+
+		Casbin: common.CasbinCnf{
+			ModelPath:  common.WithDefault("APP_CASBIN_MODEL_PATH", "./config/rbac/model.conf"),
+			PolicyPath: common.WithDefault("APP_CASBIN_POLICY_PATH", "./config/rbac/policy.csv"),
 		},
 	}
 }
