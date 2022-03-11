@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Config(router gin.IRouter) {
-	gr := router.Group("/a" /*,middlewares.Author*/)
+func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
+	gr := router.Group("/a", mw... /*,middlewares.Author*/)
 
 	//gr.GET("/someRoute", someHandler)
 	gr.GET("/ping", func(c *gin.Context) {
