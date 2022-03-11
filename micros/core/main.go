@@ -2,7 +2,10 @@ package main
 
 import (
 	"bridge/common/consts"
+	"bridge/libs"
+	userLogic "bridge/micros/core/blogic/user"
 	"bridge/micros/core/config"
+	"bridge/micros/core/dao"
 	router "bridge/micros/core/http"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
@@ -44,9 +47,21 @@ func main() {
 			}
 		}
 	}()
-	// Redis
 
-	// Message queue
+	// daos
+	daos := dao.MkDAOs(db)
+
+	// Redis
+	rm := manager.MkRedisManager(
+		config.Get().RedisConfig,
+		manager.StdDbMap)
+	defer func() {
+		rm.Flush(manager.StdAuthDBName)
+		rm.CloseAll()
+	}()
+
+	// token service
+	ts := libs.MkTokenServ(config.Get().Secrets.JwtSecret)
 
 	// Mailer
 
@@ -54,7 +69,10 @@ func main() {
 
 	// WEL chain stuff
 
-	// GRPC server/client
+	// Core business logic init
+	userLogic.Init(daos, rm, ts)
+
+	// Temporal
 
 	/// HTTP server
 	// Router setup
