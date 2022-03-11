@@ -15,7 +15,7 @@ var (
 	StdAuthDBName = "AuthDB"
 	StdTestDBName = "TestDB"
 )
-var stdDbMap map[string]int = map[string]int{
+var StdDbMap map[string]int = map[string]int{
 	StdAuthDBName: 1,
 	StdTestDBName: 15,
 }
