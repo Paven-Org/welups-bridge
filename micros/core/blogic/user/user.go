@@ -185,7 +185,7 @@ func ParseToken(token string) (*jwt.Token, error) {
 func ParseTokenToClaims(token string) (*model.Claims, error) {
 	tk, err := ParseToken(token)
 	if err != nil {
-		log.Err(err).Msgf("[user logic] Failed to parse token %s", token)
+		log.Err(err).Msgf("Failed to parse token %s", token)
 		return nil, err
 	}
 

@@ -56,7 +56,9 @@ func main() {
 		config.Get().RedisConfig,
 		manager.StdDbMap)
 	defer func() {
-		rm.Flush(manager.StdAuthDBName)
+		if config.Get().HttpConfig.Mode == "debug" {
+			rm.Flush(manager.StdAuthDBName)
+		}
 		rm.CloseAll()
 	}()
 
