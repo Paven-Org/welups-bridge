@@ -60,7 +60,9 @@ func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 	if err != nil {
 		return err
 	}
-	s.EventConsumerMap[KeyFromBEConsumer(consumerHandler.Address.Hex(), consumerHandler.Topic.Hex())] = consumerHandler
+	for i := 0; i < len(consumerHandler); i++ {
+		s.EventConsumerMap[KeyFromBEConsumer(consumerHandler[i].Address.Hex(), consumerHandler[i].Topic.Hex())] = consumerHandler[i]
+	}
 
 	s.EventFilters = append(s.EventFilters, consumer.GetFilterQuery())
 	return nil

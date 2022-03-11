@@ -8,6 +8,7 @@ import (
 	"bridge/common/consts"
 	"bridge/service-managers/daemon"
 
+	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
 	"github.com/rs/zerolog"
 )
 
@@ -47,12 +48,15 @@ func (s *WelListener) RegisterConsumer(consumer IEventConsumer) error {
 		return err
 	}
 
-	s.EventConsumerMap[KeyFromBEConsumer(consumerHandler.Address)] = consumerHandler
+	for i := 0; i < len(consumerHandler); i++ {
+		// remove 0x from the topic
+		s.EventConsumerMap[KeyFromBEConsumer(consumerHandler[i].Address, consumerHandler[i].Topic.Hex()[2:])] = consumerHandler[i]
+	}
 	return nil
 }
 
-func KeyFromBEConsumer(address string) string {
-	return fmt.Sprintf("%s", address)
+func KeyFromBEConsumer(address string, topic string) string {
+	return fmt.Sprintf("%s:%s", address, topic)
 }
 
 func (s *WelListener) Start(ctx context.Context) {
@@ -113,7 +117,8 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 }
 
 func (s *WelListener) matchEvent(tran *Transaction) (*EventConsumer, bool) {
-	key := KeyFromBEConsumer(tran.ContractAddress)
+	//TODO: add topic
+	key := KeyFromBEConsumer(tran.ContractAddress, GotronCommon.Bytes2Hex(tran.Log[0].Topics[0]))
 	consumer, isExisted := s.EventConsumerMap[key]
 	if isExisted {
 		return consumer, isExisted
