@@ -4,6 +4,7 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	welListener "bridge/service-managers/listener/wel"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -77,20 +78,26 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction) error {
 	fee := data["fee"].(*big.Int).String()
 
 	if t.Result == "unconfirmed" {
-		tran, _ := e.WelEthTransDAO.SelectTransById(t.Hash)
-		if tran == nil {
-			return fmt.Errorf("can't find this transaction")
-		} else {
+		tran, err := e.WelEthTransDAO.SelectTransById(rqId)
+		if err != nil {
+			return err
+		}
+		if tran.ClaimStatus != model.StatusUnknown {
 			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, amount, fee, model.StatusUnknown)
 			if err != nil {
 				return err
 			}
 		}
-
 	} else if t.Result == "confirmed" {
-		err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, amount, fee, model.StatusSuccess)
+		tran, err := e.WelEthTransDAO.SelectTransById(rqId)
 		if err != nil {
 			return err
+		}
+		if tran.ClaimStatus != model.StatusSuccess {
+			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, amount, fee, model.StatusSuccess)
+			if err != nil {
+				return err
+			}
 		}
 
 		// emit done deposit event, save to db
@@ -108,19 +115,23 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 		"Withdraw",
 		t.Log[0].Data,
 	)
-	ethTokenAddr := data["to"].([]byte)
+	ethTokenAddr := data["to"].(common.Address)
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
 	var networkID = &big.Int{}
 	if t.Result == "unconfirmed" {
-		tran, _ := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
+		// NOTE: if front end can't get txHash then we will need to fix this
+		_, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
+		if err != nil && err != sql.ErrNoRows {
+			return err
+		}
 
-		// somehow, we did not save this deposit to db before
-		if tran == nil {
+		if err == sql.ErrNoRows {
+			// somehow, we did not save this deposit to db before
 			event := model.WelEthEvent{
 				WelTokenAddr: "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
-				EthTokenAddr: common.BytesToAddress(ethTokenAddr).Hex(),
+				EthTokenAddr: ethTokenAddr.Hex(),
 				NetworkID:    networkID.SetBytes(t.Log[0].Topics[3]).String(),
 				DepositAt:    time.Now(),
 			}
@@ -133,14 +144,44 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 			event.DepositTxHash = t.Hash
 			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
 			event.DepositAmount = amount
+			event.DepositStatus = model.StatusUnknown
 			event.Fee = fee
 
 			_ = e.WelEthTransDAO.CreateWelEthTrans(&event)
 		}
 	} else if t.Result == "confirmed" {
-		err := e.WelEthTransDAO.UpdateDepositWelEthConfirmed(t.Hash, GotronCommon.EncodeCheck(t.Log[0].Topics[2]), amount, fee)
-		if err != nil {
+		tran, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
+		if err != nil && err != sql.ErrNoRows {
 			return err
+		}
+		if err == sql.ErrNoRows {
+			// somehow, we did not save this deposit to db before
+			event := model.WelEthEvent{
+				WelTokenAddr: "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
+				EthTokenAddr: ethTokenAddr.Hex(),
+				NetworkID:    networkID.SetBytes(t.Log[0].Topics[3]).String(),
+				DepositAt:    time.Now(),
+			}
+			m, err := json.Marshal(event)
+			if err != nil {
+				return fmt.Errorf("can't gen id")
+			}
+			event.ID = crypto.Keccak256Hash(m).Big().String()
+
+			event.DepositTxHash = t.Hash
+			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
+			event.DepositAmount = amount
+			event.DepositStatus = model.StatusSuccess
+			event.Fee = fee
+
+			_ = e.WelEthTransDAO.CreateWelEthTrans(&event)
+		} else {
+			if tran.DepositStatus != model.StatusSuccess {
+				err := e.WelEthTransDAO.UpdateDepositWelEthConfirmed(t.Hash, GotronCommon.EncodeCheck(t.Log[0].Topics[2]), amount, fee)
+				if err != nil {
+					return err
+				}
+			}
 		}
 		// emit done deposit event, save to db
 	} else {
