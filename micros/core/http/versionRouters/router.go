@@ -1,4 +1,4 @@
-package admRouter
+package versionRouters
 
 import (
 	"net/http"
@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Config(router gin.IRouter) {
-	gr := router.Group("/api/v1" /*,middlewares.Author*/)
+func MkVRouter(version string, parentRouter gin.IRouter) gin.IRouter {
+	gr := parentRouter.Group("/" + version /*,middlewares.Author*/)
 
 	//gr.GET("/someRoute", someHandler)
 	gr.GET("/ping", func(c *gin.Context) {
@@ -16,4 +16,6 @@ func Config(router gin.IRouter) {
 
 	// subRouters
 	//eth2wel.Config(gr)
+
+	return gr
 }

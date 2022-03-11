@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"bridge/micros/core/http/admRouter"
-	"bridge/micros/core/http/userRouter"
+	"bridge/micros/core/http/publicRouter"
+	"bridge/micros/core/http/versionRouters"
 	"bridge/micros/core/middlewares"
 
 	helmet "github.com/danielkov/gin-helmet"
@@ -42,11 +43,14 @@ func InitMainRouter(cnf common.HttpConf) *gin.Engine {
 
 	router.Use(gzip.Gzip(gzip.BestCompression))
 
-	// add subrouters
-	admRouter.Config(router)
+	// version routers
+	v1 := versionRouters.MkVRouter("v1", router)
 
-	// authen routes
-	userRouter.Config(router)
+	// add subrouters
+	admRouter.Config(v1)
+
+	// public routes
+	publicRouter.Config(v1)
 
 	return router
 }
