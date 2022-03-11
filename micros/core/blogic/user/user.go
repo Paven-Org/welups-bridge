@@ -28,25 +28,26 @@ func Init(d *dao.DAOs, r *manager.RedisManager, t libs.ITokenService) {
 	ts = t
 }
 
-func Login(username string, password string) (string, string, string, error) {
-	log.Info().Msgf("Preparing to login user %s", username)
+func Login(username string, password string) (string, string, string, time.Duration, error) {
+	log.Info().Msgf("[user logic] Preparing to login user %s", username)
 	redis, err := rm.GetRedisClient(manager.StdAuthDBName)
 	if err != nil {
-		log.Err(err).Msgf("Failed to get redis connection %s's info", username)
-		return "", "", "", err
+		log.Err(err).Msgf("[user logic] Failed to get redis connection %s's info", username)
+		return "", "", "", -1, err
 	}
+	log.Info().Msg("[user logic] connected to redis server")
 	ctx := context.Background()
 
 	tk, sessionSecret, err := login(username, password)
 	if err != nil {
-		log.Err(err).Msgf("User %s's login failed", username)
-		return "", "", "", err
+		log.Err(err).Msgf("[user logic] User %s's login failed", username)
+		return "", "", "", -1, err
 	}
 
 	signedTk, err := ts.SignToken(tk)
 	if err != nil {
-		log.Err(err).Msgf("Error while creating user %s's credential", username)
-		return "", "", "", err
+		log.Err(err).Msgf("[user logic] Error while creating user %s's credential", username)
+		return "", "", "", -1, err
 	}
 
 	mClaims, _ := tk.Claims.(jwt.MapClaims)
@@ -60,26 +61,26 @@ func Login(username string, password string) (string, string, string, error) {
 	logger.Get().Debug().Msgf("expDur: %s", expDur.String())
 
 	if err := redis.SetNX(ctx, fmt.Sprintf("session:user_%s:%s", username, sessionID), sessionSecret, exp.Sub(time.Now())).Err(); err != nil {
-		log.Err(err).Msgf("Error while saving session for user %s", username)
-		return "", "", "", err
+		log.Err(err).Msgf("[user logic] Error while saving session for user %s", username)
+		return "", "", "", -1, err
 
 	}
 
-	return signedTk, sessionID, sessionSecret, nil
+	return signedTk, sessionID, sessionSecret, expDur, nil
 }
 
 func login(username string, password string) (*jwt.Token, string, error) {
-	log.Info().Msgf("Logging user %s in...", username)
+	log.Info().Msgf("[user logic internal] Logging user %s in...", username)
 	user, err := userDAO.GetUserByName(username)
 	if err != nil {
-		log.Err(err).Msgf("Failed to retrieve user %s's info", username)
+		log.Err(err).Msgf("[user logic internal] Failed to retrieve user %s's info", username)
 		return nil, "", err
 	}
 
-	log.Info().Msgf("Checking user %s's password...", username)
+	log.Info().Msgf("[user logic internal] Checking user %s's password...", username)
 	if !libs.ValidatePasswd(user.Password, password) {
 		err := model.ErrWrongPasswd
-		log.Err(err).Msgf("Wrong password")
+		log.Err(err).Msgf("[user logic internal] Wrong password")
 		return nil, "", err
 	}
 
@@ -93,11 +94,11 @@ func login(username string, password string) (*jwt.Token, string, error) {
 		case model.UserStatusPermabanned:
 			err = model.ErrUserPermaBanned
 		}
-		log.Err(err).Msgf("User %s is not available", username)
+		log.Err(err).Msgf("[user logic internal] User %s is not available", username)
 		return nil, "", err
 	}
 
-	log.Info().Msgf("Creating user %s's credential...", username)
+	log.Info().Msgf("[user logic internal] Creating user %s's credential...", username)
 	tk := ts.MkToken(user.Id, user.Username, time.Hour*24*30)
 
 	// used as a httponly secure cookie to guard against XXS
@@ -109,12 +110,12 @@ func login(username string, password string) (*jwt.Token, string, error) {
 func Logout(token string, cookie string) error {
 	tk, err := ts.ValidateToken(token)
 	if err != nil {
-		log.Err(err).Msgf("Failed to parse token %s", token)
+		log.Err(err).Msgf("[user logic] Failed to parse token %s", token)
 		return err
 	}
 	if tk == nil {
-		err := fmt.Errorf("JWT parse result: nil")
-		log.Err(err).Msgf("Failed to parse token %s", token)
+		err := fmt.Errorf("[user logic] JWT parse result: nil")
+		log.Err(err).Msgf("[user logic] Failed to parse token %s", token)
 		return err
 	}
 
@@ -124,10 +125,10 @@ func Logout(token string, cookie string) error {
 	logger.Get().Debug().Msgf("sessionID: %s", sessionID)
 	logger.Get().Debug().Msgf("username: %s", username)
 
-	log.Info().Msgf("Preparing to logout user %s", username)
+	log.Info().Msgf("[user logic] Preparing to logout user %s", username)
 	redis, err := rm.GetRedisClient(manager.StdAuthDBName)
 	if err != nil {
-		log.Err(err).Msgf("Failed to get redis connection")
+		log.Err(err).Msgf("[user logic] Failed to get redis connection")
 		return err
 	}
 	ctx := context.Background()
@@ -138,18 +139,18 @@ func Logout(token string, cookie string) error {
 		Result()
 
 	if err != nil {
-		log.Err(err).Msgf("Error while logging out user %s", username)
+		log.Err(err).Msgf("[user logic] Error while logging out user %s", username)
 		return err
 	}
 
 	if cookie != sessionSecret {
 		err := model.ErrInconsistentCredentials
-		log.Err(err).Msgf("Error while logging out user %s", username)
+		log.Err(err).Msgf("[user logic] Error while logging out user %s", username)
 		return err
 	}
 
 	if err := redis.Del(ctx, fmt.Sprintf("session:user_%s:%s", username, sessionID)).Err(); err != nil {
-		log.Err(err).Msgf("Error while removing session for user %s", username)
+		log.Err(err).Msgf("[user logic] Error while removing session for user %s", username)
 		return err
 	}
 
@@ -157,10 +158,10 @@ func Logout(token string, cookie string) error {
 }
 
 func GetUserRoles(id uint64) ([]string, error) {
-	log.Info().Msgf("Getting user id %d's roles...", id)
+	log.Info().Msgf("[user logic] Getting user id %d's roles...", id)
 	roles, err := userDAO.GetUserRoles(id)
 	if err != nil {
-		log.Err(err).Msgf("Failed to retrieve user id %d's roles", id)
+		log.Err(err).Msgf("[user logic] Failed to retrieve user id %d's roles", id)
 		return nil, err
 	}
 
@@ -174,7 +175,7 @@ func ParseToken(token string) (*jwt.Token, error) {
 	}
 
 	if tk == nil {
-		err := fmt.Errorf("JWT parse result: nil")
+		err := fmt.Errorf("[user logic] JWT parse result: nil")
 		return tk, err
 	}
 
@@ -184,7 +185,7 @@ func ParseToken(token string) (*jwt.Token, error) {
 func ParseTokenToClaims(token string) (*model.Claims, error) {
 	tk, err := ParseToken(token)
 	if err != nil {
-		log.Err(err).Msgf("Failed to parse token %s", token)
+		log.Err(err).Msgf("[user logic] Failed to parse token %s", token)
 		return nil, err
 	}
 
