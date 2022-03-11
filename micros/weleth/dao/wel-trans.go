@@ -7,61 +7,131 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type IWelTransDAO interface {
-	CreateTrans(t *model.DoneDepositEvent) error
-	UpdateVerified(txHash string, amount, fee string) error
-	UpdateClaimed(id, depositID string) error
-	SelectTransByTxHash(txHash string) (*model.DoneDepositEvent, error)
+type IWelEthTransDAO interface {
+	CreateWelEthTrans(t *model.WelEthEvent) error
+	CreateEthWelTrans(t *model.WelEthEvent) error
+
+	UpdateDepositWelEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error
+	UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAddr, amount string) error
+
+	UpdateClaimWelEth(id, claimTxHash, claimWalletAddr, claimAmount, status string) error
+	UpdateClaimEthWel(id, claimTxHash, claimWalletAddr, claimAmount, fee, status string) error
+
+	SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error)
+	SelectTransById(id string) (*model.WelEthEvent, error)
 }
 
 // sort of a locator for DAOs
-type welTransDAO struct {
+type welEthTransDAO struct {
 	db *sqlx.DB
 }
 
-func (w *welTransDAO) CreateTrans(t *model.DoneDepositEvent) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_deposit_trans(id, deposit_id, tx_hash, from_addr, amount, decimal, status, created_at) VALUES (:id, :deposit_id, :tx_hash, :from_addr, :amount, :decimal, :status, :created_at)`,
+func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, deposit_amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :network_id, :deposit_amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
-			"id":         t.ID,
-			"deposit_id": t.DepositID,
-			"tx_hash":    t.TxHash,
-			"from_addr":  t.FromAddr,
-			"amount":     t.Amount,
-			"status":     model.StatusUnknown,
-			"created_at": time.Now(),
+			"id":              t.ID,
+			"wel_eth":         true,
+			"deposit_tx_hash": t.DepositTxHash,
+			"wel_wallet_addr": t.WelWalletAddr,
+			"eth_token_addr":  t.EthTokenAddr,
+			"wel_token_addr":  t.WelTokenAddr,
+			"netword_id":      t.NetworkID,
+			"deposit_amount":  t.DepositAmount,
+			"fee":             t.Fee,
+			"deposit_at":      t.DepositAt,
+			"deposit_status":  model.StatusUnknown,
 		})
 	return err
 }
 
-func (w *welTransDAO) UpdateVerified(txHash string, amount, fee string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_deposit_trans SET status = :status WHERE tx_hash = :tx_hash`,
+func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, network_id, deposit_amount, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :network_id, :deposit_amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
-			"status":  model.StatusSuccess,
-			"tx_hash": txHash,
+			"id":              t.ID,
+			"wel_eth":         false,
+			"deposit_tx_hash": t.DepositTxHash,
+			"wel_token_addr":  t.WelTokenAddr,
+			"eth_token_addr":  t.EthTokenAddr,
+			"eth_wallet_addr": t.EthWalletAddr,
+			"netword_id":      t.NetworkID,
+			"deposit_amount":  t.DepositAmount,
+			"deposit_at":      time.Now(),
+			"deposit_status":  model.StatusUnknown,
+		})
+
+	return err
+}
+
+func (w *welEthTransDAO) UpdateDepositWelEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, wel_wallet_addr = :wel_wallet_addr, deposit_amount = :deposit_amount, fee = :fee WHERE deposit_tx_hash = :deposit_tx_hash`,
+		map[string]interface{}{
+			"deposit_status":  model.StatusSuccess,
+			"wel_wallet_addr": welWalletAddr,
+			"deposit_amount":  amount,
+			"fee":             fee,
+			"deposit_tx_hash": depositTxHash,
 		})
 	return err
 }
 
-func (w *welTransDAO) UpdateClaimed(id, depositID string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_deposit_trans SET deposit_id = :deposit_id WHERE id = :id`,
+func (w *welEthTransDAO) UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAddr, amount string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, eth_wallet_addr = :eth_wallet_addr, deposit_amount = :deposit_amount WHERE deposit_tx_hash = :deposit_tx_hash`,
 		map[string]interface{}{
-			"deposit_id": depositID,
-			"id":         id,
+			"deposit_status":  model.StatusSuccess,
+			"eth_wallet_addr": ethWalletAddr,
+			"deposit_amount":  amount,
+			"deposit_tx_hash": depositTxHash,
 		})
 	return err
 }
 
-func (w *welTransDAO) SelectTransByTxHash(txHash string) (*model.DoneDepositEvent, error) {
-	var t = &model.DoneDepositEvent{}
-	err := w.db.Select(t, "SELECT wel_eth_deposit_trans FROM wel_eth_sys WHERE tx_hash = :tx_hash",
+func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, ethWalletAddr, claimAmount, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_amount = :claim_amount, claim_status = :claim_status WHERE id= :id`,
+		map[string]interface{}{
+			"claim_tx_hash":   claimTxHash,
+			"eth_wallet_addr": ethWalletAddr,
+			"claim_amount":    claimAmount,
+			"status":          status,
+			"id":              id,
+		})
+
+	return err
+}
+
+func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, welWalletAddr, claimAmount, fee, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_amount = :claim_amount, claim_status = :claim_status, fee = :fee WHERE id= :id`,
+		map[string]interface{}{
+			"claim_tx_hash":   claimTxHash,
+			"eth_wallet_addr": welWalletAddr,
+			"claim_amount":    claimAmount,
+			"status":          status,
+			"fee":             fee,
+			"id":              id,
+		})
+
+	return err
+}
+
+func (w *welEthTransDAO) SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error) {
+	var t = &model.WelEthEvent{}
+	err := w.db.Select(t, "SELECT * FROM wel_eth_trans WHERE deposit_tx_hash = :tx_hash",
 		map[string]interface{}{
 			"tx_hash": txHash,
 		})
 	return t, err
 }
 
-func MkWelTransDao(db *sqlx.DB) *welTransDAO {
-	return &welTransDAO{
+func (w *welEthTransDAO) SelectTransById(id string) (*model.WelEthEvent, error) {
+	var t = &model.WelEthEvent{}
+	err := w.db.Select(t, "SELECT * FROM wel_eth_trans WHERE id = :id",
+		map[string]interface{}{
+			"id": id,
+		})
+	return t, err
+}
+
+func MkWelEthTransDao(db *sqlx.DB) *welEthTransDAO {
+	return &welEthTransDAO{
 		db: db,
 	}
 }

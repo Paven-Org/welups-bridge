@@ -11,14 +11,17 @@ import (
 )
 
 type Env struct {
-	HttpConfig        common.HttpConf
-	DBconfig          common.DBconf
-	RedisConfig       common.Redisconf
-	Secrets           common.Secrets
-	TemporalCliConfig common.TemporalCliconf
-	EtherumConf       common.EtherumConfig
-	WelupsConf        common.WelupsConfig
-	Mailerconf        common.Mailerconf
+	HttpConfig         common.HttpConf
+	DBconfig           common.DBconf
+	RedisConfig        common.Redisconf
+	Secrets            common.Secrets
+	EtherumConf        common.EtherumConfig
+	WelupsConf         common.WelupsConfig
+	Mailerconf         common.Mailerconf
+	WelContractAddress []string
+	EthContractAddress []string
+	Mailerconf         common.Mailerconf
+	TemporalCliConfig  common.TemporalCliconf
 }
 
 func parseEnv() Env {
@@ -81,12 +84,14 @@ func parseEnv() Env {
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
+		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{}),
 
 		WelupsConf: common.WelupsConfig{
 			Nodes:       common.WithDefault("WEL_NODES", []string{""}),
 			BlockTime:   common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
 			BlockOffSet: common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
+		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{}),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),

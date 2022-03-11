@@ -4,6 +4,7 @@ import (
 	"bridge/common/consts"
 	"bridge/micros/weleth/config"
 	"bridge/micros/weleth/dao"
+	"bridge/micros/weleth/service"
 	manager "bridge/service-managers"
 	ethListener "bridge/service-managers/listener/eth"
 	welListener "bridge/service-managers/listener/wel"
@@ -53,6 +54,8 @@ func main() {
 	// Mailer
 
 	// create parent context
+	welEthDAO := dao.MkWelEthTransDao(db)
+
 	ctx := context.Background()
 
 	// ETH chain stuff: contract address, prkey, contract event watcher...
@@ -64,6 +67,10 @@ func main() {
 	defer ethClient.Close()
 	ethSysDAO := dao.MkEthSysDao(db)
 	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
+
+	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
+	ethListen.RegisterConsumer(ethEvtConsumer)
+
 	ethListen.Start(ctx)
 
 	// WEL chain stuff
@@ -79,6 +86,10 @@ func main() {
 	welTransHandler := welListener.NewTransHandler(welClient, config.Get().WelupsConf.BlockOffSet)
 	welSysDAO := dao.MkWelSysDao(db)
 	welListen := welListener.NewWelListener(welSysDAO, welTransHandler, config.Get().WelupsConf.BlockTime, config.Get().WelupsConf.BlockOffSet, logger)
+
+	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], welEthDAO)
+	welListen.RegisterConsumer(welEvtConsumer)
+
 	welListen.Start(ctx)
 
 	//// Temporal
