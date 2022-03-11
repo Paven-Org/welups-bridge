@@ -39,7 +39,7 @@ func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
 			"deposit_amount":  t.DepositAmount,
 			"fee":             t.Fee,
 			"deposit_at":      t.DepositAt,
-			"deposit_status":  model.StatusUnknown,
+			"deposit_status":  t.DepositStatus,
 		})
 	return err
 }
@@ -56,7 +56,7 @@ func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
 			"netword_id":      t.NetworkID,
 			"deposit_amount":  t.DepositAmount,
 			"deposit_at":      time.Now(),
-			"deposit_status":  model.StatusUnknown,
+			"deposit_status":  t.DepositStatus,
 		})
 
 	return err
@@ -114,7 +114,7 @@ func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, welWalletAddr, claim
 
 func (w *welEthTransDAO) SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error) {
 	var t = &model.WelEthEvent{}
-	err := w.db.Select(t, "SELECT * FROM wel_eth_trans WHERE deposit_tx_hash = :tx_hash",
+	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE deposit_tx_hash = :tx_hash",
 		map[string]interface{}{
 			"tx_hash": txHash,
 		})
@@ -123,7 +123,7 @@ func (w *welEthTransDAO) SelectTransByDepositTxHash(txHash string) (*model.WelEt
 
 func (w *welEthTransDAO) SelectTransById(id string) (*model.WelEthEvent, error) {
 	var t = &model.WelEthEvent{}
-	err := w.db.Select(t, "SELECT * FROM wel_eth_trans WHERE id = :id",
+	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE id = :id",
 		map[string]interface{}{
 			"id": id,
 		})

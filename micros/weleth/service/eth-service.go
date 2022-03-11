@@ -4,6 +4,7 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	ethListener "bridge/service-managers/listener/eth"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -89,8 +90,12 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 	txHash := l.TxHash.Hex()
 	ethWalletAddr := common.HexToAddress(l.Topics[2].Hex()).Hex()
 
-	tran, _ := e.WelEthTransDAO.SelectTransById(l.TxHash.Hex())
-	if tran == nil {
+	tran, err := e.WelEthTransDAO.SelectTransById(l.TxHash.Hex())
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	if err == sql.ErrNoRows {
 		event := model.WelEthEvent{
 			EthTokenAddr: common.HexToAddress(l.Topics[1].Hex()).Hex(),
 			WelTokenAddr: common.HexToAddress(l.Topics[3].Hex()).Hex(),
@@ -106,18 +111,20 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 		event.DepositTxHash = txHash
 		event.EthWalletAddr = ethWalletAddr
 		event.DepositAmount = amount
+		event.DepositStatus = model.StatusSuccess
 
-		err = e.WelEthTransDAO.CreateWelEthTrans(&event)
+		err = e.WelEthTransDAO.CreateEthWelTrans(&event)
 		if err != nil {
 			return err
 		}
-
+	} else {
+		if tran.DepositStatus != model.StatusSuccess {
+			err := e.WelEthTransDAO.UpdateDepositEthWelConfirmed(txHash, ethWalletAddr, amount)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	err := e.WelEthTransDAO.UpdateDepositEthWelConfirmed(txHash, ethWalletAddr, amount)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -133,9 +140,15 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	var reqID = &big.Int{}
 	reqID.SetBytes(l.Topics[1].Bytes())
 
-	err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), common.HexToAddress(l.Topics[3].Hex()).Hex(), amount, model.StatusSuccess)
+	tran, err := e.WelEthTransDAO.SelectTransById(reqID.String())
 	if err != nil {
 		return err
+	}
+	if tran.ClaimStatus != model.StatusSuccess {
+		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), common.HexToAddress(l.Topics[3].Hex()).Hex(), amount, model.StatusSuccess)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
