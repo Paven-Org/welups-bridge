@@ -24,11 +24,13 @@ func RegisterWelethBridgeService(w worker.Worker) {
 }
 
 func PingPongActivity(ctx context.Context, ping string) (string, error) {
+	logger.Get().Info().Msgf("[activity] KV in context: pkeys=%s", ctx.Value("pkeys"))
 	logger.Get().Info().Msg("Received ping: " + ping)
 	return "pong", nil
 }
 
 func PingPongWorkflow(ctx workflow.Context, ping string) (string, error) {
+	workflow.GetLogger(ctx).Info("[workflow] KV in context: " + "pkeys=" + (ctx.Value("pkeys").(string)))
 	workflow.GetLogger(ctx).Info("Send ping: " + ping)
 	ao := workflow.ActivityOptions{
 		TaskQueue:              welethQueue,

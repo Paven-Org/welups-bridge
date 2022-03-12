@@ -49,6 +49,7 @@ type TemporalCliconf struct {
 	Host      string
 	Port      int
 	Namespace string
+	Secret    string
 }
 
 type CasbinCnf struct {
