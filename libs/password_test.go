@@ -6,7 +6,7 @@ import (
 )
 
 func TestGeneratePassword(t *testing.T) {
-	hs, err := HashPasswd("root")
+	hs, err := HashPasswd("abcxyz")
 	if err != nil {
 		t.Errorf("Error: %s", err.Error())
 	}
