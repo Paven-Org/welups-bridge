@@ -14,8 +14,8 @@ type IWelEthTransDAO interface {
 	UpdateDepositWelEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error
 	UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAddr, amount string) error
 
-	UpdateClaimWelEth(id, claimTxHash, claimWalletAddr, claimAmount, status string) error
-	UpdateClaimEthWel(id, claimTxHash, claimWalletAddr, claimAmount, fee, status string) error
+	UpdateClaimWelEth(id, claimTxHash, claimWalletAddr, status string) error
+	UpdateClaimEthWel(id, claimTxHash, claimWalletAddr, fee, status string) error
 
 	SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error)
 	SelectTransById(id string) (*model.WelEthEvent, error)
@@ -27,7 +27,7 @@ type welEthTransDAO struct {
 }
 
 func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, deposit_amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :network_id, :deposit_amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"id":              t.ID,
 			"wel_eth":         true,
@@ -36,7 +36,7 @@ func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
 			"eth_token_addr":  t.EthTokenAddr,
 			"wel_token_addr":  t.WelTokenAddr,
 			"netword_id":      t.NetworkID,
-			"deposit_amount":  t.DepositAmount,
+			"amount":          t.Amount,
 			"fee":             t.Fee,
 			"deposit_at":      t.DepositAt,
 			"deposit_status":  t.DepositStatus,
@@ -45,7 +45,7 @@ func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
 }
 
 func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, network_id, deposit_amount, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :network_id, :deposit_amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, network_id, amount, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"id":              t.ID,
 			"wel_eth":         false,
@@ -54,7 +54,7 @@ func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
 			"eth_token_addr":  t.EthTokenAddr,
 			"eth_wallet_addr": t.EthWalletAddr,
 			"netword_id":      t.NetworkID,
-			"deposit_amount":  t.DepositAmount,
+			"amount":          t.Amount,
 			"deposit_at":      time.Now(),
 			"deposit_status":  t.DepositStatus,
 		})
@@ -63,11 +63,11 @@ func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
 }
 
 func (w *welEthTransDAO) UpdateDepositWelEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, wel_wallet_addr = :wel_wallet_addr, deposit_amount = :deposit_amount, fee = :fee WHERE deposit_tx_hash = :deposit_tx_hash`,
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, wel_wallet_addr = :wel_wallet_addr, amount = :amount, fee = :fee WHERE deposit_tx_hash = :deposit_tx_hash`,
 		map[string]interface{}{
 			"deposit_status":  model.StatusSuccess,
 			"wel_wallet_addr": welWalletAddr,
-			"deposit_amount":  amount,
+			"amount":          amount,
 			"fee":             fee,
 			"deposit_tx_hash": depositTxHash,
 		})
@@ -75,22 +75,21 @@ func (w *welEthTransDAO) UpdateDepositWelEthConfirmed(depositTxHash, welWalletAd
 }
 
 func (w *welEthTransDAO) UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAddr, amount string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, eth_wallet_addr = :eth_wallet_addr, deposit_amount = :deposit_amount WHERE deposit_tx_hash = :deposit_tx_hash`,
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET deposit_status = :deposit_status, eth_wallet_addr = :eth_wallet_addr, amount = :amount WHERE deposit_tx_hash = :deposit_tx_hash`,
 		map[string]interface{}{
 			"deposit_status":  model.StatusSuccess,
 			"eth_wallet_addr": ethWalletAddr,
-			"deposit_amount":  amount,
+			"amount":          amount,
 			"deposit_tx_hash": depositTxHash,
 		})
 	return err
 }
 
-func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, ethWalletAddr, claimAmount, status string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_amount = :claim_amount, claim_status = :claim_status WHERE id= :id`,
+func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, ethWalletAddr, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_status = :claim_status WHERE id= :id`,
 		map[string]interface{}{
 			"claim_tx_hash":   claimTxHash,
 			"eth_wallet_addr": ethWalletAddr,
-			"claim_amount":    claimAmount,
 			"status":          status,
 			"id":              id,
 		})
@@ -98,12 +97,11 @@ func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, ethWalletAddr, claim
 	return err
 }
 
-func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, welWalletAddr, claimAmount, fee, status string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_amount = :claim_amount, claim_status = :claim_status, fee = :fee WHERE id= :id`,
+func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, welWalletAddr, fee, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_status = :claim_status, fee = :fee WHERE id= :id`,
 		map[string]interface{}{
 			"claim_tx_hash":   claimTxHash,
 			"eth_wallet_addr": welWalletAddr,
-			"claim_amount":    claimAmount,
 			"status":          status,
 			"fee":             fee,
 			"id":              id,

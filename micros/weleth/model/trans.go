@@ -24,8 +24,7 @@ type WelEthEvent struct {
 
 	NetworkID string `json:"network_id" db:"network_id,omitempty"`
 
-	DepositAmount string `json:"deposit_amount" db:"deposit_amount"`
-	ClaimAmount   string `json:"claim_amount" db:"claim_amount"`
+	Amount string `json:"amount" db:"amount"`
 
 	Fee string `json:"fee" db:"fee"`
 

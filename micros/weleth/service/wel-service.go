@@ -77,24 +77,24 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction) error {
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
+	tran, err := e.WelEthTransDAO.SelectTransById(rqId)
+	if err != nil {
+		return err
+	}
+	if amount != tran.Amount {
+		return fmt.Errorf("Claim wrong amount")
+	}
+
 	if t.Result == "unconfirmed" {
-		tran, err := e.WelEthTransDAO.SelectTransById(rqId)
-		if err != nil {
-			return err
-		}
 		if tran.ClaimStatus != model.StatusUnknown {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, amount, fee, model.StatusUnknown)
+			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, fee, model.StatusUnknown)
 			if err != nil {
 				return err
 			}
 		}
 	} else if t.Result == "confirmed" {
-		tran, err := e.WelEthTransDAO.SelectTransById(rqId)
-		if err != nil {
-			return err
-		}
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, amount, fee, model.StatusSuccess)
+			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 
 			event.DepositTxHash = t.Hash
 			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
-			event.DepositAmount = amount
+			event.Amount = amount
 			event.DepositStatus = model.StatusUnknown
 			event.Fee = fee
 
@@ -170,7 +170,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 
 			event.DepositTxHash = t.Hash
 			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
-			event.DepositAmount = amount
+			event.Amount = amount
 			event.DepositStatus = model.StatusSuccess
 			event.Fee = fee
 
