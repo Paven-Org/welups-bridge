@@ -110,7 +110,7 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 
 		event.DepositTxHash = txHash
 		event.EthWalletAddr = ethWalletAddr
-		event.DepositAmount = amount
+		event.Amount = amount
 		event.DepositStatus = model.StatusSuccess
 
 		err = e.WelEthTransDAO.CreateEthWelTrans(&event)
@@ -144,8 +144,12 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	if err != nil {
 		return err
 	}
+	if amount != tran.Amount {
+		return fmt.Errorf("Claim wrong amount")
+	}
+
 	if tran.ClaimStatus != model.StatusSuccess {
-		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), common.HexToAddress(l.Topics[3].Hex()).Hex(), amount, model.StatusSuccess)
+		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), common.HexToAddress(l.Topics[3].Hex()).Hex(), model.StatusSuccess)
 		if err != nil {
 			return err
 		}
