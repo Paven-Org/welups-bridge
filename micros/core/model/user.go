@@ -8,7 +8,7 @@ import (
 type User struct {
 	Id       uint64
 	Username string
-	Password string
+	Password string `json:"-"`
 	Email    string
 	Status   string
 

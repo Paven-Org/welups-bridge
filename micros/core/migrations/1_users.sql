@@ -2,8 +2,8 @@
 -- +goose StatementBegin
 SELECT 'up SQL query';
 CREATE TABLE IF NOT EXISTS roles (
-  name varchar(20),
-  PRIMARY KEY (name)
+  role varchar(20),
+  PRIMARY KEY (role)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -23,7 +23,7 @@ CREATE TABLE user_roles (
     role varchar(20),
 
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (role) REFERENCES roles(name),
+    FOREIGN KEY (role) REFERENCES roles(role),
     PRIMARY KEY (user_id, role)
 );
 
@@ -38,7 +38,7 @@ CREATE TABLE wallets (
   FOREIGN KEY (owner) REFERENCES users(id)
 );
 
-INSERT INTO roles (name) VALUES 
+INSERT INTO roles (role) VALUES 
   ('root'),
   ('service'),
   ('admin');

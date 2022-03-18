@@ -46,23 +46,29 @@ func TestAddUser(t *testing.T) {
 	}
 	logger.Get().Info().Msgf("Found user abc: %v", u)
 
-	err = userDao.GrantRole(id, "admin")
+	err = userDao.GrantRole("abc", "admin")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	logger.Get().Info().Msg("User abc granted role admin")
 
-	err = userDao.UpdateUser(&model.User{Id: u.Id, Username: "def", Email: "def@abc.com", Password: u.Password})
+	err = userDao.UpdateUser(&model.User{Id: u.Id, Username: "def", Email: "def@abc.com", Status: u.Status, Password: u.Password})
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	logger.Get().Info().Msg("User updated")
 
-	err = userDao.RemoveUser(id)
+	err = userDao.RemoveUser("def")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	logger.Get().Info().Msg("User removed")
+
+	u, err = userDao.GetUserByName("def")
+	if err != nil {
+		t.Log("Error: ", err.Error())
+	}
+	logger.Get().Info().Msgf("user def should not be found: %v", u)
 }
 
 func TestGetUserByID(t *testing.T) {
@@ -97,19 +103,49 @@ func TestGetUserRoles(t *testing.T) {
 	}
 	logger.Get().Info().Msg("User abc added")
 
-	err = userDao.GrantRole(id, "admin")
+	err = userDao.GrantRole("abc", "admin")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	logger.Get().Info().Msg("User abc granted role admin")
 
-	err = userDao.GrantRole(id, "root")
+	err = userDao.GrantRole("abc", "root")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	logger.Get().Info().Msg("User abc granted role root")
 
-	roles, err := userDao.GetUserRoles(id)
+	roles, err := userDao.GetUserRoles("abc")
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	logger.Get().Info().Msgf("user roles: %v", roles)
+
+	err = userDao.RevokeRole("abc", "root")
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	logger.Get().Info().Msg("User abc revoked role root")
+
+	roles, err = userDao.GetUserRoles("abc")
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	logger.Get().Info().Msgf("user roles: %v", roles)
+}
+
+func TestGetUsers(t *testing.T) {
+	users, err := userDao.GetUsers(0, 100)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println("Users got: ", users)
+	users, err = userDao.GetUsersWithRole("root", 0, 100)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println("Users with role \"root\" got: ", users)
+	roles, err := userDao.GetUserRoles("root")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
