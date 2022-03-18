@@ -1,6 +1,7 @@
 package admRouter
 
 import (
+	"bridge/micros/core/http/admRouter/manageUserRouter"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,5 +16,5 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	})
 
 	// subRouters
-	//walletRouter.Config(gr)
+	manageUserRouter.Config(gr)
 }
