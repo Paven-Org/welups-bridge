@@ -1,9 +1,10 @@
-package publicRouter
+package userRouter
 
 import (
 	"bridge/common"
 	userLogic "bridge/micros/core/blogic/user"
 	"bridge/micros/core/config"
+	"bridge/micros/core/model"
 	log "bridge/service-managers/logger"
 	"fmt"
 	"net/http"
@@ -13,17 +14,15 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func Config(router gin.IRouter) {
+// router for users internal to the bridge system, e.g. admin, service manager etc...
+func Config(router gin.IRouter, authMW gin.HandlerFunc) {
 	initialize()
-	gr := router.Group("/p")
+	gr := router.Group("/u")
 	gr.POST("/login", loginHandler)
-	gr.POST("/logout" /*,authenMW*/, logoutHandler)
-	gr.POST("/passwd" /*,authenMW*/, passwdHandler)
-}
-
-type loginReq struct {
-	Username string
-	Password string
+	gr.POST("/logout", logoutHandler)
+	gr.POST("/passwd", authMW, passwdHandler)
+	gr.POST("/update", authMW, userUpdateHandler)
+	gr.GET("/:username", getUserHandler)
 }
 
 var logger *zerolog.Logger
@@ -32,11 +31,16 @@ var serverCnf common.HttpConf
 func initialize() {
 	logger = log.Get()
 	serverCnf = config.Get().HttpConfig
-	logger.Info().Msg("public handlers initialized")
+	logger.Info().Msg("user handlers initialized")
 }
 
 func loginHandler(c *gin.Context) {
 	// request
+	type loginReq struct {
+		Username string
+		Password string
+	}
+
 	var lReq = loginReq{}
 	if err := c.ShouldBindJSON(&lReq); err != nil {
 		logger.Err(err).Msgf("[login handler] Invalid request payload")
@@ -95,5 +99,83 @@ func logoutHandler(c *gin.Context) {
 }
 
 func passwdHandler(c *gin.Context) {
+	// request
 
+	type passwdRequest struct {
+		OldPasswd string `json:"old_passwd"`
+		NewPasswd string `json:"new_passwd"`
+	}
+
+	var req passwdRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[passwd handler] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// process
+	username := c.GetString("username")
+	if err := userLogic.Passwd(username, req.OldPasswd, req.NewPasswd); err != nil {
+		if err == model.ErrWrongPasswd {
+			logger.Err(err).Msgf("[passwd handler] wrong old password")
+			c.JSON(http.StatusBadRequest, "Wrong old password")
+			return
+		}
+		logger.Err(err).Msgf("[passwd handler] Unable to update password")
+		c.JSON(http.StatusInternalServerError, "Unable to update password")
+		return
+	}
+
+	// response
+	logger.Info().Msgf("[passwd handler] Password updated successfully")
+	c.JSON(http.StatusOK, "Password updated successfully")
+	return
+}
+
+func userUpdateHandler(c *gin.Context) {
+
+	// request
+
+	// users are only allowed to update email for now
+	type updateRequest struct {
+		NewEmail string `json:"new_email"`
+	}
+
+	var req updateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[update handler] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// process
+	username := c.GetString("username")
+	if err := userLogic.UpdateUserInfo(username, req.NewEmail); err != nil {
+		logger.Err(err).Msgf("[update handler] Unable to update user")
+		c.JSON(http.StatusInternalServerError, "Unable to update user")
+		return
+	}
+
+	// response
+	logger.Info().Msgf("[update handler] User updated successfully")
+	c.JSON(http.StatusOK, "User updated successfully")
+	return
+}
+
+func getUserHandler(c *gin.Context) {
+	// request
+	username := c.Param("username")
+
+	// process
+	user, err := userLogic.GetUserByName(username)
+	if err != nil {
+		logger.Err(err).Msgf("[getUserHandler] Unable to retrieve user")
+		c.JSON(http.StatusNotFound, "Unable to retrieve user "+username)
+		return
+	}
+
+	// response
+	user.Password = "" // just to be sure, this field wouldn't be marshalled anyway
+	c.JSON(http.StatusOK, user)
+	return
 }

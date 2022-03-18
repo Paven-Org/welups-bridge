@@ -70,7 +70,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		// save claims into context
 		c.Set("username", claims.Username)
 		c.Set("uid", claims.Uid)
-		roles, err := userLogic.GetUserRoles(claims.Uid)
+		roles, err := userLogic.GetUserRoles(claims.Username)
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")

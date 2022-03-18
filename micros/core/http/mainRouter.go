@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"bridge/micros/core/http/admRouter"
-	"bridge/micros/core/http/publicRouter"
+	userRouter "bridge/micros/core/http/userRouter"
 	"bridge/micros/core/http/versionRouters"
 	"bridge/micros/core/middlewares"
 
@@ -53,7 +53,7 @@ func InitMainRouter(cnf common.HttpConf, authMW gin.HandlerFunc) *gin.Engine {
 	admRouter.Config(v1, authMW)
 
 	// public routes
-	publicRouter.Config(v1)
+	userRouter.Config(v1, authMW)
 
 	return router
 }
