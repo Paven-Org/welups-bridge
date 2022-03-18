@@ -2,8 +2,6 @@ package userLogic
 
 import (
 	"bridge/libs"
-	"bridge/micros/core/dao"
-	userdao "bridge/micros/core/dao/user"
 	"bridge/micros/core/model"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
@@ -14,19 +12,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 )
-
-var (
-	userDAO userdao.IUserDAO
-	rm      *manager.RedisManager
-	ts      libs.ITokenService
-	log     = logger.Get()
-)
-
-func Init(d *dao.DAOs, r *manager.RedisManager, t libs.ITokenService) {
-	userDAO = d.User
-	rm = r
-	ts = t
-}
 
 func Login(username string, password string) (string, string, string, time.Duration, error) {
 	log.Info().Msgf("[user logic] Preparing to login user %s", username)
@@ -157,62 +142,39 @@ func Logout(token string, cookie string) error {
 	return nil
 }
 
-func GetUserRoles(id uint64) ([]string, error) {
-	log.Info().Msgf("[user logic] Getting user id %d's roles...", id)
-	roles, err := userDAO.GetUserRoles(id)
+// change password
+func Passwd(username string, oldpasswd string, newpasswd string) error {
+	log.Info().Msgf("[user logic internal] Changing password for user %s", username)
+	user, err := userDAO.GetUserByName(username)
 	if err != nil {
-		log.Err(err).Msgf("[user logic] Failed to retrieve user id %d's roles", id)
-		return nil, err
+		log.Err(err).Msgf("[user logic internal] Failed to retrieve user %s's info", username)
+		return err
 	}
 
-	return roles, nil
+	log.Info().Msgf("[user logic internal] Checking user %s's old password...", username)
+	if !libs.ValidatePasswd(user.Password, oldpasswd) {
+		err := model.ErrWrongPasswd
+		log.Err(err).Msgf("[user logic internal] old password doesn't match")
+		return err
+	}
+
+	log.Info().Msgf("[user logic internal] Hashing new password for %s", username)
+	user.Password, err = libs.HashPasswd(newpasswd)
+	if err != nil {
+		log.Err(err).Msgf("[user logic internal] Unable to hash password")
+		return err
+	}
+
+	log.Info().Msgf("[user logic internal] Updating database...")
+	if err := userDAO.UpdateUser(&user); err != nil {
+		log.Err(err).Msgf("[user logic internal] Failed to update user %s's info in database")
+		return err
+	}
+
+	return nil
 }
 
-func ParseToken(token string) (*jwt.Token, error) {
-	tk, err := ts.ValidateToken(token)
-	if err != nil {
-		return tk, err
-	}
-
-	if tk == nil {
-		err := fmt.Errorf("[user logic] JWT parse result: nil")
-		return tk, err
-	}
-
-	return tk, err
-}
-
-func ParseTokenToClaims(token string) (*model.Claims, error) {
-	tk, err := ParseToken(token)
-	if err != nil {
-		log.Err(err).Msgf("Failed to parse token %s", token)
-		return nil, err
-	}
-
-	claims, _ := tk.Claims.(jwt.MapClaims)
-
-	//"session"
-	sessionID := claims["session"].(string)
-	//"exp":      exp,
-	_exp, _ := strconv.ParseInt(claims["exp"].(string), 10, 64)
-	exp := time.Unix(_exp, 0)
-	//"iat":      created,
-	_iat, _ := strconv.ParseInt(claims["iat"].(string), 10, 64)
-	iat := time.Unix(_iat, 0)
-	//"iss":      "welbridge",
-	iss := claims["iss"].(string)
-	//"uid":      fmt.Sprintf("%d", uid),
-	uid, _ := strconv.ParseUint(claims["uid"].(string), 10, 64)
-	//"username": username,
-	username := claims["username"].(string)
-
-	return &model.Claims{
-			Exp:      exp,
-			Iat:      iat,
-			Iss:      iss,
-			Uid:      uid,
-			Username: username,
-			Session:  sessionID,
-		},
-		nil
+// Update user's info
+func UpdateUserInfo(username, email string) error {
+	return generalUpdateUserInfo(username, "", email, "", "")
 }
