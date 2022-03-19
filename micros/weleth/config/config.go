@@ -17,7 +17,6 @@ type Env struct {
 	Secrets            common.Secrets
 	EtherumConf        common.EtherumConfig
 	WelupsConf         common.WelupsConfig
-	Mailerconf         common.Mailerconf
 	WelContractAddress []string
 	EthContractAddress []string
 	Mailerconf         common.Mailerconf

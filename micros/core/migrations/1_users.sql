@@ -27,17 +27,6 @@ CREATE TABLE user_roles (
     PRIMARY KEY (user_id, role)
 );
 
-CREATE TABLE wallets (
-  owner integer,
-  chain varchar(20) NOT NULL,
-  address varchar(100) NOT NULL,
-  created_at timestamp NOT NULL DEFAULT NOW(),
-  updated_at timestamp NOT NULL DEFAULT NOW(),
-
-  PRIMARY KEY (chain, address),
-  FOREIGN KEY (owner) REFERENCES users(id)
-);
-
 INSERT INTO roles (role) VALUES 
   ('root'),
   ('service'),
@@ -47,7 +36,7 @@ INSERT INTO roles (role) VALUES
 -- must be changed immediately upon operation of course
 INSERT INTO users (username, password, email) VALUES
   ('root', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'nhatanh02@gmail.com'),
-  ('weleth_bridge', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'nhatanh02@gmail.com');
+  ('weleth_bridge', '$2a$10$TP.3Z1/JJyGJwtDaX0xSs.FrO76FEz17DNwujGO0FKpBxr9gKCZpm', 'nhatanh02@gmail.com');
 
 INSERT INTO user_roles(user_id, role)
   SELECT id, 'root' FROM users WHERE username = 'root'
@@ -61,5 +50,4 @@ SELECT 'down SQL query';
 DROP TABLE users CASCADE;
 DROP TABLE roles CASCADE;
 DROP TABLE user_roles CASCADE;
-DROP TABLE wallets CASCADE;
 -- +goose StatementEnd
