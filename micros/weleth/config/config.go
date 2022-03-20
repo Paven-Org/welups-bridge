@@ -79,18 +79,19 @@ func parseEnv() Env {
 		},
 
 		EtherumConf: common.EtherumConfig{
-			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://kovan.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://rinkeby.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{}),
+		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0xE5a7d2F508579C22238688AD0d90db20f708e2A5"}),
 
 		WelupsConf: common.WelupsConfig{
-			Nodes:       common.WithDefault("WEL_NODES", []string{""}),
-			BlockTime:   common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
-			BlockOffSet: common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
+			Nodes:         common.WithDefault("WEL_NODES", []string{"172.104.51.182:16669"}),
+			BlockTime:     common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
+			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
+			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
-		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{}),
+		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WAxgwpEH95VKXm5XWcDvrdw5sxM9VBkEYT"}),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),
