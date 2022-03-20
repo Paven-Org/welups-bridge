@@ -78,7 +78,11 @@ func main() {
 	for _, addr := range config.Get().WelupsConf.Nodes {
 		welClient := welListener.NewExtNodeClientWithTimeout(addr, time.Duration(config.Get().WelupsConf.ClientTimeout)*time.Minute)
 		if welClient.Start() == nil {
+		welClient = welListener.NewExtNodeClientWithTimeout(addr, time.Duration(config.Get().WelupsConf.ClientTimeout)*time.Minute)
+		if err := welClient.Start(); err == nil {
 			break
+		} else {
+			logger.Err(err).Msg("Can't start wel listener")
 		}
 	}
 	defer welClient.Stop()
