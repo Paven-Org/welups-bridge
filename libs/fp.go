@@ -42,7 +42,7 @@ func DropWhile[A any](f func(a A) bool, amap []A) []A {
 	var res []A
 	for i, v := range amap {
 		if !f(v) {
-			copy(res, amap[i:])
+			res = append(res, amap[i:]...)
 			break
 		}
 	}

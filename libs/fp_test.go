@@ -29,3 +29,13 @@ func TestMapReduce(t *testing.T) {
 	fmt.Println(Reduce(func(b string, a int) string { return fmt.Sprintf("%s!%d", b, a) }, "", test2.Given) == test2.Expected)
 
 }
+
+func TestDropWhile(t *testing.T) {
+	test := []string{"a", "b", "c", "d", "e", "e", "f", "e"}
+	fmt.Println("Result: ", DropWhile(func(a string) bool { return a != "e" }, test))
+}
+
+func TestTakeWhile(t *testing.T) {
+	test := []string{"a", "b", "c", "d", "e", "e", "f", "e"}
+	fmt.Println("Result: ", TakeWhile(func(a string) bool { return a != "e" }, test))
+}
