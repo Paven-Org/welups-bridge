@@ -129,7 +129,7 @@ func TestGetRoles(t *testing.T) {
 }
 
 func getroles(t *testing.T) {
-	resp, err := cli.Get("/v1/a/mu/roles")
+	resp, err := cli.Get("/v1/a/m/u/roles")
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
 	}
@@ -149,7 +149,7 @@ func getroles(t *testing.T) {
 }
 
 func getusers(t *testing.T) {
-	resp, err := cli.Get("/v1/a/mu/users/1?limit=1")
+	resp, err := cli.Get("/v1/a/m/u/users/1?limit=1")
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
 	}
@@ -169,7 +169,7 @@ func getusers(t *testing.T) {
 }
 
 func getuserswithrole(t *testing.T) {
-	resp, err := cli.Get("/v1/a/mu/haverole/service/1?limit=1")
+	resp, err := cli.Get("/v1/a/m/u/haverole/service/1?limit=1")
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
 	}

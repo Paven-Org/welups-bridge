@@ -17,7 +17,7 @@ var logger *zerolog.Logger
 func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	initialize()
 
-	gr := router.Group("/mu", mw... /*,middlewares.Author*/)
+	gr := router.Group("/m/u", mw... /*,middlewares.Author*/)
 
 	gr.POST("/add", addUser)
 	gr.POST("/update/:user", updateUser)
@@ -26,7 +26,7 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.POST("/revoke/:role/from/:user", revokeRole)
 	gr.GET("/haverole/:role/:page", getUsersWithRole)
 	gr.GET("/users/:page", getUsers)
-	gr.GET("/ban/:user", banUser)
+	gr.POST("/ban/:user", banUser)
 	gr.GET("/roles", getRoles)
 
 }
