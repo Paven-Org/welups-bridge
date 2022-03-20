@@ -13,7 +13,7 @@ type IEthDAO interface {
 	AddEthAccount(address string, status string) error
 	GetAllEthAccounts(offset uint, size uint) ([]model.EthAccount, error)
 	GetAllRoles() ([]string, error)
-	GetEthAccount(address string) ([]model.EthAccount, error)
+	GetEthAccount(address string) (*model.EthAccount, error)
 	GetEthAccountRoles(address string) ([]string, error)
 	GetEthAccountsWithRole(role string, offset uint, size uint) ([]model.EthAccount, error)
 	GetEthPrikeyIfExists(address string) (string, error)
@@ -33,8 +33,8 @@ func MkEthDAO(db *sqlx.DB) IEthDAO {
 	return &ethDAO{db: db}
 }
 
-func (dao *ethDAO) GetEthAccount(address string) ([]model.EthAccount, error) {
-	var accounts []model.EthAccount
+func (dao *ethDAO) GetEthAccount(address string) (*model.EthAccount, error) {
+	var account model.EthAccount
 	db := dao.db
 	log := logger.Get()
 
@@ -43,12 +43,12 @@ func (dao *ethDAO) GetEthAccount(address string) ([]model.EthAccount, error) {
 									ON eth_sys_accounts.address = eth_sys_prikeys.address
 									WHERE eth_sys_accounts.address  = ? 
 									ORDER BY eth_sys_accounts.created_at`)
-	err := db.Select(&accounts, q, address)
+	err := db.Get(&account, q, address)
 	if err != nil {
 		log.Err(err).Msgf("Error while querying for account with address %s", address)
 		return nil, err
 	}
-	return accounts, nil
+	return &account, nil
 }
 
 func (dao *ethDAO) AddEthAccount(address string, status string) error {
