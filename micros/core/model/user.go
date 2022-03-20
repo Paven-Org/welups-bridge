@@ -32,6 +32,12 @@ const (
 	UserStatusPermabanned = "permabanned"
 )
 
+const (
+	UserRoleRoot    = "root"
+	UserRoleAdmin   = "admin"
+	UserRoleService = "service"
+)
+
 var (
 	ErrWrongPasswd             = fmt.Errorf("Wrong password")
 	ErrUserNotActivated        = fmt.Errorf("User not activated")
