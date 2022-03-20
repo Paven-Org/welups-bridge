@@ -49,5 +49,5 @@ SELECT 'down SQL query';
 DROP TABLE wel_sys_account_roles CASCADE;
 DROP TABLE wel_sys_prikeys CASCADE;
 DROP TABLE wel_sys_roles CASCADE;
-DROP TABLE wel_sys_account CASCADE;
+DROP TABLE wel_sys_accounts CASCADE;
 -- +goose StatementEnd

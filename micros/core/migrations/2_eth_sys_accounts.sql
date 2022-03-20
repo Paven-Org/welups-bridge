@@ -49,5 +49,5 @@ SELECT 'down SQL query';
 DROP TABLE eth_sys_account_roles CASCADE;
 DROP TABLE eth_sys_prikeys CASCADE;
 DROP TABLE eth_sys_roles CASCADE;
-DROP TABLE eth_sys_account CASCADE;
+DROP TABLE eth_sys_accounts CASCADE;
 -- +goose StatementEnd
