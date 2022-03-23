@@ -1,7 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
 SELECT 'up SQL query';
--- +goose StatementEnd
 
 CREATE TABLE IF NOT EXISTS wel_eth_trans (
   id varchar(70),
@@ -24,6 +23,7 @@ CREATE TABLE IF NOT EXISTS wel_eth_trans (
 );
 
 CREATE UNIQUE INDEX deposit_tx_index ON wel_eth_trans(deposit_tx_hash); 
+-- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
