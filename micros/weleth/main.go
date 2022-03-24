@@ -6,7 +6,6 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/service"
 	manager "bridge/service-managers"
-	ethListener "bridge/service-managers/listener/eth"
 	welListener "bridge/service-managers/listener/wel"
 	"bridge/service-managers/logger"
 	"context"
@@ -65,19 +64,17 @@ func main() {
 		panic(err)
 	}
 	defer ethClient.Close()
-	ethSysDAO := dao.MkEthSysDao(db)
-	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
+	//ethSysDAO := dao.MkEthSysDao(db)
+	//ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
 
-	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
-	ethListen.RegisterConsumer(ethEvtConsumer)
+	//ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
+	//ethListen.RegisterConsumer(ethEvtConsumer)
 
-	ethListen.Start(ctx)
+	//ethListen.Start(ctx)
 
 	// WEL chain stuff
 	var welClient = &welListener.ExtNodeClient{}
 	for _, addr := range config.Get().WelupsConf.Nodes {
-		welClient := welListener.NewExtNodeClientWithTimeout(addr, time.Duration(config.Get().WelupsConf.ClientTimeout)*time.Minute)
-		if welClient.Start() == nil {
 		welClient = welListener.NewExtNodeClientWithTimeout(addr, time.Duration(config.Get().WelupsConf.ClientTimeout)*time.Minute)
 		if err := welClient.Start(); err == nil {
 			break
