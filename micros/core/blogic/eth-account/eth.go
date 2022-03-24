@@ -3,6 +3,11 @@ package ethLogic
 import (
 	"bridge/libs"
 	"bridge/micros/core/model"
+	ethService "bridge/micros/core/service/eth"
+	"context"
+
+	"github.com/ethereum/go-ethereum/crypto"
+	"go.temporal.io/sdk/client"
 )
 
 //AddEthAccount(address string, status string)
@@ -102,39 +107,94 @@ func GetEthAccountsWithRole(role string, offset uint, size uint) ([]model.EthAcc
 }
 
 //GrantRole(address string, role string)
-func GrantRole(address, role string) error {
+func GrantRole(address, role string, callerkey string) (string, error) {
 	log.Info().Msgf("[ethAccount logic internal] Start granting role %s to ethAccount %s...", role, address)
-	//ethAccount, err := ethDAO.GetEthAccount(address)
-	//if err != nil {
-	//	log.Err(err).Msgf("[ethAccount logic internal] Failed to retrieve ethAccount %s", address)
-	//	return err
-	//}
 
-	log.Info().Msgf("[ethAccount logic internal] Granting role %s to ethAccount %s...", role, address)
-	if err := ethDAO.GrantRole(address, role); err != nil {
-		log.Err(err).Msgf("[ethAccount logic internal] Failed to grant role %s to ethAccount %s", role, address)
-		return err
+	key, err := crypto.HexToECDSA(callerkey)
+	if err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] Invalid private key")
+		return "", err // invalid key
 	}
 
-	return nil
+	callerAddress := crypto.PubkeyToAddress(key.PublicKey).Hex()
+	log.Info().Msgf("[ethAccount logic internal] caller address: %s", callerAddress)
+
+	acc, err := ethDAO.GetEthAccount(callerAddress)
+	if err != nil {
+		log.Err(err).Msgf("[ethAccount logic internal] Unable to get ethereum account %s from DB", callerAddress)
+		return "", err // invalid key
+	}
+	if acc.Status != "ok" {
+		log.Info().Msgf("[ethAccount logic internal] account %s locked and cannot do administrative tasks", callerAddress)
+		return "", model.ErrEthAccountLocked
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "callerkey", callerkey)
+	// call workflow
+	log.Info().Msgf("[ethAccount logic internal] Calling GovContractService workflow...")
+	wo := client.StartWorkflowOptions{
+		TaskQueue: ethService.GovContractQueue,
+	}
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, ethService.GrantRoleWorkflow, address, role)
+	if err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] Unable to call GrantRoleWorkflow")
+		return "", err
+	}
+	log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+
+	var txhash string
+	if err := we.Get(ctx, &txhash); err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] GrantRoleWorkflow failed")
+		return txhash, err
+	}
+	return txhash, nil
 }
 
 //RevokeRole(address string, role string)
-func RevokeRole(address, role string) error {
-	log.Info().Msgf("[ethAccount logic internal] Start revoking role %s from ethAccount %s...", role, address)
-	//ethAccount, err := ethDAO.GetEthAccount(address)
-	//if err != nil {
-	//	log.Err(err).Msgf("[ethAccount logic internal] Failed to retrieve ethAccount %s", address)
-	//	return err
-	//}
+func RevokeRole(address, role string, callerkey string) (string, error) {
+	log.Info().Msgf("[ethAccount logic internal] Start revoking role %s to ethAccount %s...", role, address)
 
-	log.Info().Msgf("[ethAccount logic internal] Revoking role %s from ethAccount %s...", role, address)
-	if err := ethDAO.RevokeRole(address, role); err != nil {
-		log.Err(err).Msgf("[ethAccount logic internal] Failed to revoke role %s from ethAccount %s", role, address)
-		return err
+	key, err := crypto.HexToECDSA(callerkey)
+	if err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] Invalid private key")
+		return "", err // invalid key
 	}
 
-	return nil
+	callerAddress := crypto.PubkeyToAddress(key.PublicKey).Hex()
+	log.Info().Msgf("[ethAccount logic internal] caller address: %s", callerAddress)
+
+	acc, err := ethDAO.GetEthAccount(callerAddress)
+	if err != nil {
+		log.Err(err).Msgf("[ethAccount logic internal] Unable to get ethereum account %s from DB", callerAddress)
+		return "", err // invalid key
+	}
+	if acc.Status != "ok" {
+		log.Info().Msgf("[ethAccount logic internal] account %s locked and cannot do administrative tasks", callerAddress)
+		return "", model.ErrEthAccountLocked
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "callerkey", callerkey)
+	// call workflow
+	log.Info().Msgf("[ethAccount logic internal] Calling GovContractService workflow...")
+	wo := client.StartWorkflowOptions{
+		TaskQueue: ethService.GovContractQueue,
+	}
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, ethService.RevokeRoleWorkflow, address, role)
+	if err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] Unable to call RevokeRoleWorkflow")
+		return "", err
+	}
+	log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+
+	var txhash string
+	if err := we.Get(ctx, &txhash); err != nil {
+		log.Err(err).Msg("[ethAccount logic internal] RevokeRoleWorkflow failed")
+		return txhash, err
+	}
+	return txhash, nil
 }
 
 //SetEthAccountStatus(address string, status string)
@@ -156,55 +216,21 @@ func SetEthAccountStatus(address, status string) error {
 }
 
 // system keys
-func SetCurrentSuperAdmin(address string, prikey string) error {
+
+func SetCurrentAuthenticator(prikey string) error {
 	sysAccounts.Lock()
 	defer sysAccounts.Unlock()
 
-	log.Info().Msgf("[ethAccount logic internal] Set current super admin to %s", address)
-
-	if !verifyKeyAndAddress(prikey, address) {
-		err := model.ErrEthKeyAndAddressMismatch
-		log.Err(err).Msgf("[ethAccount logic internal] Key and address mismatch for account %s", address)
-		return err
-	}
-
-	accs, err := ethDAO.GetEthAccountsWithRole(model.EthAccountRoleSuperAdmin, 0, 1000)
+	key, err := crypto.HexToECDSA(prikey)
 	if err != nil {
-		log.Err(err).Msgf("[ethAccount logic internal] couldn't retrieve super admin accounts")
-		return err
-	}
-	match := libs.DropWhile(func(a model.EthAccount) bool { return a.Address != address }, accs)
-	if len(match) < 1 {
-		err = model.ErrEthAccountNotFound
-		log.Err(err).Msgf("[ethAccount logic internal] super admin %s not found", address)
+		log.Err(err).Msgf("[ethAccount logic internal] invalid private key")
 		return err
 	}
 
-	if match[0].Status != "ok" {
-		err = model.ErrEthAccountLocked
-		log.Err(err).Msgf("[ethAccount logic internal] super admin %s is locked", address)
-		return err
-	}
-
-	sysAccounts.superAdmin.Address = address
-	sysAccounts.superAdmin.Prikey = prikey
-	sysAccounts.superAdmin.Status = match[0].Status
-	return nil
-}
-
-func SetCurrentAuthenticator(address string, prikey string) error {
-	sysAccounts.Lock()
-	defer sysAccounts.Unlock()
-
+	address := crypto.PubkeyToAddress(key.PublicKey).Hex()
 	log.Info().Msgf("[ethAccount logic internal] Set current authenticator to %s", address)
 
-	if !verifyKeyAndAddress(prikey, address) {
-		err := model.ErrEthKeyAndAddressMismatch
-		log.Err(err).Msgf("[ethAccount logic internal] Key and address mismatch for account %s", address)
-		return err
-	}
-
-	accs, err := ethDAO.GetEthAccountsWithRole(model.EthAccountRoleAuthenticator, 0, 1000)
+	accs, err := ethDAO.GetEthAccountsWithRole(model.EthAccountRoleAuthenticator, 0, 1000) // should've made the DAO to branch out queries instead, but deadline
 	if err != nil {
 		log.Err(err).Msgf("[ethAccount logic internal] couldn't retrieve authenticator accounts")
 		return err
@@ -226,16 +252,6 @@ func SetCurrentAuthenticator(address string, prikey string) error {
 	sysAccounts.authenticator.Prikey = prikey
 	sysAccounts.authenticator.Status = match[0].Status
 	return nil
-}
-
-func CheckSuperAdminKey() bool {
-
-	return true
-}
-
-func CheckAuthenticatorKey() bool {
-
-	return true
 }
 
 //GetEthPrikeyIfExists(address string)
