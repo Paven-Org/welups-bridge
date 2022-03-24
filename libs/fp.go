@@ -48,3 +48,12 @@ func DropWhile[A any](f func(a A) bool, amap []A) []A {
 	}
 	return res
 }
+
+func Member[A comparable](a A, amap []A) bool {
+	for _, v := range amap {
+		if v == a {
+			return true
+		}
+	}
+	return false
+}

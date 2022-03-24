@@ -39,3 +39,9 @@ func TestTakeWhile(t *testing.T) {
 	test := []string{"a", "b", "c", "d", "e", "e", "f", "e"}
 	fmt.Println("Result: ", TakeWhile(func(a string) bool { return a != "e" }, test))
 }
+
+func TestMember(t *testing.T) {
+	test := []string{"a", "b", "c", "d", "e", "e", "f", "e"}
+	fmt.Println("Result: ", Member("e", test))
+	fmt.Println("Result: ", Member("m", test))
+}
