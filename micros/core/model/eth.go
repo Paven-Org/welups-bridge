@@ -22,9 +22,8 @@ const (
 const (
 	EthAccountRoleUnauthorized  = "unauthorized"
 	EthAccountRoleSuperAdmin    = "super_admin"
-	EthAccountRoleTreasury      = "treasury"
-	EthAccountRoleVault         = "vault"
-	EthAccountRoleAuthenticator = "authenticator"
+	EthAccountRoleManager       = "MANAGER_ROLE"
+	EthAccountRoleAuthenticator = "AUTHENTICATOR"
 )
 
 var (
