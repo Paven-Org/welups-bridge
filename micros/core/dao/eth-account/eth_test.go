@@ -68,10 +68,10 @@ func TestGetEthAccountRoles(t *testing.T) {
 }
 
 func TestGetEthAccountsWithRole(t *testing.T) {
-	if accounts, err := ethDao.GetEthAccountsWithRole("vault", 0, 20); err != nil {
+	if accounts, err := ethDao.GetEthAccountsWithRole("super_admin", 0, 20); err != nil {
 		t.Fatal("Error: ", err.Error())
 	} else {
-		fmt.Println("All accounts with role 'vault': ", accounts)
+		fmt.Println("All accounts with role 'super_admin': ", accounts)
 	}
 }
 func TestGetEthPrikeyIfExists(t *testing.T) {}

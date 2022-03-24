@@ -38,16 +38,27 @@ func (dao *ethDAO) GetEthAccount(address string) (*model.EthAccount, error) {
 	db := dao.db
 	log := logger.Get()
 
-	q := db.Rebind(`SELECT eth_sys_accounts.*, eth_sys_prikeys.prikey 
-									FROM eth_sys_accounts LEFT JOIN eth_sys_prikeys 
-									ON eth_sys_accounts.address = eth_sys_prikeys.address
-									WHERE eth_sys_accounts.address  = ? 
-									ORDER BY eth_sys_accounts.created_at`)
+	q := db.Rebind(`SELECT eth_sys_accounts.*
+									FROM eth_sys_accounts
+									WHERE eth_sys_accounts.address  = ?`)
 	err := db.Get(&account, q, address)
 	if err != nil {
 		log.Err(err).Msgf("Error while querying for account with address %s", address)
 		return nil, err
 	}
+	// get key if exists
+	qPrikey := db.Rebind("SELECT prikey FROM eth_sys_prikeys WHERE address = ?")
+	var prikey string
+	err = db.Get(&prikey, qPrikey, address)
+	if err == sql.ErrNoRows {
+		prikey = ""
+	} else if err != nil {
+		log.Err(err).Msgf("Error while querying for address' private key: %s", address)
+		return &account, err
+	}
+
+	account.Prikey = prikey
+
 	return &account, nil
 }
 
