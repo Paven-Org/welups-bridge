@@ -70,7 +70,7 @@ func parseEnv() Env {
 			Port:      common.WithDefault("APP_TEMPORAL_POST", 7233),
 			Namespace: common.WithDefault("APP_TEMPORAL_NAMESPACE", "default"), // "devWelbridge", "prodWelbridge"
 			// Ideally this should be retrieved from some secret manager
-			Secret: common.WithDefault("APP_TEMPORAL_SECRET", "99c7129d075fd9b7505f1552d13c6fce411ab14d42f1f5cf668db2d6ebd73937"), // 16,24,32 bytes long for AES-128,192,256 respectively
+			Secret: common.WithDefault("APP_TEMPORAL_SECRET", "411ab14d42f1f5cf668db2d6ebd73937"), // 16,24,32 bytes long for AES-128,192,256 respectively
 		},
 
 		Secrets: common.Secrets{

@@ -18,6 +18,10 @@ type Env struct {
 	Mailerconf        common.Mailerconf
 	TemporalCliConfig common.TemporalCliconf
 	Casbin            common.CasbinCnf
+	EthereumConfig    common.EtherumConfig
+	EthGovContract    string
+	WelupsConfig      common.WelupsConfig
+	WelGovContract    string
 }
 
 func parseEnv() Env {
@@ -66,6 +70,8 @@ func parseEnv() Env {
 			Host:      common.WithDefault("APP_TEMPORAL_HOST", "localhost"),
 			Port:      common.WithDefault("APP_TEMPORAL_POST", 7233),
 			Namespace: common.WithDefault("APP_TEMPORAL_NAMESPACE", "default"), // "devWelbridge", "prodWelbridge"
+			// Ideally this should be retrieved from some secret manager
+			Secret: common.WithDefault("APP_TEMPORAL_SECRET", "411ab14d42f1f5cf668db2d6ebd73937"), // 16,24,32 bytes long for AES-128,192,256 respectively
 		},
 
 		Secrets: common.Secrets{
@@ -83,6 +89,21 @@ func parseEnv() Env {
 			ModelPath:  common.WithDefault("APP_CASBIN_MODEL_PATH", "./config/rbac/model.conf"),
 			PolicyPath: common.WithDefault("APP_CASBIN_POLICY_PATH", "./config/rbac/policy.csv"),
 		},
+
+		EthereumConfig: common.EtherumConfig{
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://rinkeby.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
+			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
+			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
+		},
+		EthGovContract: common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x6150f59d1fd1A3C6Dc22619973D574e3CC7bA6E2"),
+
+		WelupsConfig: common.WelupsConfig{
+			Nodes:         common.WithDefault("WEL_NODES", []string{"172.104.51.182:16669"}),
+			BlockTime:     common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
+			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
+			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
+		},
+		WelGovContract: common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WJARLFMGuaTwpMpAhbEziapZpNc24k3iVa"),
 	}
 }
 
