@@ -26,9 +26,9 @@ func (inq *WelInquirer) TriggerContract(from, contractAddress, method, jsonStrin
 	return inq.cli.TriggerContract(from, contractAddress, method, jsonString, feeLimit, tAmount, tTokenID, tTokenAmount)
 }
 
-func (inq *WelInquirer) WRC20balanceOf(opts *CallOpts, contractAddr string, account string) (*big.Int, error) {
+func (inq *WelInquirer) WRC20balanceOf(contractAddr string, account string) (*big.Int, error) {
 	jsonString := fmt.Sprintf(`[{"address":"%s"}]`, account)
-	tx, err := inq.TriggerConstantContract(opts.From, contractAddr, "balanceOf(address)", jsonString)
+	tx, err := inq.TriggerConstantContract(account, contractAddr, "balanceOf(address)", jsonString)
 	if err != nil {
 		fmt.Println("BalanceOf failed, error: ", err.Error())
 		return big.NewInt(0), err
