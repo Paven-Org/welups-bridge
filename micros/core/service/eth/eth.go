@@ -24,7 +24,7 @@ import (
 const (
 	GrantRoleWorkflow  = "GrantRole"
 	RevokeRoleWorkflow = "RevokeRole"
-	GovContractQueue   = "GovContractService"
+	GovContractQueue   = "EthGovContractService"
 )
 
 type GovContractService struct {
