@@ -2,7 +2,6 @@ package wel
 
 import (
 	"bridge/service-managers/logger"
-	"crypto/ecdsa"
 	"crypto/sha256"
 	"fmt"
 	"math/big"
@@ -13,19 +12,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// WelGov is an auto generated Go binding around an Welereum contract.
 type WelGov struct {
 	address string
 	cli     *welclient.GrpcClient
-}
-
-type CallOpts struct {
-	From          string
-	Prikey        *ecdsa.PrivateKey
-	Fee_limit     int64
-	T_amount      int64
-	T_tokenID     string
-	T_tokenAmount int64
 }
 
 // NewWelGov creates a new instance of WelGov, bound to a specific deployed contract.
