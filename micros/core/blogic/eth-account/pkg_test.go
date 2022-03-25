@@ -78,15 +78,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestKeyAndAddress(t *testing.T) {
-	fmt.Println(verifyAddress("0x25e8370E0e2cf3943Ad75e768335c892434bD090"))
-	fmt.Println(verifyKeyAndAddress("ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a", "0x25e8370E0e2cf3943Ad75e768335c892434bD090"))
+	fmt.Println(verifyAddress(testaddr))
+	fmt.Println(verifyKeyAndAddress(testkey, testaddr))
 }
 
 func TestSetAuthenticator(t *testing.T) {
-	ethDAO.GrantRole("0x25e8370E0e2cf3943Ad75e768335c892434bD090", "AUTHENTICATOR")
+	ethDAO.GrantRole(testaddr, "AUTHENTICATOR")
 	SetCurrentAuthenticator(testkey)
 	fmt.Println(sysAccounts.authenticator)
-	ethDAO.RevokeRole("0x25e8370E0e2cf3943Ad75e768335c892434bD090", "AUTHENTICATOR")
+	ethDAO.RevokeRole(testaddr, "AUTHENTICATOR")
 }
 
 func TestGrantRole(t *testing.T) {

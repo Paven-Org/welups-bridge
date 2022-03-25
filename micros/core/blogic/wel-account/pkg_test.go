@@ -5,24 +5,26 @@ import (
 	"bridge/libs"
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
-	ethService "bridge/micros/core/service/eth"
+	welService "bridge/micros/core/service/wel"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
 	"fmt"
 	"testing"
 
+	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+
 	"github.com/DATA-DOG/go-txdb"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 const (
-	testkey  = "ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a"
-	testaddr = "0x4125e8370E0e2cf3943Ad75e768335c892434bD090"
+	testkey     = "ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a"
+	testaddr    = "WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2"
+	testaddrhex = "0x4125e8370E0e2cf3943Ad75e768335c892434bD090"
 )
 
-var GovService *ethService.GovContractService
+var GovService *welService.GovContractService
 
 func TestMain(m *testing.M) {
 	mCnf := common.Mailerconf{
@@ -47,7 +49,7 @@ func TestMain(m *testing.M) {
 	defer db.Close()
 	daos := dao.MkDAOs(db)
 	userDAO = daos.User
-	//ethDAO = daos.Eth
+	welDAO = daos.Wel
 	//ethDAO.GrantRole("0x25e8370E0e2cf3943Ad75e768335c892434bD090", "AUTHENTICATOR")
 
 	// temporal
@@ -60,14 +62,14 @@ func TestMain(m *testing.M) {
 
 	tempcli = tcli
 
-	ethCli, err := ethclient.Dial(cnf.EthereumConfig.BlockchainRPC)
-	if err != nil {
-		logger.Get().Err(err).Msgf("Unable to connect to ethereum RPC server")
+	welCli := welclient.NewGrpcClient(cnf.WelupsConfig.Nodes[0])
+	defer welCli.Stop()
+	if err := welCli.Start(); err != nil {
+		logger.Get().Err(err).Msgf("Unable to start welCli's GRPC connection")
 		return
 	}
-	defer ethCli.Close()
 
-	GovService, err = ethService.MkGovContractService(ethCli, tempcli, daos, cnf.EthGovContract)
+	GovService, err = welService.MkGovContractService(welCli, tempcli, daos, cnf.WelGovContract)
 	if err != nil {
 		logger.Get().Err(err).Msgf("Unable to initialize GovContractService")
 		return
@@ -80,16 +82,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestKeyAndAddress(t *testing.T) {
-	fmt.Println(verifyAddress("0x4125e8370E0e2cf3943Ad75e768335c892434bD090"))
-	fmt.Println(verifyKeyAndAddress("ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a", "0x4125e8370E0e2cf3943Ad75e768335c892434bD090"))
+	fmt.Println(verifyAddress(testaddr))
+	fmt.Println(verifyKeyAndAddress(testkey, testaddr))
 
-	b58, err := libs.KeyToB58Addr("ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a")
+	b58, err := libs.KeyToB58Addr(testkey)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
 	fmt.Println(b58)
 
-	hex, err := libs.KeyToHexAddr("ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a")
+	hex, err := libs.KeyToHexAddr(testkey)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
@@ -99,6 +101,22 @@ func TestKeyAndAddress(t *testing.T) {
 func TestSetAuthenticator(t *testing.T) {
 	SetCurrentAuthenticator(testkey)
 	fmt.Println(sysAccounts.authenticator)
+}
+
+func TestGrantRole(t *testing.T) {
+	tx, err := GrantRole(testaddr, "MANAGER_ROLE", testkey)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println(tx)
+}
+
+func TestRevokeRole(t *testing.T) {
+	tx, err := RevokeRole(testaddr, "MANAGER_ROLE", testkey)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println(tx)
 }
 
 //func TestSendMailToAdmins(t *testing.T) {

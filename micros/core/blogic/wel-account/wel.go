@@ -5,6 +5,7 @@ import (
 	"bridge/micros/core/model"
 	welService "bridge/micros/core/service/wel"
 	"context"
+	"database/sql"
 	"strings"
 
 	"go.temporal.io/sdk/client"
@@ -134,6 +135,30 @@ func GrantRole(address, role string, callerkey string) (string, error) {
 	}
 	if acc.Status != "ok" {
 		log.Info().Msgf("[welAccount logic internal] account %s locked and cannot do administrative tasks", callerAddress)
+		return "", model.ErrWelAccountLocked
+	}
+
+	if !verifyAddress(address) {
+		err := model.ErrEthInvalidAddress
+		log.Err(err).Msgf("[ethAccount logic internal] invalid address %s", address)
+	}
+
+	target, err := welDAO.GetWelAccount(address)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Info().Msgf("[welAccount logic internal] address %s not in system", address)
+			log.Info().Msgf("[welAccount logic internal] Registering address %s", address)
+			if err := AddWelAccount(address, model.WelAccountStatusOK); err != nil {
+				log.Err(err).Msgf("[welAccount logic internal] Unable to add welereum account %s to DB", address)
+				return "", err
+			}
+		} else {
+			log.Err(err).Msgf("[welAccount logic internal] Unable to get welereum account %s from DB", address)
+			return "", err // invalid key
+		}
+	}
+	if target.Status != model.WelAccountStatusOK {
+		log.Info().Msgf("[welAccount logic internal] account %s locked", address)
 		return "", model.ErrWelAccountLocked
 	}
 

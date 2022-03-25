@@ -5,6 +5,7 @@ import (
 	"bridge/micros/core/model"
 	ethService "bridge/micros/core/service/eth"
 	"context"
+	"database/sql"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"
@@ -124,8 +125,32 @@ func GrantRole(address, role string, callerkey string) (string, error) {
 		log.Err(err).Msgf("[ethAccount logic internal] Unable to get ethereum account %s from DB", callerAddress)
 		return "", err // invalid key
 	}
-	if acc.Status != "ok" {
+	if acc.Status != model.EthAccountStatusOK {
 		log.Info().Msgf("[ethAccount logic internal] account %s locked and cannot do administrative tasks", callerAddress)
+		return "", model.ErrEthAccountLocked
+	}
+
+	if !verifyAddress(address) {
+		err := model.ErrEthInvalidAddress
+		log.Err(err).Msgf("[ethAccount logic internal] invalid address %s", address)
+	}
+
+	target, err := ethDAO.GetEthAccount(address)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Info().Msgf("[ethAccount logic internal] address %s not in system", address)
+			log.Info().Msgf("[ethAccount logic internal] Registering address %s", address)
+			if err := AddEthAccount(address, model.EthAccountStatusOK); err != nil {
+				log.Err(err).Msgf("[ethAccount logic internal] Unable to add ethereum account %s to DB", address)
+				return "", err
+			}
+		} else {
+			log.Err(err).Msgf("[ethAccount logic internal] Unable to get ethereum account %s from DB", address)
+			return "", err // invalid key
+		}
+	}
+	if target.Status != model.EthAccountStatusOK {
+		log.Info().Msgf("[ethAccount logic internal] account %s locked", address)
 		return "", model.ErrEthAccountLocked
 	}
 
