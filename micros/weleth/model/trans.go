@@ -19,10 +19,10 @@ type WelEthEvent struct {
 	WelTokenAddr string `json:"wel_token_addr" db:"wel_token_addr,omitempty"`
 	EthTokenAddr string `json:"eth_token_addr" db:"eth_token_addr,omitempty"`
 
-	WelWalletAddr string `json:"wel_wallet_addr,omitempty" db:"wel_wallet_addr,omitempty"`
+	WelWalletAddr string `json:"wel_wallet_addr,omitempty" db:"wel_wallet_addr"`
 	EthWalletAddr string `json:"eth_wallet_addr" db:"eth_wallet_addr"`
 
-	NetworkID string `json:"network_id" db:"network_id,omitempty"`
+	NetworkID string `json:"network_id" db:"network_id"`
 
 	Amount string `json:"amount" db:"amount"`
 
