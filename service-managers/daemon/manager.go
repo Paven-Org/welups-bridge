@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -12,18 +11,15 @@ import (
 // BootstrapDaemons start daemons and handling os signal.
 func BootstrapDaemons(ctx context.Context, daemonGenerators ...consts.DaemonGenerator) {
 	// os signal handling
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
 	// create daemon manager
 	manager := newDaemonManager(ctx)
 	manager.registerDaemons(daemonGenerators...)
 
 	// wait os signal
-	select {
-	case <-sigs:
-	case <-manager.ctx.Done():
-	}
+	<-manager.ctx.Done()
+	stop()
 
 	// stop daemons
 	manager.stop()

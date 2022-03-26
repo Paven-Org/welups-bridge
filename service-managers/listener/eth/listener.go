@@ -87,6 +87,7 @@ func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon,
 
 			case <-parentContext.Done():
 				s.Logger.Info().Msg("[eth_listener] Blockchain listener stop")
+				return
 			}
 		}
 

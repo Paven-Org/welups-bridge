@@ -78,6 +78,7 @@ func (s *WelListener) Handling(parentContext context.Context) (fn consts.Daemon,
 
 			case <-parentContext.Done():
 				s.Logger.Info().Msg("[wel_listener] Blockchain listener stop")
+				return
 			}
 		}
 

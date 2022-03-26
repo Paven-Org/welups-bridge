@@ -6,9 +6,11 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/service"
 	manager "bridge/service-managers"
+	ethListener "bridge/service-managers/listener/eth"
 	welListener "bridge/service-managers/listener/wel"
 	"bridge/service-managers/logger"
 	"context"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -57,6 +59,8 @@ func main() {
 
 	ctx := context.Background()
 
+	wg := sync.WaitGroup{}
+
 	// ETH chain stuff: contract address, prkey, contract event watcher...
 	ethClient, err := ethclient.Dial(config.Get().EtherumConf.BlockchainRPC)
 	if err != nil {
@@ -64,13 +68,17 @@ func main() {
 		panic(err)
 	}
 	defer ethClient.Close()
-	//ethSysDAO := dao.MkEthSysDao(db)
-	//ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
+	ethSysDAO := dao.MkEthSysDao(db)
+	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
 
-	//ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
-	//ethListen.RegisterConsumer(ethEvtConsumer)
+	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
+	ethListen.RegisterConsumer(ethEvtConsumer)
 
-	//ethListen.Start(ctx)
+	wg.Add(1)
+	go func() {
+		ethListen.Start(ctx)
+		wg.Done()
+	}()
 
 	// WEL chain stuff
 	var welClient = &welListener.ExtNodeClient{}
@@ -91,8 +99,15 @@ func main() {
 	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], welEthDAO)
 	welListen.RegisterConsumer(welEvtConsumer)
 
-	welListen.Start(ctx)
+	wg.Add(1)
+	go func() {
+		welListen.Start(ctx)
+		wg.Done()
+	}()
 
+	logger.Info().Msg("[main] Waiting for daemons to stop...")
+	wg.Wait()
+	logger.Info().Msg("[main] Closing weleth process, cleaning up...")
 	//// Temporal
 	//c, err := manager.MkTemporalClient(config.Get().TemporalCliConfig)
 	//if err != nil {
