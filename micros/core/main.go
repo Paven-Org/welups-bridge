@@ -10,6 +10,11 @@ import (
 	"bridge/micros/core/middlewares"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
+	"context"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/casbin/casbin/v2"
 	_ "github.com/lib/pq"
@@ -24,7 +29,8 @@ func main() {
 	// logger
 	logger.Init(config.Get().Structured)
 	logger := logger.Get()
-	logger.Info().Msgf("Initialize system with config: %+v ", *config.Get())
+	logger.Info().Msgf("[main] Initialize system with config: %+v ", *config.Get())
+	defer logger.Info().Msg("[main] Core exited")
 
 	//	ctx = logger.WithContext(ctx)
 	//	zerolog.Ctx(ctx).Info().Msgf("getting log from context: ", ctx)
@@ -90,11 +96,25 @@ func main() {
 	// middlewares: TLS, CORS, JWT, secure cookie, json resp body, URL normalization...
 	mainRouter := router.InitMainRouter(config.Get().HttpConfig, authMW)
 	httpServ := manager.MkHttpServer(config.Get().HttpConfig, mainRouter)
-	httpServ.ListenAndServe()
+	go func() {
+		if err := httpServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Err(err).Msg("[main] Failed to start HTTP server")
+			return
+		}
+	}()
 	// system validity check
 
-	//// layer 2 setup:
-	// load handlers for HTTP server
-	// load handlers for GRPC server/client
+	// shutdown & cleanup
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
+	defer stop()
+	<-ctx.Done()
+	stop()
+
+	logger.Info().Msg("[main] Shutting down HTTP server")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := httpServ.Shutdown(ctx); err != nil {
+		logger.Err(err).Msg("[main] Failed to gracefully shutdown HTTP server")
+	}
 
 }
