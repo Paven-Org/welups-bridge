@@ -3,11 +3,11 @@
 SELECT 'up SQL query';
 
 CREATE TABLE IF NOT EXISTS wel_eth_sys (
-  eth_last_scan_block bigint(20),
-  wel_last_scan_block bigint(20)
+  eth_last_scan_block bigint,
+  wel_last_scan_block bigint
 );
 
-INSERT INTO wel_eth_sys(eth_last_scan_block, wel_last_scan_block) VALUES (0,0);
+INSERT INTO wel_eth_sys (eth_last_scan_block, wel_last_scan_block) VALUES (0,0);
 -- +goose StatementEnd
 
 -- +goose Down

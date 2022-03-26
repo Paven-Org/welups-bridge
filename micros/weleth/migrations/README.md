@@ -15,4 +15,5 @@ goose postgres "host=<host> port=<port> user=<user> password=<password> \
 dbname=<dbname> sslmode=disable" down <migration-number> #default to current-1
 ``` 
 
-`GOOSE_DBSTRING` could be set to the lengthy connection string above. Much recommended.
+`GOOSE_DBSTRING` could be set to the lengthy connection string above and `GOOSE_DRIVER`
+could be set to `postgres`. See `.env.example` in this directory.

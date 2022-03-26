@@ -49,7 +49,7 @@ func parseEnv() Env {
 			Port:            common.WithDefault("APP_DB_PORT", 5432),
 			Username:        common.WithDefault("APP_DB_USERNAME", "welbridge"),
 			Password:        common.WithDefault("APP_DB_PASSWORD", ""),
-			DBname:          common.WithDefault("APP_DB_NAME", "welbridge"),
+			DBname:          common.WithDefault("APP_DB_NAME", "welbridge_weleth"),
 			DBbackend:       common.WithDefault("APP_DB_BACKEND", "postgres"),
 			MaxOpenConns:    common.WithDefault("APP_DB_CONN_MAX", 10),
 			MaxIdleConns:    common.WithDefault("APP_DB_CONN_MAX_IDLE", 5),
