@@ -1,7 +1,6 @@
 package libs
 
 import (
-	"bridge/common/utils"
 	"crypto/sha256"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -15,10 +14,14 @@ func H256(payload []byte) []byte {
 	return h256h.Sum(nil)
 }
 
+func HKeccak(payload []byte) []byte {
+	return crypto.Keccak256Hash(payload).Bytes()
+}
+
 type Signer func([]byte, string) ([]byte, error)
 
 var SignerH256 = MkSigner(H256)
-var SignerK256 = MkSigner(utils.HashKeccak256)
+var SignerK256 = MkSigner(HKeccak)
 
 func MkSigner(h Hasher) Signer {
 	return func(payload []byte, keyhex string) ([]byte, error) {
