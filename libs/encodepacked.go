@@ -55,7 +55,7 @@ func ToEthSignedMessageHash(_token string, _user string, _amount *big.Int, _requ
 	hash := crypto.Keccak256Hash(token, user, amount, requestID, version)
 	// ECDSA.toEthSignedMessageHash
 	prefixedHash := crypto.Keccak256Hash(
-		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%v", len(hash))),
+		[]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d", len(hash))),
 		hash.Bytes(),
 	).Bytes()
 
