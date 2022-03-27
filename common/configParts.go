@@ -71,6 +71,7 @@ type WelupsConfig struct {
 }
 
 func WithDefault[A any](key string, df A) A {
+	viper.SetTypeByDefaultValue(true) // make sure viper.Get would always Get() value as A
 	viper.SetDefault(key, df)
 	return viper.Get(key).(A)
 }
