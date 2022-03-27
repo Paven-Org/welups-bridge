@@ -1,13 +1,15 @@
 package manager
 
-import "syscall"
+import (
+	"golang.org/x/sys/unix"
+)
 
 func SetOSParams() {
 	// Prevent coredump to keep process memory confidential
-	nocore := &syscall.Rlimit{
+	nocore := &unix.Rlimit{
 		Cur: 0,
 		Max: 0,
 	}
 
-	syscall.Setrlimit(syscall.RLIMIT_CORE, nocore)
+	unix.Setrlimit(unix.RLIMIT_CORE, nocore)
 }
