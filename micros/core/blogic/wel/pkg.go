@@ -1,10 +1,10 @@
-package ethLogic
+package welLogic
 
 import (
 	"bridge/libs"
 	"bridge/micros/core/dao"
-	ethdao "bridge/micros/core/dao/eth-account"
 	userdao "bridge/micros/core/dao/user"
+	weldao "bridge/micros/core/dao/wel-account"
 	"bridge/micros/core/model"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	ethDAO  ethdao.IEthDAO
+	welDAO  weldao.IWelDAO
 	userDAO userdao.IUserDAO
 	mailer  *manager.Mailer
 	tempcli client.Client
@@ -28,40 +28,67 @@ var (
 
 func Init(d *dao.DAOs, m *manager.Mailer, tmpcli client.Client) {
 	log = logger.Get()
-	ethDAO = d.Eth
+	welDAO = d.Wel
 	userDAO = d.User
 	mailer = m
 	tempcli = tmpcli
 }
 
-type ethSysAccounts struct {
+type welSysAccounts struct {
 	sync.RWMutex
-	superAdmin    model.EthAccount
-	authenticator model.EthAccount
+	superAdmin    model.WelAccount
+	authenticator model.WelAccount
 }
 
-var sysAccounts ethSysAccounts
+var sysAccounts welSysAccounts
 
-func verifyKeyAndAddress(hexkey string, hexaddress string) bool {
+func verifyKeyAndAddress(hexkey string, address string) bool {
 	key, err := crypto.HexToECDSA(hexkey)
 	if err != nil {
 		return false // invalid key
 	}
 	keyAddr := crypto.PubkeyToAddress(key.PublicKey)
+
+	var hexaddress string
+	if !strings.HasPrefix(address, "0x") {
+		hexaddress, err = libs.B58toHex(address)
+		if err != nil {
+			return false
+		}
+	} else {
+		hexaddress = address
+	}
+	_, hexaddress, _ = strings.Cut(hexaddress, "0x41")
+	hexaddress = "0x" + hexaddress
+	hexaddress = strings.ToLower(hexaddress)
+
 	keyaddr := strings.ToLower(keyAddr.Hex())
 
-	return keyaddr == strings.ToLower(hexaddress)
+	fmt.Println("keyaddr and hexaddr: ", keyaddr, hexaddress)
+
+	return hexaddress == keyaddr
 }
 
-func verifyAddress(hexaddress string) bool {
-	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")
+func verifyAddress(address string) bool { // change! Base58 -> hex -> address
+	var hexaddress string
+	var err error
+	if !strings.HasPrefix(address, "0x") {
+		hexaddress, err = libs.B58toHex(address)
+		if err != nil {
+			return false
+		}
+	} else {
+		hexaddress = address
+	}
+
+	re := regexp.MustCompile("^0x41[0-9a-fA-F]{40}$")
 	return re.MatchString(hexaddress)
 }
 
 func sendNotificationToRole(role string, subject string, body string) error {
 	users, err := userDAO.GetUsersWithRole(role, 0, 1000)
 	if err != nil {
-		log.Err(err).Msgf("[ethAccount logic internal] Unable to fetch users with role %s", role)
+		log.Err(err).Msgf("[Wel logic internal] Unable to fetch users with role %s", role)
 		return err
 	}
 	fmt.Println("Users: ", users)
@@ -73,7 +100,7 @@ func sendNotificationToRole(role string, subject string, body string) error {
 		mess := mailer.MkPlainMessage(mail, subject, body)
 		err := mailer.Send(mess)
 		if err != nil {
-			log.Err(err).Msgf("[ethAccount logic internal] unable to send mail to address %s", mail) // best effort lol
+			log.Err(err).Msgf("[Wel logic internal] unable to send mail to address %s", mail) // best effort lol
 		}
 	}
 
