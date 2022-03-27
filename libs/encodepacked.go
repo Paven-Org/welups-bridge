@@ -45,6 +45,7 @@ func EncodeUint256Array(arr []string) []byte {
 }
 
 func ToEthSignedMessageHash(_token string, _user string, _amount *big.Int, _requestID *big.Int, _version string) []byte {
+	// https://gist.github.com/trmaphi/04b5790328dd71693b591973e07a943a
 	token := common.HexToAddress(_token).Bytes()
 	user := common.HexToAddress(_user).Bytes()
 	amount := _amount.Bytes()

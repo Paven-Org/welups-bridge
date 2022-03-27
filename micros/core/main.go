@@ -22,6 +22,7 @@ import (
 )
 
 func main() {
+	manager.SetOSParams()
 	//ctx := context.Background()
 
 	config.Load()
