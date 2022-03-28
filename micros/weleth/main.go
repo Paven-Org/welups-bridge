@@ -56,7 +56,8 @@ func main() {
 	// Mailer
 
 	// create parent context
-	welEthDAO := dao.MkWelEthTransDao(db)
+	daos := dao.MkDAOs(db)
+	welEthDAO := daos.TransDAO
 
 	ctx := context.Background()
 
@@ -69,7 +70,7 @@ func main() {
 		panic(err)
 	}
 	defer ethClient.Close()
-	ethSysDAO := dao.MkEthSysDao(db)
+	ethSysDAO := daos.EthSysDAO
 	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
 
 	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
@@ -94,7 +95,7 @@ func main() {
 	defer welClient.Stop()
 
 	welTransHandler := welListener.NewTransHandler(welClient, config.Get().WelupsConf.BlockOffSet)
-	welSysDAO := dao.MkWelSysDao(db)
+	welSysDAO := daos.WelSysDAO
 	welListen := welListener.NewWelListener(welSysDAO, welTransHandler, config.Get().WelupsConf.BlockTime, config.Get().WelupsConf.BlockOffSet, logger)
 
 	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], welEthDAO)
