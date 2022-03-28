@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		if err := manager.SpawnTemporalWorker(ctx, c, welethQueue, worker.Options{}, RegisterWelethBridgeService); err != nil {
+		if err := manager.SpawnTemporalWorker(ctx, c, pingpongQueue, worker.Options{}, RegisterPingPongService); err != nil {
 			logger.Get().Err(err).Msg("Unable to spawn worker")
 		}
 		wg.Done()
@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 
 func TestPing(t *testing.T) {
 	wo := client.StartWorkflowOptions{
-		TaskQueue: welethQueue,
+		TaskQueue: pingpongQueue,
 	}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "pkeys", "123123")
