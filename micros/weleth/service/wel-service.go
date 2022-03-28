@@ -84,17 +84,20 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction) error {
 	if amount != tran.Amount {
 		return fmt.Errorf("Claim wrong amount")
 	}
+	if tran.WelWalletAddr != welWalletAddr {
+		return fmt.Errorf("Wrong claim wel wallet address")
+	}
 
 	if t.Result == "unconfirmed" {
 		if tran.ClaimStatus != model.StatusUnknown {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, fee, model.StatusUnknown)
+			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, fee, model.StatusUnknown)
 			if err != nil {
 				return err
 			}
 		}
 	} else if t.Result == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, welWalletAddr, fee, model.StatusSuccess)
+			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
@@ -115,7 +118,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 		"Withdraw",
 		t.Log[0].Data,
 	)
-	ethTokenAddr := data["to"].(common.Address)
+	ethWalletAddr := data["to"].(common.Address)
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
@@ -130,10 +133,10 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
 			event := model.WelEthEvent{
-				WelTokenAddr: "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
-				EthTokenAddr: ethTokenAddr.Hex(),
-				NetworkID:    networkID.SetBytes(t.Log[0].Topics[3]).String(),
-				DepositAt:    time.Now(),
+				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
+				EthWalletAddr: ethWalletAddr.Hex(),
+				NetworkID:     networkID.SetBytes(t.Log[0].Topics[3]).String(),
+				DepositAt:     time.Now(),
 			}
 			m, err := json.Marshal(event)
 			if err != nil {
@@ -157,10 +160,10 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
 			event := model.WelEthEvent{
-				WelTokenAddr: "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
-				EthTokenAddr: ethTokenAddr.Hex(),
-				NetworkID:    networkID.SetBytes(t.Log[0].Topics[3]).String(),
-				DepositAt:    time.Now(),
+				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
+				EthWalletAddr: ethWalletAddr.Hex(),
+				NetworkID:     networkID.SetBytes(t.Log[0].Topics[3]).String(),
+				DepositAt:     time.Now(),
 			}
 			m, err := json.Marshal(event)
 			if err != nil {

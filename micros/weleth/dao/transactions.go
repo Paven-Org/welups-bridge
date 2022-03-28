@@ -14,8 +14,8 @@ type IWelEthTransDAO interface {
 	UpdateDepositWelEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error
 	UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAddr, amount string) error
 
-	UpdateClaimWelEth(id, claimTxHash, claimWalletAddr, status string) error
-	UpdateClaimEthWel(id, claimTxHash, claimWalletAddr, fee, status string) error
+	UpdateClaimWelEth(id, claimTxHash, status string) error
+	UpdateClaimEthWel(id, claimTxHash, fee, status string) error
 
 	SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error)
 	SelectTransById(id string) (*model.WelEthEvent, error)
@@ -85,26 +85,24 @@ func (w *welEthTransDAO) UpdateDepositEthWelConfirmed(depositTxHash, ethWalletAd
 	return err
 }
 
-func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, ethWalletAddr, status string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_status = :claim_status WHERE id= :id`,
+func (w *welEthTransDAO) UpdateClaimWelEth(id, claimTxHash, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status WHERE id= :id`,
 		map[string]interface{}{
-			"claim_tx_hash":   claimTxHash,
-			"eth_wallet_addr": ethWalletAddr,
-			"status":          status,
-			"id":              id,
+			"claim_tx_hash": claimTxHash,
+			"status":        status,
+			"id":            id,
 		})
 
 	return err
 }
 
-func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, welWalletAddr, fee, status string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, eth_wallet_addr = :eth_wallet_addr, claim_status = :claim_status, fee = :fee WHERE id= :id`,
+func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, fee, status string) error {
+	_, err := w.db.NamedExec(`UPDATE wel_eth_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status, fee = :fee WHERE id= :id`,
 		map[string]interface{}{
-			"claim_tx_hash":   claimTxHash,
-			"eth_wallet_addr": welWalletAddr,
-			"status":          status,
-			"fee":             fee,
-			"id":              id,
+			"claim_tx_hash": claimTxHash,
+			"status":        status,
+			"fee":           fee,
+			"id":            id,
 		})
 
 	return err
