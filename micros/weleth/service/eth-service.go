@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -97,10 +98,10 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 
 	if err == sql.ErrNoRows {
 		event := model.WelEthEvent{
-			EthTokenAddr: common.HexToAddress(l.Topics[1].Hex()).Hex(),
-			WelTokenAddr: common.HexToAddress(l.Topics[3].Hex()).Hex(),
-			NetworkID:    data["networkId"].(*big.Int).String(),
-			DepositAt:    time.Now(),
+			EthTokenAddr:  common.HexToAddress(l.Topics[1].Hex()).Hex(),
+			WelWalletAddr: GotronCommon.EncodeCheck(l.Topics[3].Bytes()),
+			NetworkID:     data["networkId"].(*big.Int).String(),
+			DepositAt:     time.Now(),
 		}
 		m, err := json.Marshal(event)
 		if err != nil {
@@ -137,6 +138,7 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	)
 
 	amount := data["amount"].(*big.Int).String()
+	ethWalletAddr := common.HexToAddress(l.Topics[3].Hex()).Hex()
 	var reqID = &big.Int{}
 	reqID.SetBytes(l.Topics[1].Bytes())
 
@@ -147,9 +149,12 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	if amount != tran.Amount {
 		return fmt.Errorf("Claim wrong amount")
 	}
+	if ethWalletAddr != tran.EthWalletAddr {
+		return fmt.Errorf("Wrong claim eth wallet address")
+	}
 
 	if tran.ClaimStatus != model.StatusSuccess {
-		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), common.HexToAddress(l.Topics[3].Hex()).Hex(), model.StatusSuccess)
+		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), model.StatusSuccess)
 		if err != nil {
 			return err
 		}
