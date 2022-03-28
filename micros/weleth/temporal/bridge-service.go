@@ -1,54 +1,100 @@
 package welethService
 
 import (
+	"bridge/micros/weleth/dao"
 	"bridge/service-managers/logger"
 	"context"
-	"time"
 
 	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
 )
 
+// API
 const (
-	welethQueue      = "TEMPORAL_QUEUE_WELETH"
-	pingpongActivity = "PING_ACTIVITY"
-	pingpongWorkflow = "PING_WORKFLOW"
+	WelethServiceQueue = "TEMPORAL_BRIDGE_QUEUE_WELETH"
+
+	// Main API
+
+	// Some elaboration:
+	// ChainA -`CASHIN`-> ChainB <=> method `withdraw` was called on ChainA's Export
+	// contract, waiting to be claimed by user as 1:1 equivalent (wrapped) tokens on ChainB,
+	// via calling `claim` method on ChainB's Import contract.
+	// ChainB -`CASHOUT`-> ChainA <=> method `withdraw` was called on ChainB's Import
+	// contract, waiting to be claimed by user as original tokens/currencies on ChainA, via
+	// calling `claim` method on ChainA's Export contract.
+	GetWelToEthCashinByTxHash  = "WEL2ETH_CASHIN"  // original Wel values -> wrapped Eth tokens
+	GetEthToWelCashoutByTxHash = "ETH2WEL_CASHOUT" // wrapped Eth tokens -> original Wel values
+
+	GetEthToWelCashinByTxHash  = "ETH2WEL_CASHIN"  // original Eth values -> wrapped Wel tokens
+	GetWelToEthCashoutByTxHash = "WEL2ETH_CASHOUT" // wrapped Wel tokens -> original Eth values
+
 )
 
-func RegisterWelethBridgeService(w worker.Worker) {
-	// register workflow an activities
-	w.RegisterWorkflowWithOptions(PingPongWorkflow, workflow.RegisterOptions{Name: pingpongWorkflow})
-	w.RegisterActivityWithOptions(PingPongActivity, activity.RegisterOptions{Name: pingpongActivity})
+type BridgeTx struct {
+	TriggerChainTxHash     string
+	OtherChainToTokenAddr  string
+	OtherChainReceiverAddr string
+	Amount                 string
+}
+
+type WelethBridgeService struct {
+	transDAO dao.IWelEthTransDAO
+	tempCli  client.Client
+	worker   worker.Worker
+}
+
+// Service implementation
+func MkWelethBridgeService(cli client.Client, daos *dao.DAOs) *WelethBridgeService {
+	return &WelethBridgeService{
+		transDAO: daos.TransDAO,
+		tempCli:  cli,
+	}
+}
+
+func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txhash string) (tx *BridgeTx, err error) {
+
+	return
+}
+
+func (s *WelethBridgeService) GetEthToWelCashoutByTxHash(ctx context.Context, txhash string) (tx *BridgeTx, err error) {
+
+	return
+}
+
+func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (err error) {
+	// NOT IMPLEMENTED
+	return
+}
+
+func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, txhash string) (err error) {
+	// NOT IMPLEMENTED
+	return
+}
+
+func (s *WelethBridgeService) registerService(w worker.Worker) {
+	w.RegisterActivityWithOptions(s.GetWelToEthCashinByTxHash, activity.RegisterOptions{Name: GetWelToEthCashinByTxHash})
+	w.RegisterActivityWithOptions(s.GetEthToWelCashoutByTxHash, activity.RegisterOptions{Name: GetEthToWelCashoutByTxHash})
 
 }
 
-func PingPongActivity(ctx context.Context, ping string) (string, error) {
-	logger.Get().Info().Msgf("[activity] KV in context: pkeys=%s", ctx.Value("pkeys"))
-	logger.Get().Info().Msg("Received ping: " + ping)
-	return "pong", nil
+func (s *WelethBridgeService) StartService() error {
+	w := worker.New(s.tempCli, WelethServiceQueue, worker.Options{})
+	s.registerService(w)
+
+	s.worker = w
+	logger.Get().Info().Msgf("Starting WelethBridgeService")
+	if err := w.Start(); err != nil {
+		logger.Get().Err(err).Msgf("Error while starting WelethBridgeService")
+		return err
+	}
+
+	logger.Get().Info().Msgf("WelethBridgeService started")
+	return nil
 }
 
-func PingPongWorkflow(ctx workflow.Context, ping string) (string, error) {
-	workflow.GetLogger(ctx).Info("[workflow] KV in context: " + "pkeys=" + (ctx.Value("pkeys").(string)))
-	workflow.GetLogger(ctx).Info("Send ping: " + ping)
-	ao := workflow.ActivityOptions{
-		TaskQueue:              welethQueue,
-		ScheduleToCloseTimeout: time.Second * 60,
-		ScheduleToStartTimeout: time.Second * 60,
-		StartToCloseTimeout:    time.Second * 60,
-		HeartbeatTimeout:       time.Second * 10,
-		WaitForCancellation:    false,
+func (s *WelethBridgeService) StopService() {
+	if s.worker != nil {
+		s.worker.Stop()
 	}
-	ctx = workflow.WithActivityOptions(ctx, ao)
-
-	future := workflow.ExecuteActivity(ctx, pingpongActivity, ping)
-	var res string
-	err := future.Get(ctx, &res)
-	if err != nil {
-		workflow.GetLogger(ctx).Error("Failed to exec activity", pingpongActivity, "error:", err)
-		return "", err
-	}
-	workflow.GetLogger(ctx).Debug("Result: " + res)
-	return res, nil
 }

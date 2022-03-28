@@ -5,6 +5,7 @@ import (
 	"bridge/micros/weleth/config"
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/service"
+	welethService "bridge/micros/weleth/temporal"
 	manager "bridge/service-managers"
 	ethListener "bridge/service-managers/listener/eth"
 	welListener "bridge/service-managers/listener/wel"
@@ -107,35 +108,29 @@ func main() {
 		wg.Done()
 	}()
 
-	logger.Info().Msg("[main] Waiting for daemons to stop...")
-	wg.Wait()
-	logger.Info().Msg("[main] Closing weleth process, cleaning up...")
 	//// Temporal
-	//c, err := manager.MkTemporalClient(config.Get().TemporalCliConfig)
-	//if err != nil {
-	//	logger.Get().Err(err).Msgf("Unable to connect to temporal backend")
-	//	panic(err)
-	//}
-	//defer c.Close()
+	tempCli, err := manager.MkTemporalClient(config.Get().TemporalCliConfig, []string{})
+	if err != nil {
+		logger.Err(err).Msgf("Unable to connect to temporal backend")
+		panic(err)
+	}
+	defer tempCli.Close()
 
-	//// Should adapt to use with daemon manager
-	//ctx, cancel := context.WithCancel(ctx)
-	//wg := sync.WaitGroup{}
-	//// might spawn multiple temporal workers here
-	//wg.Add(1)
-	//go func() {
-	//	if err := manager.SpawnTemporalWorker(ctx, c, welethQueue, worker.Options{}, RegisterWelethBridgeService); err != nil {
-	//		logger.Get().Err(err).Msg("Unable to spawn worker")
-	//	}
-	//	wg.Done()
-	//	return
-	//}()
-	//////blocking on some channel then cancel()
-	//wg.Wait()
+	welethMS := welethService.MkWelethBridgeService(tempCli, daos)
+	if err := welethMS.StartService(); err != nil {
+		logger.Err(err).Msgf("Unable to start temporal worker")
+		panic(err)
+	}
+	defer welethMS.StopService()
+
 	// system validity check
 
 	//// layer 2 setup:
 	// load handlers for HTTP server
 	// load handlers for GRPC server/client
+
+	logger.Info().Msg("[main] Waiting for daemons to stop...")
+	wg.Wait()
+	logger.Info().Msg("[main] Closing weleth process, cleaning up...")
 
 }
