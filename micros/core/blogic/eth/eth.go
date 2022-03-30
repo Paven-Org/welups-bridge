@@ -287,6 +287,14 @@ func SetCurrentAuthenticator(prikey string) error {
 	return nil
 }
 
+func UnsetCurrentAuthenticator() error {
+	sysAccounts.Lock()
+	defer sysAccounts.Unlock()
+	sysAccounts.authenticator = model.EthAccount{}
+	// immediately send notification email to admin
+	return nil
+}
+
 // Claim cashin = get wrapped tokens equivalent to another chain's original tokens
 func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
 	// Get tx info from weleth microservice
@@ -328,6 +336,7 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 
 	log.Info().Msg("[Eth logic internal] Everything a-ok, proceeding to create signature and requestID")
 	prikey := sysAccounts.authenticator.Prikey
+	// if prikey == "", send notification mail to admin and return error
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(cashinTxId))

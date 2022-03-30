@@ -297,6 +297,14 @@ func SetCurrentAuthenticator(prikey string) error {
 	return nil
 }
 
+func UnsetCurrentAuthenticator() error {
+	sysAccounts.Lock()
+	defer sysAccounts.Unlock()
+	sysAccounts.authenticator = model.WelAccount{}
+	// immediately send notification email to admin
+	return nil
+}
+
 // Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
 func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
 	// Get tx info from weleth microservice
@@ -338,6 +346,7 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 
 	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
 	prikey := sysAccounts.authenticator.Prikey
+	// if prikey == "", send notification mail to admin and return error
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(cashoutTxId))
