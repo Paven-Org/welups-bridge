@@ -2,9 +2,9 @@ package blogic
 
 import (
 	"bridge/libs"
-	ethLogic "bridge/micros/core/blogic/eth-account"
+	ethLogic "bridge/micros/core/blogic/eth"
 	userLogic "bridge/micros/core/blogic/user"
-	welLogic "bridge/micros/core/blogic/wel-account"
+	welLogic "bridge/micros/core/blogic/wel"
 	"bridge/micros/core/dao"
 	manager "bridge/service-managers"
 
