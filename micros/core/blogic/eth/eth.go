@@ -7,7 +7,6 @@ import (
 	ethService "bridge/micros/core/service/eth"
 	welethService "bridge/micros/weleth/temporal"
 	"context"
-	"database/sql"
 	"fmt"
 	"math/big"
 
@@ -142,7 +141,7 @@ func GrantRole(address, role string, callerkey string) (string, error) {
 
 	target, err := ethDAO.GetEthAccount(address)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == model.ErrEthAccountNotFound {
 			log.Info().Msgf("[Eth logic internal] address %s not in system", address)
 			log.Info().Msgf("[Eth logic internal] Registering address %s", address)
 			if err := AddEthAccount(address, model.EthAccountStatusOK); err != nil {

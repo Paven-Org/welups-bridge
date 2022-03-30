@@ -7,7 +7,6 @@ import (
 	welService "bridge/micros/core/service/wel"
 	welethService "bridge/micros/weleth/temporal"
 	"context"
-	"database/sql"
 	"fmt"
 	"math/big"
 	"strings"
@@ -150,7 +149,7 @@ func GrantRole(address, role string, callerkey string) (string, error) {
 
 	target, err := welDAO.GetWelAccount(address)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == model.ErrWelAccountNotFound {
 			log.Info().Msgf("[Wel logic internal] address %s not in system", address)
 			log.Info().Msgf("[Wel logic internal] Registering address %s", address)
 			if err := AddWelAccount(address, model.WelAccountStatusOK); err != nil {
