@@ -2,12 +2,17 @@ package welLogic
 
 import (
 	"bridge/libs"
+	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/model"
 	welService "bridge/micros/core/service/wel"
+	welethService "bridge/micros/weleth/temporal"
 	"context"
 	"database/sql"
+	"fmt"
+	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"go.temporal.io/sdk/client"
 )
 
@@ -162,9 +167,10 @@ func GrantRole(address, role string, callerkey string) (string, error) {
 		return "", model.ErrWelAccountLocked
 	}
 
+	// call contract & persist granted role in system DB via workflow
+	// cross-system transactional semantics is needed, thus the use of workflow
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "callerkey", callerkey)
-	// call workflow
 	log.Info().Msgf("[Wel logic internal] Calling GovContractService workflow...")
 	wo := client.StartWorkflowOptions{
 		TaskQueue: welService.GovContractQueue,
@@ -216,6 +222,8 @@ func RevokeRole(address, role string, callerkey string) (string, error) {
 		return "", model.ErrWelAccountLocked
 	}
 
+	// call contract & remove revoked role from system DB via workflow
+	// cross-system transactional semantics is needed, thus the use of workflow
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "callerkey", callerkey)
 	// call workflow
@@ -290,8 +298,61 @@ func SetCurrentAuthenticator(prikey string) error {
 	return nil
 }
 
-//GetWelPrikeyIfExists(address string)
+// Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
+func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
+	// Get tx info from weleth microservice
+	// tmpCli.ExecuteWorkflow
+	ctx := context.Background()
+	// call workflow
+	log.Info().Msgf("[Wel logic internal] Calling MSWeleth workflow...")
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashoutByTxHash, cashoutTxId)
+	if err != nil {
+		log.Err(err).Msg("[Wel logic internal] Unable to call GetEthToWelCashoutByTxHash workflow")
+		return
+	}
+	log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 
-//SetPriKey(address string, key string)
+	var tx welethService.BridgeTx
+	if err = we.Get(ctx, &tx); err != nil {
+		log.Err(err).Msg("[Wel logic internal] GetWelToEthCashinByTxHash workflow failed")
+		return
+	}
+	// process
+	if tx.OtherChainReceiverAddr != userAddr {
+		err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.OtherChainReceiverAddr)
+		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
+		return
+	}
+	if tx.OtherChainReceiverAddr != outTokenAddr {
+		err = fmt.Errorf("Inconsistent cashout token address: %s != %s", outTokenAddr, tx.OtherChainToTokenAddr)
+		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
+		return
+	}
+	if tx.Amount != amount {
+		err = fmt.Errorf("Inconsistent cashout token amount: %s != %s", amount, tx.Amount)
+		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
+		return
+	}
 
-//UnsetPrikey(address string)
+	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
+	prikey := sysAccounts.authenticator.Prikey
+
+	_requestID := &big.Int{}
+	_requestID.SetBytes(common.FromHex(cashoutTxId))
+	requestID = _requestID.Bytes()
+
+	_amount := &big.Int{}
+	_amount.SetString(amount, 10)
+
+	signature, err = libs.StdSignedMessageHash(outTokenAddr, userAddr, _amount, _requestID, contractVersion, prikey)
+	if err != nil {
+		log.Err(err).Msg("[Wel logic internal] Failed to create claim signature for user")
+		return
+	}
+
+	log.Info().Msg("[Wel logic internal] Successfully create claim signature for user")
+	return
+}
