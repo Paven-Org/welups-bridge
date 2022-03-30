@@ -23,6 +23,7 @@ func Config(router gin.IRouter, authMW gin.HandlerFunc) {
 	gr.POST("/passwd", authMW, passwdHandler)
 	gr.POST("/update", authMW, userUpdateHandler)
 	gr.GET("/:username", getUserHandler)
+	gr.GET("/myroles", authMW, getCurrentUserRoles)
 }
 
 var logger *zerolog.Logger
@@ -181,5 +182,25 @@ func getUserHandler(c *gin.Context) {
 	// response
 	user.Password = "" // just to be sure, this field wouldn't be marshalled anyway
 	c.JSON(http.StatusOK, user)
+	return
+}
+
+func getCurrentUserRoles(c *gin.Context) {
+	username := c.GetString("username")
+
+	// process
+	roles, err := userLogic.GetUserRoles(username)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err == model.ErrRoleNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get user "+username+"'s roles")
+		return
+	}
+
+	// response
+
+	c.JSON(http.StatusOK, roles)
 	return
 }

@@ -28,6 +28,7 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.GET("/users/:page", getUsers)
 	gr.POST("/ban/:user", banUser)
 	gr.GET("/roles", getRoles)
+	gr.GET("/roles/of/:user", getRolesOfUser)
 
 }
 
@@ -256,4 +257,25 @@ func banUser(c *gin.Context) {
 	c.JSON(http.StatusOK, "User banned successfully")
 	return
 
+}
+
+func getRolesOfUser(c *gin.Context) {
+	// request
+	username := c.Param("user")
+
+	// process
+	roles, err := userLogic.GetUserRoles(username)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err == model.ErrRoleNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get user "+username+"'s roles")
+		return
+	}
+
+	// response
+
+	c.JSON(http.StatusOK, roles)
+	return
 }
