@@ -1,11 +1,13 @@
-package manageUserRouter
+package ethRouter
 
 import (
 	log "bridge/service-managers/logger"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	userLogic "bridge/micros/core/blogic/user"
+	ethLogic "bridge/micros/core/blogic/eth"
+	"bridge/micros/core/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -17,27 +19,14 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	initialize()
 
 	gr := router.Group("/m/eth", mw... /*,middlewares.Author*/)
-	//AddEthAccount(address string, status string)
-	//GetAllEthAccounts(offset uint, size uint)
-	//GetAllRoles()
-	//GetEthAccount(address string)
-	//GetEthAccountRoles(address string)
-	//GetEthAccountsWithRole(role string, offset uint, size uint)
-	//GetEthPrikeyIfExists(address string)
-	//GrantRole(address string, role string)
-	//RemoveEthAccount(address string)
-	//RevokeRole(address string, role string)
-	//SetEthAccountStatus(address string, status string)
-	//SetPriKey(address string, key string)
-	//UnsetPrikey(address string)
 	gr.POST("/add", addEthAccount)
 	gr.POST("/set-status/:acc/:status", setStatus)
-	gr.POST("/set-prikey/:acc", setKey)
-	gr.POST("/unset-prikey/:acc", unsetKey)
-	gr.POST("/remove/:acc", removeEth)
+	gr.POST("/set/authenticator-prikey", setKey)
+	gr.POST("/unset/authenticator-prikey", unsetKey)
+	gr.POST("/remove/:acc", removeEthAccount)
 	gr.POST("/grant/:role/to/:acc", grantRole)
 	gr.POST("/revoke/:role/from/:acc", revokeRole)
-	gr.POST("/getroles/:acc", getUserRoles)
+	gr.GET("/roles/of/:acc", getAccRoles)
 	gr.GET("/haverole/:role/:page", getAccsWithRole)
 	gr.GET("/accounts/:page", getAccs)
 	gr.GET("/info/:account", getAcc)
@@ -61,34 +50,36 @@ func getAccsWithRole(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[get users with role handler] invalid page")
 		page = 1 // default
-		return
 	}
 
 	_limit := c.Query("limit")
 	if _limit == "" {
-		limit = 10 // default
+		limit = 15 // default
 	} else {
 		limit, err = strconv.ParseUint(_limit, 10, 32)
 		if err != nil {
 			logger.Err(err).Msgf("[get users with role handler] invalid limit")
-			limit = 10 // default
-			return
+			limit = 15 // default
 		}
 
 	}
 
 	// process
-	users, err := userLogic.GetUsersWithRole(role, uint((page-1)*limit), uint(limit))
+	accs, err := ethLogic.GetEthAccountsWithRole(role, uint((page-1)*limit), uint(limit))
 	if err != nil {
-		logger.Err(err).Msgf("[get users with role handler] Unable to get users")
-		c.JSON(http.StatusInternalServerError, "Unable to get users with role "+role)
+		logger.Err(err).Msgf("[get accs with role handler] Unable to get ethereum accounts")
+		status := http.StatusInternalServerError
+		if err == model.ErrEthAccountNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get ethereum accounts with role "+role)
 		return
 	}
 
 	// response
 
-	logger.Info().Msgf("[get users with role handler] Get users with role %s successfully", role)
-	c.JSON(http.StatusOK, &users)
+	logger.Info().Msgf("[get accs with role handler] Get ethereum accs with role %s successfully", role)
+	c.JSON(http.StatusOK, &accs)
 	return
 }
 
@@ -101,34 +92,35 @@ func getAccs(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[get users handler] invalid page")
 		page = 1 // default
-		return
 	}
 
 	_limit := c.Query("limit")
 	if _limit == "" {
-		limit = 10 // default
+		limit = 15 // default
 	} else {
 		limit, err = strconv.ParseUint(_limit, 10, 32)
 		if err != nil {
 			logger.Err(err).Msgf("[get users handler] invalid limit")
-			limit = 10 // default
-			return
+			limit = 15 // default
 		}
-
 	}
 
 	// process
-	users, err := userLogic.GetUsers(uint((page-1)*limit), uint(limit))
+	accs, err := ethLogic.GetAllEthAccounts(uint((page-1)*limit), uint(limit))
 	if err != nil {
-		logger.Err(err).Msgf("[get users handler] Unable to get users")
-		c.JSON(http.StatusInternalServerError, "Unable to get users")
+		logger.Err(err).Msgf("[get accs handler] Unable to get accs")
+		status := http.StatusInternalServerError
+		if err == model.ErrEthAccountNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get accs")
 		return
 	}
 
 	// response
 
-	logger.Info().Msgf("[get users handler] Get users %s successfully")
-	c.JSON(http.StatusOK, &users)
+	logger.Info().Msgf("[get accs handler] Get accs %s successfully")
+	c.JSON(http.StatusOK, &accs)
 	return
 }
 
@@ -136,10 +128,13 @@ func getRoles(c *gin.Context) {
 	// request
 
 	// process
-	roles, err := userLogic.GetAllRoles()
+	roles, err := ethLogic.GetAllRoles()
 	if err != nil {
-		logger.Err(err).Msgf("[get roles handler] Unable to get roles")
-		c.JSON(http.StatusInternalServerError, "Unable to get roles")
+		status := http.StatusInternalServerError
+		if err == model.ErrEthRoleNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get roles")
 		return
 	}
 
@@ -151,189 +146,206 @@ func getRoles(c *gin.Context) {
 }
 
 func addEthAccount(c *gin.Context) {
-	type addUserReq struct {
-		Username string
-		Email    string
-		Password string
+	type addEthAccReq struct {
+		Address string
+		Status  string
 	}
 
-	var req addUserReq
+	var req addEthAccReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Err(err).Msgf("[add user handler] Invalid request payload")
+		logger.Err(err).Msgf("[add eth account handler] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	if err := userLogic.AddUser(req.Username, req.Email, req.Password); err != nil {
-		logger.Err(err).Msgf("[add user handler] Unable to add user")
-		c.JSON(http.StatusInternalServerError, "Unable to add user")
+	if err := ethLogic.AddEthAccount(req.Address, req.Status); err != nil {
+		logger.Err(err).Msgf("[add eth account handler] Unable to add eth account")
+		c.JSON(http.StatusInternalServerError, "Unable to add eth account")
 		return
 	}
 
-	logger.Info().Msgf("[add user handler] User successfully added")
-	c.JSON(http.StatusOK, "User successfully added")
+	logger.Info().Msgf("[add eth account handler] Ethereum account successfully added")
+	c.JSON(http.StatusOK, "Ethereum account successfully added")
 	return
 }
 
 func setStatus(c *gin.Context) {
 	// request
-	type updateRequest struct {
-		Username    string `json:"username"`
-		NewUsername string `json:"new_username"`
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		Status      string `json:"status"`
-	}
-	var req updateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Err(err).Msgf("[update handler] Invalid request payload")
-		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	acc := c.Param("acc")
+	status := c.Param("status")
+	if acc == "" || status == "" {
+		logger.Err(fmt.Errorf("URI parameters unavailable")).Msgf("[update handler] Invalid request parameters")
+		c.JSON(http.StatusBadRequest, "Invalid request parameters")
 		return
 	}
 	// process
-	if err := userLogic.AdminUpdateUserInfo(req.Username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
-		logger.Err(err).Msgf("[update handler] Unable to update user")
-		c.JSON(http.StatusInternalServerError, "Unable to update user")
+	if err := ethLogic.SetEthAccountStatus(acc, status); err != nil {
+		logger.Err(err).Msgf("[set status handler] Unable to update account %s's status to %s", acc, status)
+		c.JSON(http.StatusInternalServerError, "Unable to set status")
 		return
 	}
 
 	// response
-	logger.Info().Msgf("[update handler] User updated successfully")
-	c.JSON(http.StatusOK, "User updated successfully")
+	logger.Info().Msgf("[set status handler] Status updated successfully")
+	c.JSON(http.StatusOK, "Status updated successfully")
 	return
 
 }
 
 func setKey(c *gin.Context) {
 	// request
-	type updateRequest struct {
-		Username    string `json:"username"`
-		NewUsername string `json:"new_username"`
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		Status      string `json:"status"`
+	type setkeyRequest struct {
+		AuthenticatorKey string `json:"authenticator_key"`
 	}
-	var req updateRequest
+	var req setkeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Err(err).Msgf("[update handler] Invalid request payload")
+		logger.Err(err).Msgf("[setkey handler] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 	// process
-	if err := userLogic.AdminUpdateUserInfo(req.Username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
-		logger.Err(err).Msgf("[update handler] Unable to update user")
-		c.JSON(http.StatusInternalServerError, "Unable to update user")
+	if err := ethLogic.SetCurrentAuthenticator(req.AuthenticatorKey); err != nil {
+		logger.Err(err).Msgf("[setkey handler] Unable to set authenticator key")
+		c.JSON(http.StatusInternalServerError, "Unable to set authenticator key")
 		return
 	}
 
 	// response
-	logger.Info().Msgf("[update handler] User updated successfully")
-	c.JSON(http.StatusOK, "User updated successfully")
+	logger.Info().Msgf("[setkey handler] Authenticator key set successfully")
+	c.JSON(http.StatusOK, "Authenticator key set successfully")
 	return
 
 }
 
 func unsetKey(c *gin.Context) {
 	// request
-	type updateRequest struct {
-		Username    string `json:"username"`
-		NewUsername string `json:"new_username"`
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		Status      string `json:"status"`
-	}
-	var req updateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Err(err).Msgf("[update handler] Invalid request payload")
-		c.JSON(http.StatusBadRequest, "Invalid request payload")
-		return
-	}
 	// process
-	if err := userLogic.AdminUpdateUserInfo(req.Username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
-		logger.Err(err).Msgf("[update handler] Unable to update user")
-		c.JSON(http.StatusInternalServerError, "Unable to update user")
+	if err := ethLogic.UnsetCurrentAuthenticator(); err != nil {
+		logger.Err(err).Msgf("[unsetkey handler] Unable to unset authenticator key")
+		c.JSON(http.StatusInternalServerError, "Unable to unset authenticator key")
 		return
 	}
 
 	// response
-	logger.Info().Msgf("[update handler] User updated successfully")
-	c.JSON(http.StatusOK, "User updated successfully")
+	logger.Info().Msgf("[unsetkey handler] Authenticator key unset successfully")
+	c.JSON(http.StatusOK, "Authenticator key unset successfully")
 	return
 
 }
 
-func removeEth(c *gin.Context) {
+func removeEthAccount(c *gin.Context) {
 	// request
-	username := c.Param("user")
+	acc := c.Param("acc")
 
 	// process
-	if err := userLogic.RemoveUser(username); err != nil {
-		logger.Err(err).Msgf("[getUserHandler] Unable to remove user")
-		c.JSON(http.StatusInternalServerError, "Unable to remove user "+username)
+	if err := ethLogic.RemoveEthAccount(acc); err != nil {
+		logger.Err(err).Msgf("[remove eth account handler] Unable to remove ethereum account")
+		c.JSON(http.StatusInternalServerError, "Unable to remove ethereum account "+acc)
 		return
 	}
 	// response
-	logger.Info().Msgf("[getUserHandler] removed user")
-	c.JSON(http.StatusOK, "removed user "+username)
+	logger.Info().Msgf("[remove eth account handler] removed ethereum account")
+	c.JSON(http.StatusOK, "removed ethereum account "+acc)
 	return
 }
 
 func grantRole(c *gin.Context) {
 	// request
-	username := c.Param("user")
+	acc := c.Param("acc")
 	role := c.Param("role")
+
+	type adminKey struct {
+		AdminKey string `json:"admin_key"`
+	}
+
+	var req adminKey
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[grantRole handler] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
 	// process
 
-	if err := userLogic.GrantRole(username, role); err != nil {
-		logger.Err(err).Msgf("[getUserHandler] Unable to grant role %s to user %s", role, username)
+	if txid, err := ethLogic.GrantRole(acc, role, req.AdminKey); err != nil {
+		logger.Err(err).Msgf("[grantRole handler] Unable to grant role %s to account %s with txid %s", role, acc, txid)
 		c.JSON(http.StatusInternalServerError, "Unable to grant role")
 		return
 	}
 
 	// response
-	logger.Info().Msgf("[getUserHandler] Granted role %s to user %s", role, username)
+	logger.Info().Msgf("[grantRole handler] Granted role %s to account %s", role, acc)
 	c.JSON(http.StatusOK, "Granted role")
 	return
 }
 
 func revokeRole(c *gin.Context) {
 	// request
-	username := c.Param("user")
+	acc := c.Param("acc")
 	role := c.Param("role")
+
+	type adminKey struct {
+		AdminKey string `json:"admin_key"`
+	}
+
+	var req adminKey
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[revokeRole handler] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
 	// process
 
-	if err := userLogic.RevokeRole(username, role); err != nil {
-		logger.Err(err).Msgf("[getUserHandler] Unable to revoke role %s to user %s", role, username)
+	if txid, err := ethLogic.RevokeRole(acc, role, req.AdminKey); err != nil {
+		logger.Err(err).Msgf("[revokeRole handler] Unable to revoke role %s to account %s with txid %s", role, acc, txid)
 		c.JSON(http.StatusInternalServerError, "Unable to revoke role")
 		return
 	}
 
 	// response
-	logger.Info().Msgf("[getUserHandler] Revoked role %s to user %s", role, username)
+	logger.Info().Msgf("[revokeRole handler] Revokeed role %s to account %s", role, acc)
 	c.JSON(http.StatusOK, "Revoked role")
 	return
 }
 
-func getUserRoles(c *gin.Context) {
-
-}
-
-func getAcc(c *gin.Context) {
+func getAccRoles(c *gin.Context) {
 	// request
-	username := c.Param("username")
-
+	acc := c.Param("acc")
 	// process
-	user, err := userLogic.GetUserByName(username)
+	roles, err := ethLogic.GetEthAccountRoles(acc)
 	if err != nil {
-		logger.Err(err).Msgf("[getUserHandler] Unable to retrieve user")
-		c.JSON(http.StatusNotFound, "Unable to retrieve user "+username)
+		status := http.StatusInternalServerError
+		if err == model.ErrEthRoleNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get ethereum account "+acc+"'s roles")
 		return
 	}
 
 	// response
-	user.Password = "" // just to be sure, this field wouldn't be marshalled anyway
-	c.JSON(http.StatusOK, user)
+
+	c.JSON(http.StatusOK, roles)
+	return
+}
+
+func getAcc(c *gin.Context) {
+	// request
+	acc := c.Param("acc")
+
+	// process
+	account, err := ethLogic.GetEthAccount(acc)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if err == model.ErrEthAccountNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to get ethereum account "+acc)
+		return
+	}
+
+	// response
+
+	c.JSON(http.StatusOK, account)
 	return
 }
