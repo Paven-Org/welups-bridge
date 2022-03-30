@@ -52,20 +52,18 @@ func getUsersWithRole(c *gin.Context) {
 
 	_limit := c.Query("limit")
 	if _limit == "" {
-		limit = 10 // default
+		limit = 15 // default
 	} else {
 		limit, err = strconv.ParseUint(_limit, 10, 32)
 		if err != nil {
 			logger.Err(err).Msgf("[get users with role handler] invalid limit")
-			limit = 10 // default
-			return
+			limit = 15 // default
 		}
-
 	}
 
 	// process
 	users, err := userLogic.GetUsersWithRole(role, uint((page-1)*limit), uint(limit))
-	if err != nil {
+	if err != nil && err != model.ErrUserNotFound {
 		logger.Err(err).Msgf("[get users with role handler] Unable to get users")
 		c.JSON(http.StatusInternalServerError, "Unable to get users with role "+role)
 		return
@@ -92,20 +90,18 @@ func getUsers(c *gin.Context) {
 
 	_limit := c.Query("limit")
 	if _limit == "" {
-		limit = 10 // default
+		limit = 15 // default
 	} else {
 		limit, err = strconv.ParseUint(_limit, 10, 32)
 		if err != nil {
 			logger.Err(err).Msgf("[get users handler] invalid limit")
-			limit = 10 // default
-			return
+			limit = 15 // default
 		}
-
 	}
 
 	// process
 	users, err := userLogic.GetUsers(uint((page-1)*limit), uint(limit))
-	if err != nil {
+	if err != nil && err != model.ErrUserNotFound {
 		logger.Err(err).Msgf("[get users handler] Unable to get users")
 		c.JSON(http.StatusInternalServerError, "Unable to get users")
 		return
@@ -113,7 +109,7 @@ func getUsers(c *gin.Context) {
 
 	// response
 
-	logger.Info().Msgf("[get users handler] Get users %s successfully")
+	logger.Info().Msgf("[get users handler] Get users successfully")
 	c.JSON(http.StatusOK, &users)
 	return
 }
@@ -123,7 +119,7 @@ func getRoles(c *gin.Context) {
 
 	// process
 	roles, err := userLogic.GetAllRoles()
-	if err != nil {
+	if err != nil && err != model.ErrRoleNotFound {
 		logger.Err(err).Msgf("[get roles handler] Unable to get roles")
 		c.JSON(http.StatusInternalServerError, "Unable to get roles")
 		return

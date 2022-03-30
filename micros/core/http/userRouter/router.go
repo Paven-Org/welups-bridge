@@ -170,7 +170,11 @@ func getUserHandler(c *gin.Context) {
 	user, err := userLogic.GetUserByName(username)
 	if err != nil {
 		logger.Err(err).Msgf("[getUserHandler] Unable to retrieve user")
-		c.JSON(http.StatusNotFound, "Unable to retrieve user "+username)
+		status := http.StatusInternalServerError
+		if err == model.ErrEthAccountNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, "Unable to retrieve user "+username)
 		return
 	}
 
