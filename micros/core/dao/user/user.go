@@ -3,6 +3,7 @@ package userDAO
 import (
 	"bridge/micros/core/model"
 	"bridge/service-managers/logger"
+	"database/sql"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -106,7 +107,7 @@ func (dao *userDAO) RemoveUser(name string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting user %s", name)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -120,7 +121,7 @@ func (dao *userDAO) RemoveUser(name string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting user %s", name)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -133,7 +134,7 @@ func (dao *userDAO) RemoveUser(name string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting user %s", name)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -154,7 +155,11 @@ func (dao *userDAO) GetUserById(id uint64) (model.User, error) {
 	q := db.Rebind("SELECT * FROM users WHERE id = ?")
 	err := db.QueryRowx(q, id).StructScan(&user)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for user id: %d", id)
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for user id: %d", id)
+			return user, err
+		}
+		return user, model.ErrUserNotFound
 	}
 	return user, err
 }
@@ -168,7 +173,11 @@ func (dao *userDAO) GetUserByName(name string) (model.User, error) {
 	q := db.Rebind("SELECT * FROM users WHERE username = ?")
 	err := db.QueryRowx(q, name).StructScan(&user)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for username: %s", name)
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for username: %s", name)
+			return user, err
+		}
+		return user, model.ErrUserNotFound
 	}
 	return user, err
 }
@@ -182,7 +191,11 @@ func (dao *userDAO) GetUserByEmail(email string) (model.User, error) {
 	q := db.Rebind("SELECT * FROM users WHERE email = ?")
 	err := db.QueryRowx(q, email).StructScan(&user)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for email: %s", email)
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for email: %s", email)
+			return user, err
+		}
+		return user, model.ErrUserNotFound
 	}
 	return user, err
 }
@@ -199,8 +212,11 @@ func (dao *userDAO) GetUserRoles(name string) ([]string, error) {
 	err := db.Select(&roles, q, name)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for user %s's roles", name)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for user %s's roles", name)
+			return nil, err
+		}
+		return nil, model.ErrRoleNotFound
 	}
 
 	return roles, nil
@@ -219,8 +235,11 @@ func (dao *userDAO) GetUsers(offset uint, size uint) ([]model.User, error) {
 	err := db.Select(&users, q, offset, size)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for users")
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msg("Error while querying for users")
+			return nil, err
+		}
+		return nil, model.ErrUserNotFound
 	}
 
 	return users, nil
@@ -238,8 +257,11 @@ func (dao *userDAO) GetUsersWithRole(role string, offset uint, size uint) ([]mod
 									OFFSET ? LIMIT ?`)
 	err := db.Select(&users, q, role, offset, size)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for users with role %s", role)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for users with role %s", role)
+			return nil, err
+		}
+		return nil, model.ErrUserNotFound
 	}
 	return users, nil
 }

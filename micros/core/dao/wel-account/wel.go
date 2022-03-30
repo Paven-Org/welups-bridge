@@ -43,8 +43,11 @@ func (dao *welDAO) GetWelAccount(address string) (*model.WelAccount, error) {
 									WHERE wel_sys_accounts.address  = ?`)
 	err := db.Get(&account, q, address)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for account with address %s", address)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for account with address %s", address)
+			return nil, err
+		}
+		return nil, model.ErrWelAccountNotFound
 	}
 	// get key if exists
 	qPrikey := db.Rebind("SELECT prikey FROM wel_sys_prikeys WHERE address = ?")
@@ -160,7 +163,7 @@ func (dao *welDAO) RemoveWelAccount(address string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting address %s", address)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -174,7 +177,7 @@ func (dao *welDAO) RemoveWelAccount(address string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting address %s", address)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -188,7 +191,7 @@ func (dao *welDAO) RemoveWelAccount(address string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting address %s", address)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -201,7 +204,7 @@ func (dao *welDAO) RemoveWelAccount(address string) error {
 	if err != nil {
 		log.Err(err).Msgf("Error while deleting address %s", address)
 		for {
-			if err := tx.Rollback(); err != nil {
+			if err := tx.Rollback(); err != nil && err != sql.ErrTxDone && err != sql.ErrConnDone {
 				log.Err(err).Msg("Error while rolling back tx, retrying...")
 			} else {
 				break
@@ -240,8 +243,11 @@ func (dao *welDAO) GetWelAccountRoles(address string) ([]string, error) {
 	err := db.Select(&roles, q, address)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for address %s's roles", address)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for address %s's roles", address)
+			return nil, err
+		}
+		return nil, model.ErrWelRoleNotFound
 	}
 
 	return roles, nil
@@ -258,8 +264,11 @@ func (dao *welDAO) GetAllWelAccounts(offset uint, size uint) ([]model.WelAccount
 									OFFSET ? LIMIT ?`)
 	err := db.Select(&accounts, q, offset, size)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for accounts")
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for accounts")
+			return nil, err
+		}
+		return nil, model.ErrWelAccountNotFound
 	}
 
 	qPrikey := db.Rebind("SELECT prikey FROM wel_sys_prikeys WHERE address = ?")
@@ -291,8 +300,11 @@ func (dao *welDAO) GetWelAccountsWithRole(role string, offset uint, size uint) (
 									OFFSET ? LIMIT ?`)
 	err := db.Select(&accounts, qGetAccs, role, offset, size)
 	if err != nil {
-		log.Err(err).Msgf("Error while querying for accounts with role %s", role)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msgf("Error while querying for accounts with role %s", role)
+			return nil, err
+		}
+		return nil, model.ErrWelAccountNotFound
 	}
 
 	qPrikey := db.Rebind("SELECT prikey FROM wel_sys_prikeys WHERE address = ?")
@@ -321,8 +333,11 @@ func (dao *welDAO) GetAllRoles() ([]string, error) {
 	err := db.Select(&roles, q)
 
 	if err != nil {
-		log.Err(err).Msg("Error while querying for wel_sys_roles")
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Err(err).Msg("Error while querying for wel_sys_roles")
+			return nil, err
+		}
+		return nil, model.ErrWelRoleNotFound
 	}
 
 	return roles, nil
