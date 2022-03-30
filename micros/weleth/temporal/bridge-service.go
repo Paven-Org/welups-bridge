@@ -52,22 +52,22 @@ func MkWelethBridgeService(cli client.Client, daos *dao.DAOs) *WelethBridgeServi
 	}
 }
 
-func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txhash string) (tx *BridgeTx, err error) {
+func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
 
 	return
 }
 
-func (s *WelethBridgeService) GetEthToWelCashoutByTxHash(ctx context.Context, txhash string) (tx *BridgeTx, err error) {
+func (s *WelethBridgeService) GetEthToWelCashoutByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
 
 	return
 }
 
-func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (err error) {
+func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
 	// NOT IMPLEMENTED
 	return
 }
 
-func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, txhash string) (err error) {
+func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
 	// NOT IMPLEMENTED
 	return
 }
@@ -75,6 +75,9 @@ func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, tx
 func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetWelToEthCashinByTxHash, activity.RegisterOptions{Name: GetWelToEthCashinByTxHash})
 	w.RegisterActivityWithOptions(s.GetEthToWelCashoutByTxHash, activity.RegisterOptions{Name: GetEthToWelCashoutByTxHash})
+
+	w.RegisterActivityWithOptions(s.GetEthToWelCashinByTxHash, activity.RegisterOptions{Name: GetEthToWelCashinByTxHash})
+	w.RegisterActivityWithOptions(s.GetWelToEthCashoutByTxHash, activity.RegisterOptions{Name: GetWelToEthCashoutByTxHash})
 
 }
 
