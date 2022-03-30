@@ -42,6 +42,8 @@ var (
 	ErrWrongPasswd             = fmt.Errorf("Wrong password")
 	ErrUserNotActivated        = fmt.Errorf("User not activated")
 	ErrUserBanned              = fmt.Errorf("User not banned")
+	ErrUserNotFound            = fmt.Errorf("User not found")
+	ErrRoleNotFound            = fmt.Errorf("Role not found")
 	ErrUserPermaBanned         = fmt.Errorf("User was wiped out of existence")
 	ErrInconsistentCredentials = fmt.Errorf("Cannot reconcile user's token and cookie")
 )

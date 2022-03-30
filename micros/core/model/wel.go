@@ -32,4 +32,5 @@ var (
 	ErrWelInvalidAddress        = fmt.Errorf("Invalid Address")
 	ErrWelKeyAndAddressMismatch = fmt.Errorf("Key and address mismatch")
 	ErrWelAccountNotFound       = fmt.Errorf("Account not found in internal system")
+	ErrWelRoleNotFound          = fmt.Errorf("Role not found in internal system")
 )
