@@ -3,11 +3,14 @@ package main
 import (
 	"bridge/common/consts"
 	"bridge/libs"
-	userLogic "bridge/micros/core/blogic/user"
+	"bridge/micros/core/blogic"
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	router "bridge/micros/core/http"
+	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/middlewares"
+	ethService "bridge/micros/core/service/eth"
+	welService "bridge/micros/core/service/wel"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
 	"context"
@@ -16,7 +19,10 @@ import (
 	"syscall"
 	"time"
 
+	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+
 	"github.com/casbin/casbin/v2"
+	"github.com/ethereum/go-ethereum/ethclient"
 	_ "github.com/lib/pq"
 	//"https://github.com/rs/zerolog/log"
 )
@@ -26,18 +32,20 @@ func main() {
 	//ctx := context.Background()
 
 	config.Load()
+
+	cnf := config.Get()
 	//// layer 1 setup: foundation
 	// logger
-	logger.Init(config.Get().Structured)
+	logger.Init(cnf.Structured)
 	logger := logger.Get()
-	logger.Info().Msgf("[main] Initialize system with config: %+v ", *config.Get())
+	logger.Info().Msgf("[main] Initialize system with config: %+v ", *cnf)
 	defer logger.Info().Msg("[main] Core exited")
 
 	//	ctx = logger.WithContext(ctx)
 	//	zerolog.Ctx(ctx).Info().Msgf("getting log from context: ", ctx)
 	// loading config, secret, key
 	// DB
-	db, err := manager.MkDB(config.Get().DBconfig)
+	db, err := manager.MkDB(cnf.DBconfig)
 	if err != nil {
 		logger.Err(err).Msg("[main] DB initialization failed")
 		panic(err)
@@ -62,41 +70,92 @@ func main() {
 
 	// Redis
 	rm := manager.MkRedisManager(
-		config.Get().RedisConfig,
+		cnf.RedisConfig,
 		manager.StdDbMap)
 	defer func() {
-		if config.Get().HttpConfig.Mode == "debug" {
+		if cnf.HttpConfig.Mode == "debug" {
 			rm.Flush(manager.StdAuthDBName)
 		}
 		rm.CloseAll()
 	}()
 
+	// token service
+	ts := libs.MkTokenServ(cnf.Secrets.JwtSecret)
+
+	// Mailer
+	mailer := manager.MkMailer(cnf.Mailerconf)
+
+	// Temporal
+	tempCli, err := manager.MkTemporalClient(cnf.TemporalCliConfig, []string{"callerkey", "signerkey"})
+	if err != nil {
+		logger.Err(err).Msg("[main] Unable to connect to Temporal cluster")
+		return
+	}
+	defer tempCli.Close()
+
+	// ETH chain stuff: contract address, prkey, contract event watcher...
+	ethCli, err := ethclient.Dial(cnf.EthereumConfig.BlockchainRPC)
+	if err != nil {
+		logger.Err(err).Msgf("Unable to connect to ethereum RPC server")
+		return
+	}
+	defer ethCli.Close()
+
+	ethGovService, err := ethService.MkGovContractService(ethCli, tempCli, daos, cnf.EthGovContract)
+	if err != nil {
+		logger.Err(err).Msgf("Unable to initialize ethererum GovContractService")
+		return
+	}
+
+	ethGovService.StartService()
+	defer ethGovService.StopService()
+
+	// WEL chain stuff
+	welCli := welclient.NewGrpcClient(cnf.WelupsConfig.Nodes[0])
+	defer welCli.Stop()
+	if err := welCli.Start(); err != nil {
+		logger.Err(err).Msgf("Unable to start welCli's GRPC connection")
+		return
+	}
+
+	welGovService, err := welService.MkGovContractService(welCli, tempCli, daos, cnf.WelGovContract)
+	if err != nil {
+		logger.Err(err).Msgf("Unable to initialize welups GovContractService")
+		return
+	}
+
+	welGovService.StartService()
+	defer welGovService.StopService()
+
+	// Bridge microservices
+	//weleth
+	msWelEth := msweleth.MkWeleth(tempCli)
+	msWelEth.StartService()
+	defer msWelEth.StopService()
+
+	// Core business logic init
+	initVector := blogic.InitV{
+		DAOs:         daos,
+		RedisManager: rm,
+		Mailer:       mailer,
+		//Httpcli: nil,
+		TokenService: ts,
+		TemporalCli:  tempCli,
+	}
+
+	blogic.Init(initVector)
+	/// HTTP server
 	// RBAC enforcer
-	enforcer, err := casbin.NewEnforcer(config.Get().Casbin.ModelPath, config.Get().Casbin.PolicyPath)
+	enforcer, err := casbin.NewEnforcer(cnf.Casbin.ModelPath, cnf.Casbin.PolicyPath)
 	if err != nil {
 		logger.Err(err).Msg("[main] constructing casbin enforcer failed")
 		return
 	}
 	authMW := middlewares.MkAuthMW(enforcer, rm)
-	// token service
-	ts := libs.MkTokenServ(config.Get().Secrets.JwtSecret)
-
-	// Mailer
-
-	// ETH chain stuff: contract address, prkey, contract event watcher...
-
-	// WEL chain stuff
-
-	// Core business logic init
-	userLogic.Init(daos, rm, ts)
-
-	// Temporal
-
-	/// HTTP server
 	// Router setup
 	// middlewares: TLS, CORS, JWT, secure cookie, json resp body, URL normalization...
-	mainRouter := router.InitMainRouter(config.Get().HttpConfig, authMW)
-	httpServ := manager.MkHttpServer(config.Get().HttpConfig, mainRouter)
+	mainRouter := router.InitMainRouter(cnf.HttpConfig, authMW)
+	httpServ := manager.MkHttpServer(cnf.HttpConfig, mainRouter)
 	go func() {
 		if err := httpServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Err(err).Msg("[main] Failed to start HTTP server")
