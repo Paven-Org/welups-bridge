@@ -1,7 +1,10 @@
 package admRouter
 
 import (
+	ethRouter "bridge/micros/core/http/admRouter/eth-router"
 	"bridge/micros/core/http/admRouter/manageUserRouter"
+	welRouter "bridge/micros/core/http/admRouter/wel-router"
+	"bridge/micros/core/http/bridgeRouter"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,4 +20,7 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 
 	// subRouters
 	manageUserRouter.Config(gr)
+	ethRouter.Config(gr)
+	welRouter.Config(gr)
+	bridgeRouter.Config(gr)
 }
