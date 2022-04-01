@@ -357,7 +357,7 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 			TaskQueue: notifier.NotifierQueue,
 		}
 
-		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
 			return nil, nil, err

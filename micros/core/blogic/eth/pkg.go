@@ -37,7 +37,7 @@ func Init(d *dao.DAOs, tmpcli client.Client) {
 			TaskQueue: notifier.NotifierQueue,
 		}
 
-		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Eth logic init] Failed to notify admins of problem: " + problem.Error())
 			return

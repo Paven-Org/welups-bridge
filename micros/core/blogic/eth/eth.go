@@ -347,7 +347,7 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 			TaskQueue: notifier.NotifierQueue,
 		}
 
-		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
 			return nil, nil, err

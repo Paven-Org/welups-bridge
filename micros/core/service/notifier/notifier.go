@@ -24,15 +24,15 @@ const (
 
 const (
 	notificationEmailNoAuthKey = `
-		This email is automatically sent to every admin of the Welbridge system to notify them of 
-		a certain operation problem.
+	[Timestamp=%s] This email is automatically sent to every admin of the Welbridge system
+	to notify them of a certain operation problem.\n\n 
 
-		[Timestamp=%s] %s side's Authenticator key is currently not available in
-		Welbridge [core] microservice, most likely due to a service restart during operation.
-		Without this key, claim request signing wouldn't be available and users of the bridge
-		wouldn't be able to claim their resources. Please visit Welbridge's administration
-		portal at %s, login as your admin handle, and provide the system with the
-		Authenticator key at %s.
+	To all admins of Welbridge system: %s side's Authenticator key is currently not
+	available in Welbridge [core] microservice, most likely due to a service restart during
+	operation.  Without this key, claim request signing wouldn't be available and users of
+	the bridge wouldn't be able to claim their resources. Please visit Welbridge's
+	administration portal at %s, login as your admin handle, and provide the system with the
+	Authenticator key at %s.
 	`
 	notificationSubjectNoAuthKey = "[Welbridge system] No Authenticator key available for %s side"
 )
@@ -48,9 +48,9 @@ func MkNotifier(tempCli client.Client, daos *dao.DAOs, mailer *manager.Mailer) *
 	return &Notifier{tempCli: tempCli, userDAO: daos.User, mailer: mailer}
 }
 
-func (notifier *Notifier) NotifyWorkflow(ctx workflow.Context, problem error, role string) error {
+func (notifier *Notifier) NotifyWorkflow(ctx workflow.Context, problem string, role string) error {
 	log := workflow.GetLogger(ctx)
-	log.Info("[NotifierWF] start notifying role " + role + " of problem: " + problem.Error())
+	log.Info("[NotifierWF] start notifying role " + role + " of problem: " + problem)
 	ao := workflow.ActivityOptions{
 		TaskQueue:              NotifierQueue,
 		ScheduleToCloseTimeout: time.Second * 60,
@@ -65,9 +65,9 @@ func (notifier *Notifier) NotifyWorkflow(ctx workflow.Context, problem error, ro
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	future := workflow.ExecuteLocalActivity(ctx, notifier.NotifyActivity, problem, role)
+	future := workflow.ExecuteActivity(ctx, notifier.NotifyActivity, problem, role)
 	if err := future.Get(ctx, nil); err != nil {
-		log.Error("[NotifierWF] Failed to notify users with role " + role + " of problem: " + problem.Error())
+		log.Error("[NotifierWF] Failed to notify users with role " + role + " of problem: " + problem)
 		return err
 	}
 
@@ -76,33 +76,33 @@ func (notifier *Notifier) NotifyWorkflow(ctx workflow.Context, problem error, ro
 	return nil
 }
 
-func (notifier *Notifier) NotifyActivity(ctx context.Context, problem error, role string) error {
-	logger.Get().Info().Msgf("[Notifier] Problem to notify all users with role %s: %s", role, problem.Error())
+func (notifier *Notifier) NotifyActivity(ctx context.Context, problem string, role string) error {
+	logger.Get().Info().Msgf("[Notifier] Problem to notify all users with role %s: %s", role, problem)
 
-	if err := notifier.handleHealthProblem(problem, role); err != nil {
-		logger.Get().Err(err).Msgf("[Notifier] Failed to notify users with role %s about problem: %s", role, problem.Error())
+	if err := notifier.handleProblem(problem, role); err != nil {
+		logger.Get().Err(err).Msgf("[Notifier] Failed to notify users with role %s about problem: %s", role, problem)
 		return err
 	}
 
-	logger.Get().Info().Msgf("[Notifier] Notified users with role %s about problem: %s", role, problem.Error())
+	logger.Get().Info().Msgf("[Notifier] Notified users with role %s about problem: %s", role, problem)
 	return nil
 }
 
-func (notifier *Notifier) handleHealthProblem(prob error, role string) error {
+func (notifier *Notifier) handleProblem(prob string, role string) error {
 	switch prob {
-	case model.ErrEthAuthenticatorKeyUnavailable:
+	case model.ErrEthAuthenticatorKeyUnavailable.Error():
 		adminPortal := "<placeholder>"
 		chain := "Ethereum"
 		injectKeyURL := adminPortal + "/<placeholder>"
 		mailBody := fmt.Sprintf(notificationEmailNoAuthKey, time.Now().String(), chain, adminPortal, injectKeyURL)
-		subject := fmt.Sprint(notificationSubjectNoAuthKey, chain)
+		subject := fmt.Sprintf(notificationSubjectNoAuthKey, chain)
 		return notifier.sendNotificationToRole(role, subject, mailBody)
-	case model.ErrWelAuthenticatorKeyUnavailable:
+	case model.ErrWelAuthenticatorKeyUnavailable.Error():
 		adminPortal := "<placeholder>"
 		chain := "Welups"
 		injectKeyURL := adminPortal + "/<placeholder>"
 		mailBody := fmt.Sprintf(notificationEmailNoAuthKey, time.Now().String(), chain, adminPortal, injectKeyURL)
-		subject := fmt.Sprint(notificationSubjectNoAuthKey, chain)
+		subject := fmt.Sprintf(notificationSubjectNoAuthKey, chain)
 		return notifier.sendNotificationToRole(role, subject, mailBody)
 	default:
 		return nil
