@@ -10,6 +10,7 @@ import (
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/middlewares"
 	ethService "bridge/micros/core/service/eth"
+	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
@@ -132,6 +133,10 @@ func main() {
 	msWelEth := msweleth.MkWeleth(tempCli)
 	msWelEth.StartService()
 	defer msWelEth.StopService()
+
+	notifierS := notifier.MkNotifier(tempCli, daos, mailer)
+	notifierS.StartService()
+	defer notifierS.StopService()
 
 	// Core business logic init
 	initVector := blogic.InitV{
