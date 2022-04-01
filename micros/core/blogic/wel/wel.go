@@ -4,6 +4,7 @@ import (
 	"bridge/libs"
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/model"
+	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
 	welethService "bridge/micros/weleth/temporal"
 	"context"
@@ -345,8 +346,30 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 	}
 
 	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
+
+	sysAccounts.RLock()
+	defer sysAccounts.RUnlock()
 	prikey := sysAccounts.authenticator.Prikey
 	// if prikey == "", send notification mail to admin and return error
+	if prikey == "" {
+		problem := model.ErrWelAuthenticatorKeyUnavailable
+		wo := client.StartWorkflowOptions{
+			TaskQueue: notifier.NotifierQueue,
+		}
+
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		if err != nil {
+			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
+			return nil, nil, err
+		}
+		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+		if err := we.Get(ctx, nil); err != nil {
+			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
+			return nil, nil, err
+		}
+		err = problem
+		return nil, nil, err
+	}
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(cashoutTxId))

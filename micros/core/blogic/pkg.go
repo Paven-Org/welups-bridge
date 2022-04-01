@@ -22,6 +22,6 @@ type InitV struct {
 
 func Init(iv InitV) {
 	userLogic.Init(iv.DAOs, iv.RedisManager, iv.TokenService)
-	ethLogic.Init(iv.DAOs, iv.Mailer, iv.TemporalCli)
-	welLogic.Init(iv.DAOs, iv.Mailer, iv.TemporalCli)
+	ethLogic.Init(iv.DAOs, iv.TemporalCli)
+	welLogic.Init(iv.DAOs, iv.TemporalCli)
 }

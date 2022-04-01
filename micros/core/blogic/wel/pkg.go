@@ -6,8 +6,9 @@ import (
 	userdao "bridge/micros/core/dao/user"
 	weldao "bridge/micros/core/dao/wel-account"
 	"bridge/micros/core/model"
-	manager "bridge/service-managers"
+	"bridge/micros/core/service/notifier"
 	"bridge/service-managers/logger"
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -21,17 +22,34 @@ import (
 var (
 	welDAO  weldao.IWelDAO
 	userDAO userdao.IUserDAO
-	mailer  *manager.Mailer
+	//mailer  *manager.Mailer
 	tempcli client.Client
 	log     *zerolog.Logger
 )
 
-func Init(d *dao.DAOs, m *manager.Mailer, tmpcli client.Client) {
+func Init(d *dao.DAOs, tmpcli client.Client) {
 	log = logger.Get()
 	welDAO = d.Wel
 	userDAO = d.User
-	mailer = m
+	//mailer = m
 	tempcli = tmpcli
+	if problem := Healthcheck(); problem != nil {
+		ctx := context.Background()
+		wo := client.StartWorkflowOptions{
+			TaskQueue: notifier.NotifierQueue,
+		}
+
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		if err != nil {
+			log.Err(err).Msg("[Eth logic init] Failed to notify admins of problem: " + problem.Error())
+			return
+		}
+		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+		if err := we.Get(ctx, nil); err != nil {
+			log.Err(err).Msg("[Eth logic init] Failed to notify admins of problem: " + problem.Error())
+			return
+		}
+	}
 }
 
 type welSysAccounts struct {
@@ -41,6 +59,16 @@ type welSysAccounts struct {
 }
 
 var sysAccounts welSysAccounts
+
+func Healthcheck() error {
+	sysAccounts.RLock()
+	defer sysAccounts.RUnlock()
+	if sysAccounts.authenticator.Prikey == "" {
+		logger.Get().Warn().Msg("[Wel logic] Welups authenticator key unavailable")
+		return model.ErrWelAuthenticatorKeyUnavailable
+	}
+	return nil
+}
 
 func verifyKeyAndAddress(hexkey string, address string) bool {
 	key, err := crypto.HexToECDSA(hexkey)
@@ -83,26 +111,4 @@ func verifyAddress(address string) bool { // change! Base58 -> hex -> address
 
 	re := regexp.MustCompile("^0x41[0-9a-fA-F]{40}$")
 	return re.MatchString(hexaddress)
-}
-
-func sendNotificationToRole(role string, subject string, body string) error {
-	users, err := userDAO.GetUsersWithRole(role, 0, 1000)
-	if err != nil {
-		log.Err(err).Msgf("[Wel logic internal] Unable to fetch users with role %s", role)
-		return err
-	}
-	fmt.Println("Users: ", users)
-
-	mails := libs.Map(func(u model.User) string { return u.Email },
-		libs.Filter(func(u model.User) bool { return u.Status == "ok" }, users))
-	fmt.Println("Mails: ", mails)
-	for _, mail := range mails {
-		mess := mailer.MkPlainMessage(mail, subject, body)
-		err := mailer.Send(mess)
-		if err != nil {
-			log.Err(err).Msgf("[Wel logic internal] unable to send mail to address %s", mail) // best effort lol
-		}
-	}
-
-	return nil
 }

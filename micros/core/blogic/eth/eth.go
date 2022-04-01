@@ -5,6 +5,7 @@ import (
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/model"
 	ethService "bridge/micros/core/service/eth"
+	"bridge/micros/core/service/notifier"
 	welethService "bridge/micros/weleth/temporal"
 	"context"
 	"fmt"
@@ -335,8 +336,30 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 	}
 
 	log.Info().Msg("[Eth logic internal] Everything a-ok, proceeding to create signature and requestID")
+
+	sysAccounts.RLock()
+	defer sysAccounts.RUnlock()
 	prikey := sysAccounts.authenticator.Prikey
 	// if prikey == "", send notification mail to admin and return error
+	if prikey == "" {
+		problem := model.ErrEthAuthenticatorKeyUnavailable
+		wo := client.StartWorkflowOptions{
+			TaskQueue: notifier.NotifierQueue,
+		}
+
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem, "admin")
+		if err != nil {
+			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
+			return nil, nil, err
+		}
+		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+		if err := we.Get(ctx, nil); err != nil {
+			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
+			return nil, nil, err
+		}
+		err = problem
+		return nil, nil, err
+	}
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(cashinTxId))
