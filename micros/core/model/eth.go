@@ -27,10 +27,11 @@ const (
 )
 
 var (
-	ErrEthAccountLocked         = fmt.Errorf("Ethereum account locked in the internal system")
-	ErrEthNoPrikey              = fmt.Errorf("Ethereum account doesn't have private key stored in the system")
-	ErrEthInvalidAddress        = fmt.Errorf("Invalid Address")
-	ErrEthKeyAndAddressMismatch = fmt.Errorf("Key and address mismatch")
-	ErrEthAccountNotFound       = fmt.Errorf("Account not found in internal system")
-	ErrEthRoleNotFound          = fmt.Errorf("Role not found in internal system")
+	ErrEthAccountLocked               = fmt.Errorf("Ethereum account locked in the internal system")
+	ErrEthNoPrikey                    = fmt.Errorf("Ethereum account doesn't have private key stored in the system")
+	ErrEthInvalidAddress              = fmt.Errorf("Invalid Address")
+	ErrEthKeyAndAddressMismatch       = fmt.Errorf("Key and address mismatch")
+	ErrEthAccountNotFound             = fmt.Errorf("Account not found in internal system")
+	ErrEthRoleNotFound                = fmt.Errorf("Role not found in internal system")
+	ErrEthAuthenticatorKeyUnavailable = fmt.Errorf("Ethereum authenticator key unavailable")
 )
