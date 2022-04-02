@@ -33,10 +33,11 @@ func InitMainRouter(cnf common.HttpConf, authMW gin.HandlerFunc) *gin.Engine {
 	router.Use(middlewares.LoggerMw())
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:  cnf.CORSAllowOrigins,
-		AllowMethods:  []string{"*"},
-		AllowHeaders:  []string{"*"},
-		AllowWildcard: true,
+		AllowOrigins:     cnf.CORSAllowOrigins,
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		AllowWildcard:    true,
+		AllowCredentials: true,
 	}))
 	router.Use(helmet.NoSniff(),
 		helmet.DNSPrefetchControl(),

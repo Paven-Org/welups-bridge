@@ -25,7 +25,8 @@ const (
 const (
 	notificationEmailNoAuthKey = `
 	[Timestamp=%s] This email is automatically sent to every admin of the Welbridge system
-	to notify them of a certain operation problem.\n\n 
+	to notify them of a certain operation problem.
+
 
 	To all admins of Welbridge system: %s side's Authenticator key is currently not
 	available in Welbridge [core] microservice, most likely due to a service restart during
