@@ -16,7 +16,8 @@ func TestMain(m *testing.M) {
 	var err error
 	config.Load()
 	//log.Init(config.Get().Structured)
-	cli, err = manager.MkHttpClient("http://localhost:8001", "")
+	cli, err = manager.MkHttpClient("https://localhost:8001", "")
+	//cli, err = manager.MkHttpClient("http://52.220.114.136", "")
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
 		return

@@ -11,6 +11,8 @@ type HttpConf struct {
 	Port             int
 	Mode             string
 	CORSAllowOrigins []string
+	X509CertFile     string
+	X509KeyFile      string
 }
 
 type Secrets struct {

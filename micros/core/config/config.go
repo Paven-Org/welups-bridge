@@ -43,6 +43,9 @@ func parseEnv() Env {
 			Port:             common.WithDefault("APP_PORT", 8001),
 			Mode:             common.WithDefault("APP_MODE", "debug"), // "release", "test"
 			CORSAllowOrigins: CORS,
+
+			X509CertFile: common.WithDefault("APP_X509_CERT", "./cert.pem"),
+			X509KeyFile:  common.WithDefault("APP_X509_KEY", "./key.pem"),
 		},
 
 		DBconfig: common.DBconf{

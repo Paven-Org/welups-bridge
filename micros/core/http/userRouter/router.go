@@ -59,7 +59,7 @@ func loginHandler(c *gin.Context) {
 	logger.Debug().Msgf("[login handler] token %s, sessionID %s, sessionSecret %s, age: %d", token, sessionID, sessionSecret, dur)
 
 	// response
-	c.SetCookie(sessionID, sessionSecret, int(dur), "/", "", serverCnf.Mode == "prod", true)
+	c.SetCookie(sessionID, sessionSecret, int(dur), "/", "", true, true)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 	return
 }
@@ -92,7 +92,7 @@ func logoutHandler(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(sessionID, "", -1, "/", serverCnf.Host, serverCnf.Mode == "prod", true)
+	c.SetCookie(sessionID, "", -1, "/", serverCnf.Host, true, true)
 
 	// response
 	c.JSON(http.StatusOK, fmt.Sprintf("User %s logout successfully", claims.Username))

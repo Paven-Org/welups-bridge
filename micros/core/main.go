@@ -162,7 +162,7 @@ func main() {
 	mainRouter := router.InitMainRouter(cnf.HttpConfig, authMW)
 	httpServ := manager.MkHttpServer(cnf.HttpConfig, mainRouter)
 	go func() {
-		if err := httpServ.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := httpServ.ListenAndServeTLS(cnf.HttpConfig.X509CertFile, cnf.HttpConfig.X509KeyFile); err != nil && err != http.ErrServerClosed {
 			logger.Err(err).Msg("[main] Failed to start HTTP server")
 			return
 		}
