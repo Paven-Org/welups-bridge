@@ -33,7 +33,7 @@ func parseEnv() Env {
 		viper.AutomaticEnv()
 	}
 	CORSstring := common.WithDefault("APP_CORS", "*")
-	CORS := strings.Split(CORSstring, ",")
+	CORS := strings.Split(CORSstring, " ")
 	fmt.Println(CORS)
 
 	return Env{
