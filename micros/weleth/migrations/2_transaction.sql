@@ -28,6 +28,6 @@ CREATE UNIQUE INDEX deposit_tx_index ON wel_eth_trans(deposit_tx_hash);
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';
-ALTER TABLE wel_eth_trans DROP INDEX deposit_tx_index;
+DROP INDEX deposit_tx_index;
 DROP TABLE wel_eth_trans CASCADE;
 -- +goose StatementEnd

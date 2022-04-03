@@ -91,7 +91,7 @@ func parseEnv() Env {
 			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
-		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WAxgwpEH95VKXm5XWcDvrdw5sxM9VBkEYT"}),
+		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WGswjxGZma3dWxf2ZSEvh5AYvcWvbdpYhW"}),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),
