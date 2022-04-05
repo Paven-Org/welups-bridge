@@ -13,7 +13,7 @@ type ethSysDAO struct {
 
 func (e *ethSysDAO) Get() (*consts.EthDefaultInfo, error) {
 	var res = &consts.EthDefaultInfo{}
-	err := e.db.Select(res, "SELECT eth_last_scan_block FROM wel_eth_sys ORDER BY first_name ASC")
+	err := e.db.Get(res, "SELECT eth_last_scan_block FROM wel_eth_sys LIMIT 1")
 	return res, err
 }
 

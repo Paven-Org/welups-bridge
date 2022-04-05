@@ -1,7 +1,7 @@
 package consts
 
 type EthDefaultInfo struct {
-	LastScannedBlock int64 `db:"column:eth_last_scan_block"`
+	LastScannedBlock int64 `db:"eth_last_scan_block"`
 }
 
 type IEthInfoRepo interface {

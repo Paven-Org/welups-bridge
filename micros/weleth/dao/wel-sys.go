@@ -13,7 +13,7 @@ type welSysDAO struct {
 
 func (e *welSysDAO) Get() (*consts.WelDefaultInfo, error) {
 	var res = &consts.WelDefaultInfo{}
-	err := e.db.Select(res, "SELECT wel_last_scan_block FROM wel_eth_sys LIMIT 1")
+	err := e.db.Get(res, "SELECT wel_last_scan_block FROM wel_eth_sys LIMIT 1")
 	return res, err
 }
 

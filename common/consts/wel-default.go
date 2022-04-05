@@ -1,7 +1,7 @@
 package consts
 
 type WelDefaultInfo struct {
-	LastScannedBlock int64 `db:"column:wel_last_scan_block"`
+	LastScannedBlock int64 `db:"wel_last_scan_block"`
 }
 
 type IWelInfoRepo interface {
