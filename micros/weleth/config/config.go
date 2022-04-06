@@ -86,12 +86,12 @@ func parseEnv() Env {
 		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0xE5a7d2F508579C22238688AD0d90db20f708e2A5"}),
 
 		WelupsConf: common.WelupsConfig{
-			Nodes:         common.WithDefault("WEL_NODES", []string{"172.104.51.182:16669"}),
+			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
 			BlockTime:     common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
 			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
-		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WGswjxGZma3dWxf2ZSEvh5AYvcWvbdpYhW"}),
+		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"}),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),
