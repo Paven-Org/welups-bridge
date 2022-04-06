@@ -2,7 +2,6 @@ package dao
 
 import (
 	"bridge/micros/weleth/model"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -28,12 +27,12 @@ type welEthTransDAO struct {
 }
 
 func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
-	fmt.Println("[dao] t: ", t)
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_wallet_addr, :wel_token_addr, :eth_token_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr,eth_wallet_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"id":              t.ID,
 			"wel_eth":         true,
 			"deposit_tx_hash": t.DepositTxHash,
+			"eth_wallet_addr": t.EthWalletAddr,
 			"wel_wallet_addr": t.WelWalletAddr,
 			"eth_token_addr":  t.EthTokenAddr,
 			"wel_token_addr":  t.WelTokenAddr,
@@ -47,7 +46,7 @@ func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
 }
 
 func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, network_id, amount, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, wel_wallet_addr, network_id, amount, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"id":              t.ID,
 			"wel_eth":         false,
@@ -55,6 +54,7 @@ func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
 			"wel_token_addr":  t.WelTokenAddr,
 			"eth_token_addr":  t.EthTokenAddr,
 			"eth_wallet_addr": t.EthWalletAddr,
+			"wel_wallet_addr": t.EthWalletAddr,
 			"network_id":      t.NetworkID,
 			"amount":          t.Amount,
 			"fee":             t.Fee,

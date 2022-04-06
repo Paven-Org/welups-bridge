@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bridge/libs"
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	welListener "bridge/service-managers/listener/wel"
@@ -134,9 +135,9 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
 			event := model.WelEthEvent{
-				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
+				WelTokenAddr:  GotronCommon.BytesToHexString(t.Log[logpos].Topics[1]),
 				EthWalletAddr: ethWalletAddr.Hex(),
-				NetworkID:     networkID.SetBytes(t.Log[0].Topics[3]).String(),
+				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
 				DepositAt:     time.Now(),
 			}
 			m, err := json.Marshal(event)
@@ -146,7 +147,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 			event.ID = crypto.Keccak256Hash(m).Big().String()
 
 			event.DepositTxHash = t.Hash
-			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
+			event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
 			event.Amount = amount
 			event.DepositStatus = model.StatusUnknown
 			event.Fee = fee
@@ -173,7 +174,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 			event.ID = crypto.Keccak256Hash(m).Big().String()
 
 			event.DepositTxHash = t.Hash
-			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[logpos].Topics[2])
+			event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
 			event.Amount = amount
 			event.DepositStatus = model.StatusSuccess
 			event.Fee = fee
