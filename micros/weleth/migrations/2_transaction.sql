@@ -3,7 +3,7 @@
 SELECT 'up SQL query';
 
 CREATE TABLE IF NOT EXISTS wel_eth_trans (
-  id varchar(70),
+  id varchar(100),
   wel_eth boolean,
   deposit_tx_hash varchar(70) UNIQUE,
   claim_tx_hash varchar(70) UNIQUE, 

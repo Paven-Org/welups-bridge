@@ -2,6 +2,7 @@ package dao
 
 import (
 	"bridge/micros/weleth/model"
+	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -27,7 +28,8 @@ type welEthTransDAO struct {
 }
 
 func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
+	fmt.Println("[dao] t: ", t)
+	_, err := w.db.NamedExec(`INSERT INTO wel_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_wallet_addr, :wel_token_addr, :eth_token_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"id":              t.ID,
 			"wel_eth":         true,
@@ -35,7 +37,7 @@ func (w *welEthTransDAO) CreateWelEthTrans(t *model.WelEthEvent) error {
 			"wel_wallet_addr": t.WelWalletAddr,
 			"eth_token_addr":  t.EthTokenAddr,
 			"wel_token_addr":  t.WelTokenAddr,
-			"netword_id":      t.NetworkID,
+			"network_id":      t.NetworkID,
 			"amount":          t.Amount,
 			"fee":             t.Fee,
 			"deposit_at":      t.DepositAt,
@@ -53,8 +55,9 @@ func (w *welEthTransDAO) CreateEthWelTrans(t *model.WelEthEvent) error {
 			"wel_token_addr":  t.WelTokenAddr,
 			"eth_token_addr":  t.EthTokenAddr,
 			"eth_wallet_addr": t.EthWalletAddr,
-			"netword_id":      t.NetworkID,
+			"network_id":      t.NetworkID,
 			"amount":          t.Amount,
+			"fee":             t.Fee,
 			"deposit_at":      time.Now(),
 			"deposit_status":  t.DepositStatus,
 		})
@@ -110,19 +113,13 @@ func (w *welEthTransDAO) UpdateClaimEthWel(id, claimTxHash, fee, status string) 
 
 func (w *welEthTransDAO) SelectTransByDepositTxHash(txHash string) (*model.WelEthEvent, error) {
 	var t = &model.WelEthEvent{}
-	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE deposit_tx_hash = :tx_hash",
-		map[string]interface{}{
-			"tx_hash": txHash,
-		})
+	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE deposit_tx_hash = $1", txHash)
 	return t, err
 }
 
 func (w *welEthTransDAO) SelectTransById(id string) (*model.WelEthEvent, error) {
 	var t = &model.WelEthEvent{}
-	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE id = :id",
-		map[string]interface{}{
-			"id": id,
-		})
+	err := w.db.Get(t, "SELECT * FROM wel_eth_trans WHERE id = $1", id)
 	return t, err
 }
 
