@@ -89,30 +89,61 @@ func (s *WelListener) Handling(parentContext context.Context) (fn consts.Daemon,
 // offset is the number of block to scan before current block to make sure event is confirmed
 func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err error) {
 	fn = func() {
-		sysInfo, err := s.WelInfo.Get()
-		if err != nil {
-			s.Logger.Err(err).Msg("[wel_listener] can't get system info")
+		for {
+			select {
+			case <-parentContext.Done():
+				return
+			default:
+				sysInfo, err := s.WelInfo.Get()
+				if err != nil {
+					s.Logger.Err(err).Msg("[wel_listener] can't get system info")
+				}
+				lastScanned := sysInfo.LastScannedBlock
+				s.Logger.Info().Msgf("[wel listener] sysinfo: %d", lastScanned)
+
+				header, err := s.TransHandler.Client.GetNowBlock()
+				if err != nil {
+					s.Logger.Err(err).Msg("[wel_listener] can't get head by number")
+				}
+				headNum := header.BlockHeader.RawData.Number
+				s.Logger.Info().Msgf("[wel listener] headnum: %d", headNum)
+
+				brange := headNum - lastScanned + 1
+				s.Logger.Info().Msgf("[wel listener] block range: %d", brange)
+				if brange > 100 {
+					// partition the range to 100-long chunks
+					for begin := lastScanned; headNum-begin > 0; begin += 100 {
+						// probably should fire 1 goroutine for each partition, but i'm not sure gotron
+						// sdk's client is threadsafe or not
+						var limit int64
+						if headNum-begin < 99 {
+							limit = headNum - begin
+						} else {
+							limit = 99
+						}
+						fmt.Println("from: ", begin, " to: ", begin+limit)
+						s.TransHandler.GetInfoListTransactionRange(begin+limit, limit+1, "", s.Trans, s.errC)
+					}
+				} else {
+					fmt.Println("from: ", headNum-brange, " to: ", headNum)
+					s.TransHandler.GetInfoListTransactionRange(headNum, brange, "", s.Trans, s.errC)
+				}
+				//s.Logger.Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", sysInfo.LastScannedBlock-s.blockOffset+1, headNum))
+				//if headNum-sysInfo.LastScannedBlock > 1000000 {
+				//	s.TransHandler.GetInfoListTransactionRange(headNum, 1000000, "", s.Trans, s.errC)
+				//} else {
+				//s.TransHandler.GetInfoListTransactionRange(headNum, s.blockOffset, "", s.Trans, s.errC)
+				//s.TransHandler.GetInfoListTransactionRange(headNum, headNum-sysInfo.LastScannedBlock+1, "", s.Trans, s.errC)
+				//}
+
+				// update last scan block
+				sysInfo.LastScannedBlock = headNum
+				s.WelInfo.Update(sysInfo)
+
+				// TODO: either push this to delay message queue to run OR just sleep
+				consts.SleepContext(parentContext, time.Second*time.Duration(s.blockTime))
+			}
 		}
-
-		header, err := s.TransHandler.Client.GetNowBlock()
-		if err != nil {
-			s.Logger.Err(err).Msg("[wel_listener] can't get head by number")
-		}
-		headNum := header.BlockHeader.RawData.Number
-
-		s.Logger.Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", sysInfo.LastScannedBlock-s.blockOffset+1, headNum))
-		if headNum-sysInfo.LastScannedBlock > 10000 {
-			s.TransHandler.GetInfoListTransactionRange(headNum, 10000, "", s.Trans, s.errC)
-		} else {
-			s.TransHandler.GetInfoListTransactionRange(headNum, s.blockOffset, "", s.Trans, s.errC)
-		}
-
-		// update last scan block
-		sysInfo.LastScannedBlock = headNum
-		s.WelInfo.Update(sysInfo)
-
-		// TODO: either push this to delay message queue to run OR just sleep
-		consts.SleepContext(parentContext, time.Second*time.Duration(s.blockTime))
 	}
 	return fn, nil
 }
