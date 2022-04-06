@@ -117,21 +117,27 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 	return fn, nil
 }
 
-func (s *WelListener) matchEvent(tran *Transaction) (*EventConsumer, bool) {
+func (s *WelListener) matchEvent(tran *Transaction) (consumer *EventConsumer, position int) {
 	//TODO: add topic
-	key := KeyFromBEConsumer(tran.ContractAddress, GotronCommon.Bytes2Hex(tran.Log[0].Topics[0]))
-	consumer, isExisted := s.EventConsumerMap[key]
-	if isExisted {
-		return consumer, isExisted
+	position = -1
+	for i, log := range tran.Log {
+		fmt.Println("[matchEvent] at log ", i)
+		key := KeyFromBEConsumer(tran.Contract.Parameter.Raw["ContractAddress"].(string), GotronCommon.Bytes2Hex(log.Topics[0]))
+		fmt.Println("[matchEvent] key: ", key)
+		consumer, isExisted := s.EventConsumerMap[key]
+		if isExisted {
+			fmt.Println("[matchEvent] consumer: ", consumer)
+			return consumer, i
+		}
 	}
 
-	return nil, false
+	return nil, -1
 }
 
 func (s *WelListener) consumeEvent(t *Transaction) {
-	consumer, isExisted := s.matchEvent(t)
-	if isExisted {
-		err := consumer.ParseEvent(t)
+	consumer, position := s.matchEvent(t)
+	if position > 0 {
+		err := consumer.ParseEvent(t, position)
 		if err != nil {
 			s.Logger.Err(err).Msg("[wel_listener] Consume event error")
 		}

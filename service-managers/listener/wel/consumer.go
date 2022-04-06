@@ -12,4 +12,4 @@ type IEventConsumer interface {
 	GetConsumer() ([]*EventConsumer, error)
 }
 
-type EventParser func(t *Transaction) error
+type EventParser func(t *Transaction, logpos int) error

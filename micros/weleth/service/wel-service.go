@@ -4,6 +4,7 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	welListener "bridge/service-managers/listener/wel"
+	"bridge/service-managers/logger"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -63,12 +64,12 @@ func (e *WelConsumer) GetConsumer() ([]*welListener.EventConsumer, error) {
 	}, nil
 }
 
-func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction) error {
+func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) error {
 	data := make(map[string]interface{})
 	e.abi.UnpackIntoMap(
 		data,
 		"Returned",
-		t.Log[0].Data,
+		t.Log[logpos].Data,
 	)
 
 	rqId := data["requestId"].(*big.Int).String()
@@ -111,19 +112,19 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction) error {
 	return nil
 }
 
-func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
+func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) error {
 	data := make(map[string]interface{})
 	e.abi.UnpackIntoMap(
 		data,
 		"Withdraw",
-		t.Log[0].Data,
+		t.Log[logpos].Data,
 	)
 	ethWalletAddr := data["to"].(common.Address)
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
 	var networkID = &big.Int{}
-	if t.Result == "unconfirmed" {
+	if t.Status == "unconfirmed" {
 		// NOTE: if front end can't get txHash then we will need to fix this
 		_, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
@@ -152,7 +153,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 
 			_ = e.WelEthTransDAO.CreateWelEthTrans(&event)
 		}
-	} else if t.Result == "confirmed" {
+	} else if t.Status == "confirmed" {
 		tran, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
 			return err
@@ -160,9 +161,9 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
 			event := model.WelEthEvent{
-				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[0].Topics[1]),
+				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[logpos].Topics[1]),
 				EthWalletAddr: ethWalletAddr.Hex(),
-				NetworkID:     networkID.SetBytes(t.Log[0].Topics[3]).String(),
+				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
 				DepositAt:     time.Now(),
 			}
 			m, err := json.Marshal(event)
@@ -172,15 +173,19 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction) error {
 			event.ID = crypto.Keccak256Hash(m).Big().String()
 
 			event.DepositTxHash = t.Hash
-			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[0].Topics[2])
+			event.WelWalletAddr = GotronCommon.EncodeCheck(t.Log[logpos].Topics[2])
 			event.Amount = amount
 			event.DepositStatus = model.StatusSuccess
 			event.Fee = fee
 
-			_ = e.WelEthTransDAO.CreateWelEthTrans(&event)
+			err = e.WelEthTransDAO.CreateWelEthTrans(&event)
+			if err != nil {
+				logger.Get().Err(err).Msg("[DoneDeposit] can't create new transaction")
+				return err
+			}
 		} else {
 			if tran.DepositStatus != model.StatusSuccess {
-				err := e.WelEthTransDAO.UpdateDepositWelEthConfirmed(t.Hash, GotronCommon.EncodeCheck(t.Log[0].Topics[2]), amount, fee)
+				err := e.WelEthTransDAO.UpdateDepositWelEthConfirmed(t.Hash, GotronCommon.EncodeCheck(t.Log[logpos].Topics[2]), amount, fee)
 				if err != nil {
 					return err
 				}
