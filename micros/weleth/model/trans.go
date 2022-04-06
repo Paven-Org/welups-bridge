@@ -8,13 +8,13 @@ const (
 )
 
 type WelEthEvent struct {
-	ID string `json:"id,omitempty" db:"column:id,omitempty"`
+	ID string `json:"id,omitempty" db:"id,omitempty"`
 
 	// if return = true -> it is the request from wel -> eth, else it is the request from eth -> wel
 	WelEth bool `json:"wel_eth" db:"wel_eth"`
 
 	DepositTxHash string `json:"deposit_tx_hash" db:"deposit_tx_hash"`
-	ClaimTxHash   string `json:"claim_tx_hash" db:"column:claim_tx_hash"`
+	ClaimTxHash   string `json:"claim_tx_hash" db:"claim_tx_hash"`
 
 	WelTokenAddr string `json:"wel_token_addr" db:"wel_token_addr,omitempty"`
 	EthTokenAddr string `json:"eth_token_addr" db:"eth_token_addr,omitempty"`
