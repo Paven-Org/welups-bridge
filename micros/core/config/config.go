@@ -101,12 +101,12 @@ func parseEnv() Env {
 		EthGovContract: common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x6150f59d1fd1A3C6Dc22619973D574e3CC7bA6E2"),
 
 		WelupsConfig: common.WelupsConfig{
-			Nodes:         common.WithDefault("WEL_NODES", []string{"172.104.51.182:16669"}),
+			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
 			BlockTime:     common.WithDefault("WEL_BLOCK_TIME", uint64(3)),
 			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
-		WelGovContract: common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WJARLFMGuaTwpMpAhbEziapZpNc24k3iVa"),
+		WelGovContract: common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WE8RFVk1GA5NhK8yLxHWkpuP1E5UVqX9tQ"),
 	}
 }
 
