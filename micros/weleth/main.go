@@ -58,7 +58,6 @@ func main() {
 
 	// create parent context
 	daos := dao.MkDAOs(db)
-	welEthDAO := daos.TransDAO
 
 	ctx := context.Background()
 
@@ -74,7 +73,7 @@ func main() {
 	ethSysDAO := daos.EthSysDAO
 	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
 
-	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], welEthDAO)
+	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], daos)
 	ethListen.RegisterConsumer(ethEvtConsumer)
 
 	wg.Add(1)
@@ -99,7 +98,7 @@ func main() {
 	welSysDAO := daos.WelSysDAO
 	welListen := welListener.NewWelListener(welSysDAO, welTransHandler, config.Get().WelupsConf.BlockTime, config.Get().WelupsConf.BlockOffSet, logger)
 
-	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], welEthDAO)
+	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], daos)
 	welListen.RegisterConsumer(welEvtConsumer)
 
 	wg.Add(1)

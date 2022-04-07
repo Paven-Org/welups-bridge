@@ -20,12 +20,13 @@ import (
 )
 
 type WelConsumer struct {
-	ContractAddr   string
-	WelEthTransDAO dao.IWelEthTransDAO
-	abi            abi.ABI
+	ContractAddr          string
+	WelCashinEthTransDAO  dao.IWelCashinEthTransDAO
+	EthCashoutWelTransDAO dao.IEthCashoutWelTransDAO
+	abi                   abi.ABI
 }
 
-func NewWelConsumer(addr string, welEthTransDAO dao.IWelEthTransDAO) *WelConsumer {
+func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
 	exportAbiJSON, err := os.Open("abi/wel/Export.json")
 	if err != nil {
 		panic(err)
@@ -39,9 +40,10 @@ func NewWelConsumer(addr string, welEthTransDAO dao.IWelEthTransDAO) *WelConsume
 	}
 
 	return &WelConsumer{
-		ContractAddr:   addr,
-		WelEthTransDAO: welEthTransDAO,
-		abi:            abi,
+		ContractAddr:          addr,
+		WelCashinEthTransDAO:  daos.WelCashinEthTransDAO,
+		EthCashoutWelTransDAO: daos.EthCashoutWelTransDAO,
+		abi:                   abi,
 	}
 }
 
@@ -79,7 +81,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
-	tran, err := e.WelEthTransDAO.SelectTransById(rqId)
+	tran, err := e.EthCashoutWelTransDAO.SelectTransById(rqId)
 	if err != nil {
 		return err
 	}
@@ -92,14 +94,14 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 
 	if t.Result == "unconfirmed" {
 		if tran.ClaimStatus != model.StatusUnknown {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, fee, model.StatusUnknown)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(rqId, t.Hash, fee, model.StatusUnknown)
 			if err != nil {
 				return err
 			}
 		}
 	} else if t.Result == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.WelEthTransDAO.UpdateClaimEthWel(rqId, t.Hash, fee, model.StatusSuccess)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(rqId, t.Hash, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
@@ -127,15 +129,16 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 	var networkID = &big.Int{}
 	if t.Status == "unconfirmed" {
 		// NOTE: if front end can't get txHash then we will need to fix this
-		_, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
+		_, err := e.WelCashinEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
 			return err
 		}
 
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
+			welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
 			event := model.WelEthEvent{
-				WelTokenAddr:  GotronCommon.BytesToHexString(t.Log[logpos].Topics[1]),
+				WelTokenAddr:  welTokenAddr,
 				EthWalletAddr: ethWalletAddr.Hex(),
 				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
 				DepositAt:     time.Now(),
@@ -152,17 +155,18 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 			event.DepositStatus = model.StatusUnknown
 			event.Fee = fee
 
-			_ = e.WelEthTransDAO.CreateWelEthTrans(&event)
+			_ = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(&event)
 		}
 	} else if t.Status == "confirmed" {
-		tran, err := e.WelEthTransDAO.SelectTransByDepositTxHash(t.Hash)
+		tran, err := e.WelCashinEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
 			return err
 		}
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
+			welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
 			event := model.WelEthEvent{
-				WelTokenAddr:  "0x" + GotronCommon.ToHex(t.Log[logpos].Topics[1]),
+				WelTokenAddr:  welTokenAddr,
 				EthWalletAddr: ethWalletAddr.Hex(),
 				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
 				DepositAt:     time.Now(),
@@ -179,14 +183,15 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 			event.DepositStatus = model.StatusSuccess
 			event.Fee = fee
 
-			err = e.WelEthTransDAO.CreateWelEthTrans(&event)
+			err = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(&event)
 			if err != nil {
 				logger.Get().Err(err).Msg("[DoneDeposit] can't create new transaction")
 				return err
 			}
 		} else {
 			if tran.DepositStatus != model.StatusSuccess {
-				err := e.WelEthTransDAO.UpdateDepositWelEthConfirmed(t.Hash, GotronCommon.EncodeCheck(t.Log[logpos].Topics[2]), amount, fee)
+				welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
+				err := e.WelCashinEthTransDAO.UpdateDepositWelCashinEthConfirmed(t.Hash, welWalletAddr, amount, fee)
 				if err != nil {
 					return err
 				}

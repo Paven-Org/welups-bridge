@@ -20,12 +20,13 @@ import (
 )
 
 type EthConsumer struct {
-	ContractAddr   string
-	WelEthTransDAO dao.IWelEthTransDAO
-	abi            abi.ABI
+	ContractAddr          string
+	WelCashinEthTransDAO  dao.IWelCashinEthTransDAO
+	EthCashoutWelTransDAO dao.IEthCashoutWelTransDAO
+	abi                   abi.ABI
 }
 
-func NewEthConsumer(addr string, welEthTransDAO dao.IWelEthTransDAO) *EthConsumer {
+func NewEthConsumer(addr string, daos *dao.DAOs) *EthConsumer {
 	importAbiJSON, err := os.Open("abi/eth/Import.json")
 	if err != nil {
 		panic(err)
@@ -39,9 +40,10 @@ func NewEthConsumer(addr string, welEthTransDAO dao.IWelEthTransDAO) *EthConsume
 	}
 
 	return &EthConsumer{
-		ContractAddr:   addr,
-		WelEthTransDAO: welEthTransDAO,
-		abi:            abi,
+		ContractAddr:          addr,
+		WelCashinEthTransDAO:  daos.WelCashinEthTransDAO,
+		EthCashoutWelTransDAO: daos.EthCashoutWelTransDAO,
+		abi:                   abi,
 	}
 }
 
@@ -91,13 +93,13 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 	txHash := l.TxHash.Hex()
 	ethWalletAddr := common.HexToAddress(l.Topics[2].Hex()).Hex()
 
-	tran, err := e.WelEthTransDAO.SelectTransById(l.TxHash.Hex())
+	tran, err := e.EthCashoutWelTransDAO.SelectTransById(l.TxHash.Hex())
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 
 	if err == sql.ErrNoRows {
-		event := model.WelEthEvent{
+		event := model.EthWelEvent{
 			EthTokenAddr:  common.HexToAddress(l.Topics[1].Hex()).Hex(),
 			WelWalletAddr: GotronCommon.EncodeCheck(l.Topics[3].Bytes()),
 			NetworkID:     data["networkId"].(*big.Int).String(),
@@ -114,13 +116,13 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 		event.Amount = amount
 		event.DepositStatus = model.StatusSuccess
 
-		err = e.WelEthTransDAO.CreateEthWelTrans(&event)
+		err = e.EthCashoutWelTransDAO.CreateEthCashoutWelTrans(&event)
 		if err != nil {
 			return err
 		}
 	} else {
 		if tran.DepositStatus != model.StatusSuccess {
-			err := e.WelEthTransDAO.UpdateDepositEthWelConfirmed(txHash, ethWalletAddr, amount)
+			err := e.EthCashoutWelTransDAO.UpdateDepositEthCashoutWelConfirmed(txHash, ethWalletAddr, amount)
 			if err != nil {
 				return err
 			}
@@ -142,7 +144,7 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	var reqID = &big.Int{}
 	reqID.SetBytes(l.Topics[1].Bytes())
 
-	tran, err := e.WelEthTransDAO.SelectTransById(reqID.String())
+	tran, err := e.WelCashinEthTransDAO.SelectTransById(reqID.String())
 	if err != nil {
 		return err
 	}
@@ -154,7 +156,7 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	}
 
 	if tran.ClaimStatus != model.StatusSuccess {
-		err := e.WelEthTransDAO.UpdateClaimWelEth(reqID.String(), l.TxHash.Hex(), model.StatusSuccess)
+		err := e.WelCashinEthTransDAO.UpdateClaimWelCashinEth(reqID.String(), l.TxHash.Hex(), model.StatusSuccess)
 		if err != nil {
 			return err
 		}

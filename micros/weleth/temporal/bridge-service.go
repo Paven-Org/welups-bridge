@@ -39,16 +39,18 @@ type BridgeTx struct {
 }
 
 type WelethBridgeService struct {
-	transDAO dao.IWelEthTransDAO
-	tempCli  client.Client
-	worker   worker.Worker
+	CashinTransDAO  dao.IWelCashinEthTransDAO
+	CashoutTransDAO dao.IEthCashoutWelTransDAO
+	tempCli         client.Client
+	worker          worker.Worker
 }
 
 // Service implementation
 func MkWelethBridgeService(cli client.Client, daos *dao.DAOs) *WelethBridgeService {
 	return &WelethBridgeService{
-		transDAO: daos.TransDAO,
-		tempCli:  cli,
+		CashinTransDAO:  daos.WelCashinEthTransDAO,
+		CashoutTransDAO: daos.EthCashoutWelTransDAO,
+		tempCli:         cli,
 	}
 }
 
