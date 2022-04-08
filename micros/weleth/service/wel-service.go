@@ -127,7 +127,36 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 	fee := data["fee"].(*big.Int).String()
 
 	var networkID = &big.Int{}
-	if t.Status == "unconfirmed" {
+
+	mkEventRecord := func(status string) (*model.WelEthEvent, error) {
+		if status != model.StatusSuccess && status != model.StatusUnknown {
+			return nil, fmt.Errorf(`Event status is neither "confirmed" nor "unconfirmed"`)
+		}
+
+		welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
+		event := &model.WelEthEvent{
+			WelTokenAddr:  welTokenAddr,
+			EthWalletAddr: ethWalletAddr.Hex(),
+			NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
+			DepositAt:     time.Now(),
+		}
+		m, err := json.Marshal(event)
+		if err != nil {
+			return nil, fmt.Errorf("can't gen id")
+		}
+		event.ID = crypto.Keccak256Hash(m).Big().String()
+
+		event.DepositTxHash = t.Hash
+		event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
+		event.Amount = amount
+		event.DepositStatus = status
+		event.Fee = fee
+
+		return event, nil
+	}
+
+	switch t.Status {
+	case "unconfirmed":
 		// NOTE: if front end can't get txHash then we will need to fix this
 		_, err := e.WelCashinEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
@@ -136,54 +165,33 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
-			welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
-			event := model.WelEthEvent{
-				WelTokenAddr:  welTokenAddr,
-				EthWalletAddr: ethWalletAddr.Hex(),
-				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
-				DepositAt:     time.Now(),
-			}
-			m, err := json.Marshal(event)
+			event, err := mkEventRecord(model.StatusUnknown)
 			if err != nil {
-				return fmt.Errorf("can't gen id")
+				logger.Get().Err(err).Msg("[DoneDeposit] can't create new event record")
+				return err
 			}
-			event.ID = crypto.Keccak256Hash(m).Big().String()
 
-			event.DepositTxHash = t.Hash
-			event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
-			event.Amount = amount
-			event.DepositStatus = model.StatusUnknown
-			event.Fee = fee
-
-			_ = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(&event)
+			err = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(event)
+			if err != nil {
+				logger.Get().Err(err).Msg("[DoneDeposit] can't create new transaction")
+				return err
+			}
 		}
-	} else if t.Status == "confirmed" {
+
+	case "confirmed":
 		tran, err := e.WelCashinEthTransDAO.SelectTransByDepositTxHash(t.Hash)
 		if err != nil && err != sql.ErrNoRows {
 			return err
 		}
 		if err == sql.ErrNoRows {
 			// somehow, we did not save this deposit to db before
-			welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
-			event := model.WelEthEvent{
-				WelTokenAddr:  welTokenAddr,
-				EthWalletAddr: ethWalletAddr.Hex(),
-				NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
-				DepositAt:     time.Now(),
-			}
-			m, err := json.Marshal(event)
+			event, err := mkEventRecord(model.StatusSuccess)
 			if err != nil {
-				return fmt.Errorf("can't gen id")
+				logger.Get().Err(err).Msg("[DoneDeposit] can't create new event record")
+				return err
 			}
-			event.ID = crypto.Keccak256Hash(m).Big().String()
 
-			event.DepositTxHash = t.Hash
-			event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
-			event.Amount = amount
-			event.DepositStatus = model.StatusSuccess
-			event.Fee = fee
-
-			err = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(&event)
+			err = e.WelCashinEthTransDAO.CreateWelCashinEthTrans(event)
 			if err != nil {
 				logger.Get().Err(err).Msg("[DoneDeposit] can't create new transaction")
 				return err
@@ -197,8 +205,9 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 				}
 			}
 		}
-		// emit done deposit event, save to db
-	} else {
+
+	// emit done deposit event, save to db
+	default:
 		return fmt.Errorf("unknown status")
 	}
 
