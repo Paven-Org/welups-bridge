@@ -1,15 +1,36 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	StatusSuccess = "confirmed"
 	StatusUnknown = "unconfirmed"
+	StatusPending = "pending"
+
+	RequestDoubleClaimed = "doubleclaimed"
+	RequestExpired       = "expired"
+	RequestSuccess       = "success"
 )
+
+var (
+	ErrAlreadyClaimed     = fmt.Errorf("Already claimed")
+	ErrRequestPending     = fmt.Errorf("Request pending")
+	ErrUnrecognizedStatus = fmt.Errorf("Unrecognized transaction status")
+)
+
+type ClaimRequest struct {
+	Txid   int64  `db:"tx_id"`
+	ReqID  string `db:"request_id"`
+	Status string `db:"status"`
+}
 
 type WelEthEvent = WelCashinEthTrans
 type WelCashinEthTrans struct {
-	ID string `json:"id,omitempty" db:"id,omitempty"`
+	ID    int64  `json:"id,omitempty" db:"id,omitempty"`
+	ReqID string `json:"request_id,omitempty" db:"request_id,omitempty"`
 
 	// if return = true -> it is the request from wel -> eth, else it is the request from eth -> wel
 	WelEth bool `json:"wel_eth" db:"wel_eth"`
@@ -38,7 +59,8 @@ type WelCashinEthTrans struct {
 
 type EthWelEvent = EthCashoutWelTrans
 type EthCashoutWelTrans struct {
-	ID string `json:"id,omitempty" db:"id,omitempty"`
+	ID    int64  `json:"id,omitempty" db:"id,omitempty"`
+	ReqID string `json:"request_id,omitempty" db:"request_id,omitempty"`
 
 	// if return = true -> it is the request from wel -> eth, else it is the request from eth -> wel
 	WelEth bool `json:"wel_eth" db:"wel_eth"`

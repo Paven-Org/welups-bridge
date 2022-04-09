@@ -11,10 +11,15 @@ type IWelCashinEthTransDAO interface {
 
 	UpdateDepositWelCashinEthConfirmed(depositTxHash, welWalletAddr, amount, fee string) error
 
-	UpdateClaimWelCashinEth(id, claimTxHash, status string) error
+	UpdateClaimWelCashinEth(id int64, reqID, reqStatus, claimTxHash, status string) error
 
 	SelectTransByDepositTxHash(txHash string) (*model.WelCashinEthTrans, error)
 	SelectTransById(id string) (*model.WelCashinEthTrans, error)
+
+	CreateClaimRequest(requestID string, txID int64, status string) error
+	SelectTransByRqId(rid string) (*model.WelCashinEthTrans, error)
+	UpdateClaimRequest(reqID, status string) error
+	GetClaimRequest(reqID string) (*model.ClaimRequest, error)
 }
 
 // sort of a locator for DAOs
@@ -23,10 +28,8 @@ type welCashinEthTransDAO struct {
 }
 
 func (w *welCashinEthTransDAO) CreateWelCashinEthTrans(t *model.WelCashinEthTrans) error {
-	_, err := w.db.NamedExec(`INSERT INTO wel_cashin_eth_trans(id, wel_eth, deposit_tx_hash, wel_token_addr, eth_token_addr,eth_wallet_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:id, :wel_eth, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO wel_cashin_eth_trans(deposit_tx_hash, wel_token_addr, eth_token_addr,eth_wallet_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
-			"id":              t.ID,
-			"wel_eth":         true,
 			"deposit_tx_hash": t.DepositTxHash,
 			"eth_wallet_addr": t.EthWalletAddr,
 			"wel_wallet_addr": t.WelWalletAddr,
@@ -53,14 +56,34 @@ func (w *welCashinEthTransDAO) UpdateDepositWelCashinEthConfirmed(depositTxHash,
 	return err
 }
 
-func (w *welCashinEthTransDAO) UpdateClaimWelCashinEth(id, claimTxHash, status string) error {
-	_, err := w.db.NamedExec(`UPDATE wel_cashin_eth_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status WHERE id= :id`,
+func (w *welCashinEthTransDAO) UpdateClaimWelCashinEth(id int64, reqID, reqStatus, claimTxHash, status string) error {
+	tx, err := w.db.Beginx()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.NamedExec(`UPDATE wel_cashin_eth_trans SET request_id = :request_id, claim_tx_hash = :claim_tx_hash, claim_status = :claim_status WHERE id= :id`,
 		map[string]interface{}{
 			"claim_tx_hash": claimTxHash,
+			"request_id":    reqID,
 			"status":        status,
 			"id":            id,
 		})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.Exec("UPDATE wel_cashin_eth_req SET status = $1 WHERE request_id = $2", reqStatus, reqID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 
+	return tx.Commit()
+}
+
+func (w *welCashinEthTransDAO) UpdateClaimRequest(reqID, status string) error {
+	_, err := w.db.Exec("UPDATE wel_cashin_eth_req SET status = $1 WHERE request_id = $2", status, reqID)
 	return err
 }
 
@@ -74,6 +97,46 @@ func (w *welCashinEthTransDAO) SelectTransById(id string) (*model.WelCashinEthTr
 	var t = &model.WelCashinEthTrans{}
 	err := w.db.Get(t, "SELECT * FROM wel_cashin_eth_trans WHERE id = $1", id)
 	return t, err
+}
+
+func (w *welCashinEthTransDAO) CreateClaimRequest(requestID string, txID int64, status string) error {
+	tx, err := w.db.Beginx()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`INSERT INTO wel_cashin_eth_req(request_id, tx_id, status) VALUES ($1, $2, $3)`, requestID, txID, status)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.NamedExec(`UPDATE wel_cashin_eth_trans SET request_id = :request_id, claim_status = :status WHERE id= :id`,
+		map[string]interface{}{
+			"request_id": requestID,
+			"status":     status,
+			"id":         txID,
+		})
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func (w *welCashinEthTransDAO) SelectTransByRqId(rid string) (*model.WelCashinEthTrans, error) {
+	var t = &model.WelCashinEthTrans{}
+	err := w.db.Get(t,
+		`SELECT t.* FROM 
+					wel_cashin_eth_trans as t 
+					JOIN wel_cashin_eth_req as r 
+					ON t.id = r.tx_id 
+					WHERE r.request_id = $1`, rid)
+	return t, err
+}
+
+func (w *welCashinEthTransDAO) GetClaimRequest(reqID string) (*model.ClaimRequest, error) {
+	var req = &model.ClaimRequest{}
+	err := w.db.Get(req, `SELECT * FROM wel_cashin_eth_req WHERE request_id = $1`, reqID)
+	return req, err
 }
 
 func MkWelCashinEthTransDao(db *sqlx.DB) *welCashinEthTransDAO {
