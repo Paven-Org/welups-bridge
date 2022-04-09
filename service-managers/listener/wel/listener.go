@@ -92,6 +92,7 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 		for {
 			select {
 			case <-parentContext.Done():
+				s.Logger.Info().Msg("[wel listener] Stop listening")
 				return
 			default:
 				sysInfo, err := s.WelInfo.Get()
@@ -99,17 +100,17 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 					s.Logger.Err(err).Msg("[wel_listener] can't get system info")
 				}
 				lastScanned := sysInfo.LastScannedBlock
-				s.Logger.Info().Msgf("[wel listener] sysinfo: %d", lastScanned)
+				//s.Logger.Info().Msgf("[wel listener] sysinfo: %d", lastScanned)
 
 				header, err := s.TransHandler.Client.GetNowBlock()
 				if err != nil {
 					s.Logger.Err(err).Msg("[wel_listener] can't get head by number")
 				}
 				headNum := header.BlockHeader.RawData.Number
-				s.Logger.Info().Msgf("[wel listener] headnum: %d", headNum)
+				s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNume %d", lastScanned, headNum)
 
 				brange := headNum - lastScanned + 1
-				s.Logger.Info().Msgf("[wel listener] block range: %d", brange)
+				//s.Logger.Info().Msgf("[wel listener] block range: %d", brange)
 				if brange > 100 {
 					// partition the range to 100-long chunks
 					for begin := lastScanned; headNum-begin > 0; begin += 100 {
@@ -121,24 +122,17 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 						} else {
 							limit = 99
 						}
-						fmt.Println("from: ", begin, " to: ", begin+limit)
+						//fmt.Println("from: ", begin, " to: ", begin+limit)
 						s.TransHandler.GetInfoListTransactionRange(begin+limit, limit+1, "", s.Trans, s.errC)
+						sysInfo.LastScannedBlock = headNum
+						s.WelInfo.Update(sysInfo)
 					}
 				} else {
-					fmt.Println("from: ", headNum-brange, " to: ", headNum)
+					//fmt.Println("from: ", headNum-brange, " to: ", headNum)
 					s.TransHandler.GetInfoListTransactionRange(headNum, brange, "", s.Trans, s.errC)
+					sysInfo.LastScannedBlock = headNum
+					s.WelInfo.Update(sysInfo)
 				}
-				//s.Logger.Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", sysInfo.LastScannedBlock-s.blockOffset+1, headNum))
-				//if headNum-sysInfo.LastScannedBlock > 1000000 {
-				//	s.TransHandler.GetInfoListTransactionRange(headNum, 1000000, "", s.Trans, s.errC)
-				//} else {
-				//s.TransHandler.GetInfoListTransactionRange(headNum, s.blockOffset, "", s.Trans, s.errC)
-				//s.TransHandler.GetInfoListTransactionRange(headNum, headNum-sysInfo.LastScannedBlock+1, "", s.Trans, s.errC)
-				//}
-
-				// update last scan block
-				sysInfo.LastScannedBlock = headNum
-				s.WelInfo.Update(sysInfo)
 
 				// TODO: either push this to delay message queue to run OR just sleep
 				consts.SleepContext(parentContext, time.Second*time.Duration(s.blockTime))
@@ -156,12 +150,12 @@ func (s *WelListener) matchEvent(tran *Transaction) (consumer *EventConsumer, po
 		return nil, -1
 	}
 	for i, log := range tran.Log {
-		fmt.Println("[matchEvent] at log ", i)
+		//fmt.Println("[matchEvent] at log ", i)
 		key := KeyFromBEConsumer(ctrAddress.(string), GotronCommon.Bytes2Hex(log.Topics[0]))
-		fmt.Println("[matchEvent] key: ", key)
+		//fmt.Println("[matchEvent] key: ", key)
 		consumer, isExisted := s.EventConsumerMap[key]
 		if isExisted {
-			fmt.Println("[matchEvent] consumer: ", consumer)
+			//fmt.Println("[matchEvent] consumer: ", consumer)
 			return consumer, i
 		}
 	}

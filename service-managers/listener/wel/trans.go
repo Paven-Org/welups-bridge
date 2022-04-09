@@ -1,7 +1,6 @@
 package wel
 
 import (
-	"bridge/service-managers/logger"
 	"fmt"
 	"log"
 
@@ -100,7 +99,7 @@ func (t *TransHandler) GetTransactionDetails(n string) *Transaction {
 
 //GetInfoTransactionRange ....
 func (t *TransHandler) GetInfoListTransactionRange(blocknum int64, limit int64, sortString string, output chan *Transaction, errChan chan error) {
-	logger.Get().Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", blocknum-limit+1, blocknum))
+	//logger.Get().Info().Msg(fmt.Sprintf("[wel_listener] scan from block %v to %v", blocknum-limit+1, blocknum))
 	if sortString == "inc" {
 		blocksList, err := t.Client.GetBlockByLimitNext(blocknum+1, blocknum+limit+1)
 		if err != nil {
@@ -120,8 +119,8 @@ func (t *TransHandler) GetInfoListTransactionRange(blocknum int64, limit int64, 
 			temp = 0
 		}
 
-		fmt.Println("[trans handler] temp: ", temp)
-		fmt.Println("[trans handler] limit: ", blocknum)
+		//fmt.Println("[trans handler] temp: ", temp)
+		//fmt.Println("[trans handler] limit: ", blocknum)
 		blocksList, err := t.Client.GetBlockByLimitNext(temp, blocknum+1)
 		if err != nil {
 			errChan <- err
