@@ -6,9 +6,8 @@ import (
 	"bridge/micros/core/model"
 	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
-	welethService "bridge/micros/weleth/temporal"
+	welethModel "bridge/micros/weleth/model"
 	"context"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -316,34 +315,19 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashoutByTxHash, cashoutTxId)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateE2WCashoutClaimRequestWF, cashoutTxId, outTokenAddr, userAddr, amount, contractVersion)
 	if err != nil {
-		log.Err(err).Msg("[Wel logic internal] Unable to call GetEthToWelCashoutByTxHash workflow")
+		log.Err(err).Msg("[Wel logic internal] Unable to call CreateE2WCashoutClaimRequest workflow")
 		return
 	}
 	log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 
-	var tx welethService.BridgeTx
+	var tx welethModel.EthCashoutWelTrans
 	if err = we.Get(ctx, &tx); err != nil {
-		log.Err(err).Msg("[Wel logic internal] GetWelToEthCashinByTxHash workflow failed")
+		log.Err(err).Msg("[Wel logic internal] CreateE2WCashoutClaimRequest workflow failed")
 		return
 	}
 	// process
-	if tx.OtherChainReceiverAddr != userAddr {
-		err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.OtherChainReceiverAddr)
-		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
-		return
-	}
-	if tx.OtherChainReceiverAddr != outTokenAddr {
-		err = fmt.Errorf("Inconsistent cashout token address: %s != %s", outTokenAddr, tx.OtherChainToTokenAddr)
-		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
-		return
-	}
-	if tx.Amount != amount {
-		err = fmt.Errorf("Inconsistent cashout token amount: %s != %s", amount, tx.Amount)
-		log.Err(err).Msg("[Wel logic internal] Inconsistent request")
-		return
-	}
 
 	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
 
@@ -372,7 +356,7 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 	}
 
 	_requestID := &big.Int{}
-	_requestID.SetBytes(common.FromHex(cashoutTxId))
+	_requestID.SetBytes(common.FromHex(tx.ReqID))
 	requestID = _requestID.Bytes()
 
 	_amount := &big.Int{}

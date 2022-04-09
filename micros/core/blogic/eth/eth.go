@@ -6,9 +6,8 @@ import (
 	"bridge/micros/core/model"
 	ethService "bridge/micros/core/service/eth"
 	"bridge/micros/core/service/notifier"
-	welethService "bridge/micros/weleth/temporal"
+	welethModel "bridge/micros/weleth/model"
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -306,34 +305,19 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashinByTxHash, cashinTxId)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId, inTokenAddr, userAddr, amount, contractVersion)
 	if err != nil {
-		log.Err(err).Msg("[Eth logic internal] Unable to call GetWelToEthCashinByTxHash workflow")
+		log.Err(err).Msg("[Eth logic internal] Unable to call CreateW2ECashinClaimRequest workflow")
 		return
 	}
 	log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 
-	var tx welethService.BridgeTx
+	var tx welethModel.WelCashinEthTrans
 	if err = we.Get(ctx, &tx); err != nil {
-		log.Err(err).Msg("[Eth logic internal] GetWelToEthCashinByTxHash workflow failed")
+		log.Err(err).Msg("[Eth logic internal] CreateW2ECashinClaimRequest workflow failed")
 		return
 	}
 	// process
-	if tx.OtherChainReceiverAddr != userAddr {
-		err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.OtherChainReceiverAddr)
-		log.Err(err).Msg("[Eth logic internal] Inconsistent request")
-		return
-	}
-	if tx.OtherChainReceiverAddr != inTokenAddr {
-		err = fmt.Errorf("Inconsistent cashin token address: %s != %s", inTokenAddr, tx.OtherChainToTokenAddr)
-		log.Err(err).Msg("[Eth logic internal] Inconsistent request")
-		return
-	}
-	if tx.Amount != amount {
-		err = fmt.Errorf("Inconsistent cashin token amount: %s != %s", amount, tx.Amount)
-		log.Err(err).Msg("[Eth logic internal] Inconsistent request")
-		return
-	}
 
 	log.Info().Msg("[Eth logic internal] Everything a-ok, proceeding to create signature and requestID")
 
