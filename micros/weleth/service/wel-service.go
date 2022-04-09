@@ -7,7 +7,6 @@ import (
 	welListener "bridge/service-managers/listener/wel"
 	"bridge/service-managers/logger"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -77,7 +76,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 
 	rqId := data["requestId"].(*big.Int).String()
 	//tokenAddr := data["token"].(common.Address)
-	welWalletAddr := GotronCommon.EncodeCheck(data["user"].(common.Address).Bytes())
+	welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(data["user"].(common.Address).Bytes())) //FIX!
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
@@ -91,17 +90,27 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	if tran.WelWalletAddr != welWalletAddr {
 		return fmt.Errorf("Wrong claim wel wallet address")
 	}
+	_, err = e.EthCashoutWelTransDAO.GetClaimRequest(rqId)
+	if err == sql.ErrNoRows {
+		err := e.EthCashoutWelTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending)
+		if err != nil {
+			return err
+		}
+	}
+	if err != nil {
+		return err
+	}
 
 	if t.Result == "unconfirmed" {
-		if tran.ClaimStatus != model.StatusUnknown {
-			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(rqId, t.Hash, fee, model.StatusUnknown)
+		if tran.ClaimStatus != model.StatusPending { // Invalid state!
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusPending, t.Hash, fee, model.StatusPending)
 			if err != nil {
 				return err
 			}
 		}
 	} else if t.Result == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(rqId, t.Hash, fee, model.StatusSuccess)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusSuccess, t.Hash, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
@@ -140,11 +149,11 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 			NetworkID:     networkID.SetBytes(t.Log[logpos].Topics[3]).String(),
 			DepositAt:     time.Now(),
 		}
-		m, err := json.Marshal(event)
-		if err != nil {
-			return nil, fmt.Errorf("can't gen id")
-		}
-		event.ID = crypto.Keccak256Hash(m).Big().String()
+		//m, err := json.Marshal(event)
+		//if err != nil {
+		//	return nil, fmt.Errorf("can't gen id")
+		//}
+		//event.ID = crypto.Keccak256Hash(m).Big().String()
 
 		event.DepositTxHash = t.Hash
 		event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))

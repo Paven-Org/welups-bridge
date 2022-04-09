@@ -1,11 +1,11 @@
 package service
 
 import (
+	"bridge/libs"
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	ethListener "bridge/service-managers/listener/eth"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -93,23 +93,25 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 	txHash := l.TxHash.Hex()
 	ethWalletAddr := common.HexToAddress(l.Topics[2].Hex()).Hex()
 
-	tran, err := e.EthCashoutWelTransDAO.SelectTransById(l.TxHash.Hex())
+	tran, err := e.EthCashoutWelTransDAO.SelectTransByDepositTxHash(l.TxHash.Hex())
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 
 	if err == sql.ErrNoRows {
+		welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(l.Topics[3].Bytes()[12:]))
 		event := model.EthWelEvent{
-			EthTokenAddr:  common.HexToAddress(l.Topics[1].Hex()).Hex(),
-			WelWalletAddr: GotronCommon.EncodeCheck(l.Topics[3].Bytes()),
+			EthTokenAddr: common.HexToAddress(l.Topics[1].Hex()).Hex(),
+			//WelWalletAddr: GotronCommon.EncodeCheck(l.Topics[3].Bytes()),
+			WelWalletAddr: welWalletAddr,
 			NetworkID:     data["networkId"].(*big.Int).String(),
 			DepositAt:     time.Now(),
 		}
-		m, err := json.Marshal(event)
-		if err != nil {
-			return fmt.Errorf("can't gen id")
-		}
-		event.ID = crypto.Keccak256Hash(m).Big().String()
+		//m, err := json.Marshal(event)
+		//if err != nil {
+		//	return fmt.Errorf("can't gen id")
+		//}
+		//event.ID = crypto.Keccak256Hash(m).Big().String()
 
 		event.DepositTxHash = txHash
 		event.EthWalletAddr = ethWalletAddr
@@ -143,8 +145,9 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	ethWalletAddr := common.HexToAddress(l.Topics[3].Hex()).Hex()
 	var reqID = &big.Int{}
 	reqID.SetBytes(l.Topics[1].Bytes())
+	rqId := reqID.String()
 
-	tran, err := e.WelCashinEthTransDAO.SelectTransById(reqID.String())
+	tran, err := e.WelCashinEthTransDAO.SelectTransByRqId(rqId)
 	if err != nil {
 		return err
 	}
@@ -154,9 +157,19 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	if ethWalletAddr != tran.EthWalletAddr {
 		return fmt.Errorf("Wrong claim eth wallet address")
 	}
+	_, err = e.WelCashinEthTransDAO.GetClaimRequest(rqId)
+	if err == sql.ErrNoRows {
+		err := e.WelCashinEthTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending)
+		if err != nil {
+			return err
+		}
+	}
+	if err != nil {
+		return err
+	}
 
 	if tran.ClaimStatus != model.StatusSuccess {
-		err := e.WelCashinEthTransDAO.UpdateClaimWelCashinEth(reqID.String(), l.TxHash.Hex(), model.StatusSuccess)
+		err := e.WelCashinEthTransDAO.UpdateClaimWelCashinEth(tran.ID, reqID.String(), model.StatusSuccess, l.TxHash.Hex(), model.StatusSuccess)
 		if err != nil {
 			return err
 		}
