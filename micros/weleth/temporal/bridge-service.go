@@ -5,7 +5,6 @@ import (
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/logger"
 	"context"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"gitlab.com/rwxrob/uniq"
@@ -76,7 +75,7 @@ func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txh
 	return *ct, nil
 }
 
-func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, cashinTxHash string, inTokenAddr string, userAddr string, amount string, contractVersion string) (tx model.WelCashinEthTrans, err error) {
+func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, cashinTxHash string) (tx model.WelCashinEthTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[W2E claim request] getting cashin transaction")
 	ct, err := s.CashinTransDAO.SelectTransByDepositTxHash(cashinTxHash)
@@ -97,21 +96,21 @@ func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, c
 	case model.StatusUnknown:
 		tx = *ct
 		// validate
-		if tx.EthWalletAddr != userAddr {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.EthWalletAddr)
-			log.Err(err).Msg("[W2E claim request] Inconsistent request")
-			return model.WelCashinEthTrans{}, err
-		}
-		if tx.EthTokenAddr != inTokenAddr {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", inTokenAddr, tx.EthTokenAddr)
-			log.Err(err).Msg("[W2E claim request] Inconsistent request")
-			return model.WelCashinEthTrans{}, err
-		}
-		if tx.Amount != amount {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", amount, tx.Amount)
-			log.Err(err).Msg("[W2E claim request] Inconsistent request")
-			return model.WelCashinEthTrans{}, err
-		}
+		//if tx.EthWalletAddr != userAddr {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.EthWalletAddr)
+		//	log.Err(err).Msg("[W2E claim request] Inconsistent request")
+		//	return model.WelCashinEthTrans{}, err
+		//}
+		//if tx.EthTokenAddr != inTokenAddr {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", inTokenAddr, tx.EthTokenAddr)
+		//	log.Err(err).Msg("[W2E claim request] Inconsistent request")
+		//	return model.WelCashinEthTrans{}, err
+		//}
+		//if tx.Amount != amount {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", amount, tx.Amount)
+		//	log.Err(err).Msg("[W2E claim request] Inconsistent request")
+		//	return model.WelCashinEthTrans{}, err
+		//}
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
 		if err := s.CashinTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
@@ -148,7 +147,7 @@ func (s *WelethBridgeService) GetEthToWelCashoutByTxHash(ctx context.Context, tx
 	return *ct, nil
 }
 
-func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, cashoutTxHash string, outTokenAddr string, userAddr string, amount string, contractVersion string) (tx model.EthCashoutWelTrans, err error) {
+func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, cashoutTxHash string) (tx model.EthCashoutWelTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[E2W claim request] getting cashout transaction")
 	ct, err := s.CashoutTransDAO.SelectTransByDepositTxHash(cashoutTxHash)
@@ -169,21 +168,21 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 	case model.StatusUnknown:
 		tx = *ct
 		// validate
-		if tx.WelWalletAddr != userAddr {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.WelWalletAddr)
-			log.Err(err).Msg("[E2W claim request] Inconsistent request")
-			return model.EthCashoutWelTrans{}, err
-		}
-		if tx.WelTokenAddr != outTokenAddr {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", outTokenAddr, tx.WelTokenAddr)
-			log.Err(err).Msg("[E2W claim request] Inconsistent request")
-			return model.EthCashoutWelTrans{}, err
-		}
-		if tx.Amount != amount {
-			err = fmt.Errorf("Inconsistent receiver address: %s != %s", amount, tx.Amount)
-			log.Err(err).Msg("[E2W claim request] Inconsistent request")
-			return model.EthCashoutWelTrans{}, err
-		}
+		//if tx.WelWalletAddr != userAddr {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", userAddr, tx.WelWalletAddr)
+		//	log.Err(err).Msg("[E2W claim request] Inconsistent request")
+		//	return model.EthCashoutWelTrans{}, err
+		//}
+		//if tx.WelTokenAddr != outTokenAddr {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", outTokenAddr, tx.WelTokenAddr)
+		//	log.Err(err).Msg("[E2W claim request] Inconsistent request")
+		//	return model.EthCashoutWelTrans{}, err
+		//}
+		//if tx.Amount != amount {
+		//	err = fmt.Errorf("Inconsistent receiver address: %s != %s", amount, tx.Amount)
+		//	log.Err(err).Msg("[E2W claim request] Inconsistent request")
+		//	return model.EthCashoutWelTrans{}, err
+		//}
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
 		if err := s.CashoutTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
