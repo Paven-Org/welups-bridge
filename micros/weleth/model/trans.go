@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+var (
+	EthTokenFromWel map[string]string = map[string]string{
+		"0x4272ffC0682d68aCF5eEbD2ABFDc38d721BCF55a": "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb",
+	}
+	WelTokenFromEth map[string]string = map[string]string{
+		"W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb": "0x4272ffC0682d68aCF5eEbD2ABFDc38d721BCF55a",
+	}
+)
+
 const (
 	StatusSuccess = "confirmed"
 	StatusUnknown = "unconfirmed"
