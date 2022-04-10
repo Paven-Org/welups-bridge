@@ -39,9 +39,7 @@ func wel2ethCashin(c *gin.Context) {
 	// request
 	type request struct {
 		TxHash           string `json:"txhash"`
-		ToTokenAddr      string `json:"to_token_address"`
 		ToAccountAddress string `json:"to_account_address"`
-		Amount           string `json:"amount"`
 	}
 	var req request
 	contractVersion := "IMPORTS_ETH_v1"
@@ -51,7 +49,7 @@ func wel2ethCashin(c *gin.Context) {
 	}
 
 	// process
-	reqID, signature, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToTokenAddr, req.ToAccountAddress, req.Amount, contractVersion)
+	tkAddr, amount, reqID, signature, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim W2E cashin] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
@@ -59,12 +57,16 @@ func wel2ethCashin(c *gin.Context) {
 
 	// response
 	type response struct {
-		ReqID     []byte `json:"request_id"`
-		Signature []byte `json:"signature"`
+		TokenAddress string `json:"token_address"`
+		Amount       string `json:"amount"`
+		ReqID        []byte `json:"request_id"`
+		Signature    []byte `json:"signature"`
 	}
 	resp := response{
-		ReqID:     reqID,
-		Signature: signature,
+		TokenAddress: tkAddr,
+		Amount:       amount,
+		ReqID:        reqID,
+		Signature:    signature,
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
@@ -75,9 +77,7 @@ func eth2welCashout(c *gin.Context) {
 	// request
 	type request struct {
 		TxHash           string `json:"txhash"`
-		ToTokenAddr      string `json:"to_token_address"`
 		ToAccountAddress string `json:"to_account_address"`
-		Amount           string `json:"amount"`
 	}
 	var req request
 	contractVersion := "EXPORT_WELUPS_v1"
@@ -87,7 +87,7 @@ func eth2welCashout(c *gin.Context) {
 	}
 
 	// process
-	reqID, signature, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToTokenAddr, req.ToAccountAddress, req.Amount, contractVersion)
+	tkAddr, amount, reqID, signature, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim E2W cashout] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
@@ -95,12 +95,16 @@ func eth2welCashout(c *gin.Context) {
 
 	// response
 	type response struct {
-		ReqID     []byte `json:"request_id"`
-		Signature []byte `json:"signature"`
+		TokenAddress string `json:"token_address"`
+		Amount       string `json:"amount"`
+		ReqID        []byte `json:"request_id"`
+		Signature    []byte `json:"signature"`
 	}
 	resp := response{
-		ReqID:     reqID,
-		Signature: signature,
+		TokenAddress: tkAddr,
+		Amount:       amount,
+		ReqID:        reqID,
+		Signature:    signature,
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")

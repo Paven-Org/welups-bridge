@@ -296,7 +296,7 @@ func UnsetCurrentAuthenticator() error {
 }
 
 // Claim cashin = get wrapped tokens equivalent to another chain's original tokens
-func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
+func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion string) (inTokenAddr string, amount string, requestID []byte, signature []byte, err error) {
 	// Get tx info from weleth microservice
 	// tmpCli.ExecuteWorkflow
 	ctx := context.Background()
@@ -305,7 +305,7 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId, inTokenAddr, userAddr, amount, contractVersion)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId)
 	if err != nil {
 		log.Err(err).Msg("[Eth logic internal] Unable to call CreateW2ECashinClaimRequest workflow")
 		return
@@ -334,23 +334,26 @@ func ClaimWel2EthCashin(cashinTxId string, inTokenAddr string, userAddr string, 
 		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
-			return nil, nil, err
+			return "", "", nil, nil, err
 		}
 		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 		if err := we.Get(ctx, nil); err != nil {
 			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
-			return nil, nil, err
+			return "", "", nil, nil, err
 		}
 		err = problem
-		return nil, nil, err
+		return "", "", nil, nil, err
 	}
+
+	inTokenAddr = tx.EthTokenAddr
+	amount = tx.Amount
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(cashinTxId))
 	requestID = _requestID.Bytes()
 
 	_amount := &big.Int{}
-	_amount.SetString(amount, 10)
+	_amount.SetString(tx.Amount, 10)
 
 	signature, err = libs.StdSignedMessageHash(inTokenAddr, userAddr, _amount, _requestID, contractVersion, prikey)
 	if err != nil {

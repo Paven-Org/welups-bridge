@@ -306,7 +306,7 @@ func UnsetCurrentAuthenticator() error {
 }
 
 // Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
-func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
+func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion string) (outTokenAddr string, amount string, requestID []byte, signature []byte, err error) {
 	// Check receiving account and activate if needed
 	activators, err := GetWelAccountsWithRole("activator", 0, 1000)
 	if err != nil {
@@ -332,7 +332,7 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateE2WCashoutClaimRequestWF, cashoutTxId, outTokenAddr, userAddr, amount, contractVersion)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateE2WCashoutClaimRequestWF, cashoutTxId)
 	if err != nil {
 		log.Err(err).Msg("[Wel logic internal] Unable to call CreateE2WCashoutClaimRequest workflow")
 		return
@@ -361,16 +361,19 @@ func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr strin
 		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
-			return nil, nil, err
+			return "", "", nil, nil, err
 		}
 		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 		if err := we.Get(ctx, nil); err != nil {
 			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
-			return nil, nil, err
+			return "", "", nil, nil, err
 		}
 		err = problem
-		return nil, nil, err
+		return "", "", nil, nil, err
 	}
+
+	outTokenAddr = tx.WelTokenAddr
+	amount = tx.Amount
 
 	_requestID := &big.Int{}
 	_requestID.SetBytes(common.FromHex(tx.ReqID))
