@@ -2,6 +2,7 @@ package welLogic
 
 import (
 	"bridge/libs"
+	welABI "bridge/micros/core/abi/wel"
 	"bridge/micros/core/dao"
 	userdao "bridge/micros/core/dao/user"
 	weldao "bridge/micros/core/dao/wel-account"
@@ -24,15 +25,17 @@ var (
 	userDAO userdao.IUserDAO
 	//mailer  *manager.Mailer
 	tempcli client.Client
+	welInq  *welABI.WelInquirer
 	log     *zerolog.Logger
 )
 
-func Init(d *dao.DAOs, tmpcli client.Client) {
+func Init(d *dao.DAOs, tmpcli client.Client, inq *welABI.WelInquirer) {
 	log = logger.Get()
 	welDAO = d.Wel
 	userDAO = d.User
 	//mailer = m
 	tempcli = tmpcli
+	welInq = inq
 	if problem := Healthcheck(); problem != nil {
 		ctx := context.Background()
 		wo := client.StartWorkflowOptions{
