@@ -307,6 +307,23 @@ func UnsetCurrentAuthenticator() error {
 
 // Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
 func ClaimEth2WelCashout(cashoutTxId string, outTokenAddr string, userAddr string, amount string, contractVersion string) (requestID []byte, signature []byte, err error) {
+	// Check receiving account and activate if needed
+	activators, err := GetWelAccountsWithRole("activator", 0, 1000)
+	if err != nil {
+		log.Err(err).Msg("[Wel logic internal] Failed to retrieved activators from DB")
+		return
+	}
+	for _, a := range activators {
+		if err = welInq.ActivateAccountIfNotExist(userAddr, a.Address, a.Prikey); err == nil {
+			break
+		}
+		log.Err(err).Msgf("[Wel logic internal] Failed to activate account %s with activator %s, try another activator...", userAddr, a.Address)
+	}
+	if err != nil {
+		log.Err(err).Msgf("[Wel logic internal] Failed to activate account %s", userAddr)
+		return
+	}
+
 	// Get tx info from weleth microservice
 	// tmpCli.ExecuteWorkflow
 	ctx := context.Background()

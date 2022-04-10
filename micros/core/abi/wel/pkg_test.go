@@ -54,7 +54,7 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestActivateAccount(t *testing.T) {
-	err := inq.ActivateAccount("WDgqRLQ3928bWkvxE655QJasotasgA5ANg", testAddr, testKey)
+	err := inq.ActivateAccountIfNotExist("WDgqRLQ3928bWkvxE655QJasotasgA5ANg", testAddr, testKey)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}

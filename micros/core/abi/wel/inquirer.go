@@ -64,7 +64,7 @@ func (inq *WelInquirer) GetAccount(address string) (*core.Account, error) {
 	return account, err
 }
 
-func (inq *WelInquirer) ActivateAccount(address string, activator string, pkey string) error {
+func (inq *WelInquirer) ActivateAccountIfNotExist(address string, activator string, pkey string) error {
 	_, err := inq.cli.GetAccount(address)
 	if err == nil {
 		fmt.Println("Account " + address + " found, no activation needed")
