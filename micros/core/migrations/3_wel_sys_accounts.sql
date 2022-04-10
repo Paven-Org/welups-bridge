@@ -20,7 +20,8 @@ INSERT INTO wel_sys_roles(role) VALUES
   ('unauthorized'),
   ('super_admin'),
   ('MANAGER_ROLE'),
-  ('AUTHENTICATOR');
+  ('AUTHENTICATOR'),
+  ('activator');
 
 CREATE TABLE IF NOT EXISTS wel_sys_prikeys ( -- for those accounts we can afford to store keys
   address varchar(256) NOT NULL,
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS wel_sys_account_roles (
   FOREIGN KEY (address) REFERENCES wel_sys_accounts(address),
   FOREIGN KEY (role) REFERENCES wel_sys_roles(role),
   PRIMARY KEY (address, role),
-  CHECK (role IN ('unauthorized','super_admin','MANAGER_ROLE','AUTHENTICATOR'))
+  CHECK (role IN ('unauthorized','super_admin','MANAGER_ROLE','AUTHENTICATOR','activator'))
 );
 
 -- +goose StatementEnd
