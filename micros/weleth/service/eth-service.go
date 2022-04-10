@@ -115,6 +115,7 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 
 		event.DepositTxHash = txHash
 		event.EthWalletAddr = ethWalletAddr
+		event.WelTokenAddr = model.WelTokenFromEth[event.EthTokenAddr]
 		event.Amount = amount
 		event.DepositStatus = model.StatusSuccess
 
