@@ -1,11 +1,16 @@
 package wel
 
 import (
+	"bridge/libs"
+	"bridge/micros/core/model"
+	"bridge/service-managers/logger"
 	"fmt"
 	"math/big"
 
 	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
 	"github.com/Clownsss/gotron-sdk/pkg/proto/api"
+	"github.com/Clownsss/gotron-sdk/pkg/proto/core"
+	"google.golang.org/protobuf/proto"
 )
 
 // Contract caller for the ERC20 interface
@@ -43,6 +48,61 @@ func (inq *WelInquirer) WRC20balanceOf(contractAddr string, account string) (*bi
 	balance.SetBytes(tx.GetConstantResult()[0])
 
 	return balance, nil
+}
+
+func (inq *WelInquirer) GetAccount(address string) (*core.Account, error) {
+	account, err := inq.cli.GetAccount(address)
+	if err == nil {
+		fmt.Println("Account " + address + " found")
+		return account, nil
+	}
+
+	if err.Error() == "account not found" {
+		return nil, model.ErrWelAccountNotFound
+	}
+
+	return account, err
+}
+
+func (inq *WelInquirer) ActivateAccount(address string, activator string, pkey string) error {
+	_, err := inq.cli.GetAccount(address)
+	if err == nil {
+		fmt.Println("Account " + address + " found, no activation needed")
+		return nil
+	}
+
+	if err.Error() == "account not found" {
+		tx, err := inq.cli.Transfer(activator, address, 1)
+		if err != nil {
+			logger.Get().Err(err).Msgf("RPC failed")
+			return err
+		}
+		rawData, err := proto.Marshal(tx.Transaction.GetRawData())
+		if err != nil {
+			logger.Get().Err(err).Msgf("Failed to get transaction's raw data")
+			return err
+		}
+		// signing
+		signature, err := libs.SignerH256(rawData, pkey)
+		if err != nil {
+			logger.Get().Err(err).Msgf("Failed to sign transaction")
+			return err
+		}
+		tx.Transaction.Signature = append(tx.Transaction.Signature, signature)
+		// broadcast
+		ret, err := inq.cli.Broadcast(tx.Transaction)
+		if err != nil {
+			logger.Get().Err(err).Msgf("Failed to broadcast signed transaction")
+			return err
+		}
+		logger.Get().Info().Msgf("Account activation transaction result message: %s", ret.Message)
+
+		logger.Get().Info().Msgf("Successfully activated wel account %s", address)
+
+		return nil
+	}
+
+	return err
 }
 
 func (inq *WelInquirer) GetAssets(account string) (map[string]int64, error) {
