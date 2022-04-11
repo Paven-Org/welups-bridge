@@ -2,6 +2,7 @@ package welethRouter
 
 import (
 	log "bridge/service-managers/logger"
+	"math/big"
 	"net/http"
 
 	ethLogic "bridge/micros/core/blogic/eth"
@@ -49,23 +50,28 @@ func wel2ethCashin(c *gin.Context) {
 	}
 
 	// process
-	tkAddr, amount, reqID, signature, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToAccountAddress, contractVersion)
+	tkAddr, amount, reqIDraw, signature, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim W2E cashin] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
 	}
 
+	reqIDu256 := &big.Int{}
+	reqIDu256.SetBytes(reqIDraw)
+
 	// response
 	type response struct {
 		TokenAddress string `json:"token_address"`
 		Amount       string `json:"amount"`
-		ReqID        []byte `json:"request_id"`
+		ReqID        string `json:"request_id"`
+		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
 	}
 	resp := response{
 		TokenAddress: tkAddr,
 		Amount:       amount,
-		ReqID:        reqID,
+		ReqID:        reqIDu256.String(),
+		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
 	}
 
@@ -87,23 +93,28 @@ func eth2welCashout(c *gin.Context) {
 	}
 
 	// process
-	tkAddr, amount, reqID, signature, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToAccountAddress, contractVersion)
+	tkAddr, amount, reqIDraw, signature, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim E2W cashout] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
 	}
 
+	reqIDu256 := &big.Int{}
+	reqIDu256.SetBytes(reqIDraw)
+
 	// response
 	type response struct {
 		TokenAddress string `json:"token_address"`
 		Amount       string `json:"amount"`
-		ReqID        []byte `json:"request_id"`
+		ReqID        string `json:"request_id"`
+		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
 	}
 	resp := response{
 		TokenAddress: tkAddr,
 		Amount:       amount,
-		ReqID:        reqID,
+		ReqID:        reqIDu256.String(),
+		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
 	}
 
