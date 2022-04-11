@@ -65,7 +65,7 @@ func (w *ethCashoutWelTransDAO) UpdateClaimEthCashoutWel(id int64, reqID, reqSta
 	_, err = tx.NamedExec(`UPDATE eth_cashout_wel_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status, fee = :fee WHERE id= :id`,
 		map[string]interface{}{
 			"claim_tx_hash": claimTxHash,
-			"status":        status,
+			"claim_status":  status,
 			"fee":           fee,
 			"id":            id,
 		})

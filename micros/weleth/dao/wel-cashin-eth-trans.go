@@ -66,7 +66,7 @@ func (w *welCashinEthTransDAO) UpdateClaimWelCashinEth(id int64, reqID, reqStatu
 		map[string]interface{}{
 			"claim_tx_hash": claimTxHash,
 			"request_id":    reqID,
-			"status":        status,
+			"claim_status":  status,
 			"id":            id,
 		})
 	if err != nil {
