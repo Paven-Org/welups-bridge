@@ -8,6 +8,7 @@ import (
 	ethLogic "bridge/micros/core/blogic/eth"
 	welLogic "bridge/micros/core/blogic/wel"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 )
@@ -66,6 +67,7 @@ func wel2ethCashin(c *gin.Context) {
 		ReqID        string `json:"request_id"`
 		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
+		SignatureHex string `json:"signature_hex"`
 	}
 	resp := response{
 		TokenAddress: tkAddr,
@@ -73,6 +75,7 @@ func wel2ethCashin(c *gin.Context) {
 		ReqID:        reqIDu256.String(),
 		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
+		SignatureHex: "0x" + common.Bytes2Hex(signature),
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
@@ -109,6 +112,7 @@ func eth2welCashout(c *gin.Context) {
 		ReqID        string `json:"request_id"`
 		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
+		SignatureHex string `json:"signature_hex"`
 	}
 	resp := response{
 		TokenAddress: tkAddr,
@@ -116,6 +120,7 @@ func eth2welCashout(c *gin.Context) {
 		ReqID:        reqIDu256.String(),
 		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
+		SignatureHex: "0x" + common.Bytes2Hex(signature),
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
