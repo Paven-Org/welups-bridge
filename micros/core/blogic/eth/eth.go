@@ -317,6 +317,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		log.Err(err).Msg("[Eth logic internal] CreateW2ECashinClaimRequest workflow failed")
 		return
 	}
+	tempcli.ExecuteWorkflow(ctx, wo, msweleth.WaitForPendingW2ECashinClaimRequestWF, cashinTxId)
 	// process
 
 	log.Info().Msg("[Eth logic internal] Everything a-ok, proceeding to create signature and requestID")
