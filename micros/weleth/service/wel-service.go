@@ -101,14 +101,14 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 		return err
 	}
 
-	if t.Result == "unconfirmed" {
+	if t.Status == "unconfirmed" {
 		if tran.ClaimStatus != model.StatusPending { // Invalid state!
 			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusPending, t.Hash, fee, model.StatusPending)
 			if err != nil {
 				return err
 			}
 		}
-	} else if t.Result == "confirmed" {
+	} else if t.Status == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
 			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusSuccess, t.Hash, fee, model.StatusSuccess)
 			if err != nil {
@@ -187,6 +187,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 				return err
 			}
 		}
+		logger.Get().Info().Msg("[DoneDeposit] unconfirmed cashin transaction: " + t.Hash)
 
 	case "confirmed":
 		tran, err := e.WelCashinEthTransDAO.SelectTransByDepositTxHash(t.Hash)
@@ -209,6 +210,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 		} else {
 			if tran.DepositStatus != model.StatusSuccess {
 				welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
+				logger.Get().Info().Msg("[DoneDeposit] Update confirmed cashin transaction...")
 				err := e.WelCashinEthTransDAO.UpdateDepositWelCashinEthConfirmed(t.Hash, welWalletAddr, amount, fee)
 				if err != nil {
 					return err

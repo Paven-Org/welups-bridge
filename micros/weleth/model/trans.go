@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 )
@@ -41,9 +42,6 @@ type WelCashinEthTrans struct {
 	ID    int64  `json:"id,omitempty" db:"id,omitempty"`
 	ReqID string `json:"request_id,omitempty" db:"request_id,omitempty"`
 
-	// if return = true -> it is the request from wel -> eth, else it is the request from eth -> wel
-	WelEth bool `json:"wel_eth" db:"wel_eth"`
-
 	DepositTxHash string `json:"deposit_tx_hash" db:"deposit_tx_hash"`
 	ClaimTxHash   string `json:"claim_tx_hash" db:"claim_tx_hash"`
 
@@ -62,8 +60,8 @@ type WelCashinEthTrans struct {
 	DepositStatus string `json:"deposit_status" db:"deposit_status"`
 	ClaimStatus   string `json:"claim_status" db:"claim_status"`
 
-	DepositAt time.Time `json:"deposit_at" db:"deposit_at"`
-	ClaimAt   time.Time `json:"claim_at" db:"claim_at"`
+	DepositAt time.Time    `json:"deposit_at" db:"deposit_at"`
+	ClaimAt   sql.NullTime `json:"claim_at" db:"claim_at"`
 }
 
 type EthWelEvent = EthCashoutWelTrans
@@ -71,9 +69,6 @@ type EthCashoutWelTrans struct {
 	ID    int64  `json:"id,omitempty" db:"id,omitempty"`
 	ReqID string `json:"request_id,omitempty" db:"request_id,omitempty"`
 
-	// if return = true -> it is the request from wel -> eth, else it is the request from eth -> wel
-	WelEth bool `json:"wel_eth" db:"wel_eth"`
-
 	DepositTxHash string `json:"deposit_tx_hash" db:"deposit_tx_hash"`
 	ClaimTxHash   string `json:"claim_tx_hash" db:"claim_tx_hash"`
 
@@ -92,6 +87,6 @@ type EthCashoutWelTrans struct {
 	DepositStatus string `json:"deposit_status" db:"deposit_status"`
 	ClaimStatus   string `json:"claim_status" db:"claim_status"`
 
-	DepositAt time.Time `json:"deposit_at" db:"deposit_at"`
-	ClaimAt   time.Time `json:"claim_at" db:"claim_at"`
+	DepositAt time.Time    `json:"deposit_at" db:"deposit_at"`
+	ClaimAt   sql.NullTime `json:"claim_at" db:"claim_at"`
 }
