@@ -350,7 +350,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	amount = tx.Amount
 
 	_requestID := &big.Int{}
-	_requestID.SetBytes(common.FromHex(cashinTxId))
+	_requestID.SetBytes(common.FromHex(tx.ReqID))
 	requestID = _requestID.Bytes()
 
 	_amount := &big.Int{}
