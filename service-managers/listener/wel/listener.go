@@ -110,6 +110,10 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNume %d", lastScanned, headNum)
 
 				brange := headNum - lastScanned + 1
+				if brange > 100000 {
+					brange = 100000
+					lastScanned = headNum - brange + 1
+				}
 				//s.Logger.Info().Msgf("[wel listener] block range: %d", brange)
 				if brange > 100 {
 					// partition the range to 100-long chunks
@@ -124,7 +128,7 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 						}
 						//fmt.Println("from: ", begin, " to: ", begin+limit)
 						s.TransHandler.GetInfoListTransactionRange(begin+limit, limit+1, "", s.Trans, s.errC)
-						sysInfo.LastScannedBlock = headNum
+						sysInfo.LastScannedBlock = begin + 99
 						s.WelInfo.Update(sysInfo)
 					}
 				} else {
