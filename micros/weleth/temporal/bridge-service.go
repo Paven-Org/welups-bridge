@@ -86,12 +86,12 @@ func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, c
 	switch ct.ClaimStatus {
 	case model.StatusSuccess:
 		err = model.ErrAlreadyClaimed
-		log.Err(err).Msgf("[W2E claim request] %s already claimed " + cashinTxHash)
+		log.Err(err).Msgf("[W2E claim request] %s already claimed ", cashinTxHash)
 		return
 
 	case model.StatusPending:
 		err = model.ErrRequestPending
-		log.Err(err).Msgf("[W2E claim request] %s already pending for a request" + cashinTxHash)
+		log.Err(err).Msgf("[W2E claim request] %s already pending for a request", cashinTxHash)
 		return
 	case model.StatusUnknown:
 		tx = *ct
@@ -114,12 +114,12 @@ func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, c
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
 		if err := s.CashinTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
-			log.Err(err).Msgf("[W2E claim request] couldn't create claim request for %s" + cashinTxHash)
+			log.Err(err).Msgf("[W2E claim request] couldn't create claim request for %s", cashinTxHash)
 			return model.WelCashinEthTrans{}, err
 		}
 	default:
 		err = model.ErrUnrecognizedStatus
-		log.Err(err).Msgf("[W2E claim request] unrecognized claim request status for %s" + cashinTxHash)
+		log.Err(err).Msgf("[W2E claim request] unrecognized claim request status for %s", cashinTxHash)
 		return
 	}
 	return
@@ -158,12 +158,12 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 	switch ct.ClaimStatus {
 	case model.StatusSuccess:
 		err = model.ErrAlreadyClaimed
-		log.Err(err).Msgf("[E2W claim request] %s already claimed " + cashoutTxHash)
+		log.Err(err).Msgf("[E2W claim request] %s already claimed ", cashoutTxHash)
 		return
 
 	case model.StatusPending:
 		err = model.ErrRequestPending
-		log.Err(err).Msgf("[E2W claim request] %s already pending for a request" + cashoutTxHash)
+		log.Err(err).Msgf("[E2W claim request] %s already pending for a request", cashoutTxHash)
 		return
 	case model.StatusUnknown:
 		tx = *ct
@@ -186,12 +186,12 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
 		if err := s.CashoutTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
-			log.Err(err).Msgf("[E2W claim request] couldn't create claim request for %s" + cashoutTxHash)
+			log.Err(err).Msgf("[E2W claim request] couldn't create claim request for %s", cashoutTxHash)
 			return model.EthCashoutWelTrans{}, err
 		}
 	default:
 		err = model.ErrUnrecognizedStatus
-		log.Err(err).Msgf("[E2W claim request] unrecognized claim request status for %s" + cashoutTxHash)
+		log.Err(err).Msgf("[E2W claim request] unrecognized claim request status for %s", cashoutTxHash)
 		return
 	}
 	return

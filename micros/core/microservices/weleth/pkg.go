@@ -59,7 +59,7 @@ func (cli *Weleth) CreateW2ECashinClaimRequestWF(ctx workflow.Context, txhash st
 	log.Info("[Core MSWeleth] Call weleth...")
 	res := workflow.ExecuteActivity(ctx, welethService.CreateW2ECashinClaimRequest, txhash)
 	if err = res.Get(ctx, &tx); err != nil {
-		log.Error("[Core MSWeleth] Error while executing activity GetWelToEthCashinByTxHash in weleth microservice", err.Error())
+		log.Error("[Core MSWeleth] Error while executing activity CreateW2ECashinClaimRequest in weleth microservice", err.Error())
 		return
 	}
 
