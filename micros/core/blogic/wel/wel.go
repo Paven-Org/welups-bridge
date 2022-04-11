@@ -344,6 +344,7 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 		log.Err(err).Msg("[Wel logic internal] CreateE2WCashoutClaimRequest workflow failed")
 		return
 	}
+	tempcli.ExecuteWorkflow(ctx, wo, msweleth.WaitForPendingE2WCashoutClaimRequestWF, cashoutTxId)
 	// process
 
 	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
