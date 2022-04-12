@@ -20,8 +20,10 @@ type Env struct {
 	Casbin            common.CasbinCnf
 	EthereumConfig    common.EtherumConfig
 	EthGovContract    string
-	WelupsConfig      common.WelupsConfig
-	WelGovContract    string
+	EthImportContract string
+
+	WelupsConfig   common.WelupsConfig
+	WelGovContract string
 }
 
 func parseEnv() Env {
@@ -98,7 +100,8 @@ func parseEnv() Env {
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthGovContract: common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x6150f59d1fd1A3C6Dc22619973D574e3CC7bA6E2"),
+		EthGovContract:    common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x6150f59d1fd1A3C6Dc22619973D574e3CC7bA6E2"),
+		EthImportContract: common.WithDefault("ETH_IMPORT_CONTRACT_ADDRESS", "0xE5a7d2F508579C22238688AD0d90db20f708e2A5"),
 
 		WelupsConfig: common.WelupsConfig{
 			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),

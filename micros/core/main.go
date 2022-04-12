@@ -8,7 +8,7 @@ import (
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	router "bridge/micros/core/http"
-	msweleth "bridge/micros/core/microservices/weleth"
+	"bridge/micros/core/microservices/weleth/mswelethImp"
 	"bridge/micros/core/middlewares"
 	ethService "bridge/micros/core/service/eth"
 	"bridge/micros/core/service/notifier"
@@ -131,7 +131,7 @@ func main() {
 
 	// Bridge microservices
 	//weleth
-	msWelEth := msweleth.MkWeleth(tempCli)
+	msWelEth := mswelethImp.MkWeleth(tempCli)
 	msWelEth.StartService()
 	defer msWelEth.StopService()
 
@@ -147,6 +147,8 @@ func main() {
 		//Httpcli: nil,
 		TokenService: ts,
 		TemporalCli:  tempCli,
+		WelCli:       welCli,
+		EthCli:       ethCli,
 
 		WelInquirer: welABI.MkWelInquirer(welCli),
 	}

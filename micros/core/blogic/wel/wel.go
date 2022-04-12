@@ -307,7 +307,7 @@ func UnsetCurrentAuthenticator() error {
 // Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
 func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion string) (outTokenAddr string, amount string, requestID []byte, signature []byte, err error) {
 	// Check receiving account and activate if needed
-	activators, err := GetWelAccountsWithRole("activator", 0, 1000)
+	activators, err := GetWelAccountsWithRole("operator", 0, 1000)
 	if err != nil {
 		log.Err(err).Msg("[Wel logic internal] Failed to retrieved activators from DB")
 		return

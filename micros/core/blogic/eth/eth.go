@@ -7,9 +7,12 @@ import (
 	ethService "bridge/micros/core/service/eth"
 	"bridge/micros/core/service/notifier"
 	welethModel "bridge/micros/weleth/model"
+	"bridge/service-managers/logger"
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"
 )
@@ -363,6 +366,95 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 
 	log.Info().Msg("[Eth logic internal] Successfully create claim signature for user")
 	return
+}
+
+func GetAuthenticatorKey() (string, error) {
+	sysAccounts.RLock()
+	defer sysAccounts.RUnlock()
+	prikey := sysAccounts.authenticator.Prikey
+	// if prikey == "", send notification mail to admin and return error
+	if prikey == "" {
+		ctx := context.Background()
+		problem := model.ErrEthAuthenticatorKeyUnavailable
+		wo := client.StartWorkflowOptions{
+			TaskQueue: notifier.NotifierQueue,
+		}
+
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
+		if err != nil {
+			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
+			return "", err
+		}
+		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+		if err := we.Get(ctx, nil); err != nil {
+			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
+			return "", err
+		}
+		err = problem
+		return "", err
+	}
+
+	return prikey, nil
+}
+
+func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) error {
+	ctx := context.Background()
+	prikey, err := GetAuthenticatorKey()
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Authenticator key not available")
+		return err
+	}
+	pkey, err := crypto.HexToECDSA(prikey)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] invalid private key")
+		return err
+	}
+
+	caller := crypto.PubkeyToAddress(pkey.PublicKey)
+	address := caller.Hex()
+	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
+
+	_requestID := &big.Int{}
+	_requestID.SetString(reqID, 10)
+
+	_amount := &big.Int{}
+	_amount.SetString(amount, 10)
+
+	signature, err := libs.StdSignedMessageHash(inTokenAddr, address, _amount, _requestID, contractVersion, prikey)
+	if err != nil {
+		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
+		return err
+	}
+	log.Info().Msg("[Eth logic internal] Successfully create claim signature")
+
+	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
+
+	nonce, err := importC.cli.PendingNonceAt(ctx, caller)
+	if err != nil {
+		logger.Get().Err(err).Msgf("Unale to get last nonce of address %s", address)
+		return err
+	}
+	gasPrice, err := importC.cli.SuggestGasPrice(context.Background())
+	if err != nil {
+		logger.Get().Err(err).Msgf("Unable to get recommended gas price, set to default")
+		gasPrice = importC.lastGasPrice
+	}
+	importC.lastGasPrice = gasPrice
+
+	opts := bind.NewKeyedTransactor(pkey)
+	opts.GasLimit = uint64(300000)
+	opts.Value = _amount.Add(_amount, big.NewInt(1)) // to make the transfer fail
+	opts.GasPrice = gasPrice
+	opts.Nonce = big.NewInt(int64(nonce))
+
+	tokenAddr := common.HexToAddress(inTokenAddr)
+	tx, err := importC.impC.EthImportCTransactor.Claim(opts, tokenAddr, _requestID, _amount, signature)
+	//if err != nil {
+	logger.Get().Err(err).Msgf("[Eth logic internal] failed tx: %v", tx)
+	//	return err
+	//}
+
+	return nil
 }
 
 //GetEthPrikeyIfExists(address string)
