@@ -18,10 +18,15 @@ func HKeccak(payload []byte) []byte {
 	return crypto.Keccak256Hash(payload).Bytes()
 }
 
+func NoHash(payload []byte) []byte {
+	return payload
+}
+
 type Signer func([]byte, string) ([]byte, error)
 
 var SignerH256 = MkSigner(H256)
 var SignerK256 = MkSigner(HKeccak)
+var SignerNoHash = MkSigner(NoHash)
 
 func MkSigner(h Hasher) Signer {
 	return func(payload []byte, keyhex string) ([]byte, error) {

@@ -65,5 +65,5 @@ func ToEthSignedMessageHash(_token string, _user string, _amount *big.Int, _requ
 
 func StdSignedMessageHash(_token string, _user string, _amount *big.Int, _requestID *big.Int, _version string, prikey string) ([]byte, error) {
 	hash := ToEthSignedMessageHash(_token, _user, _amount, _requestID, _version)
-	return SignerK256(hash, prikey)
+	return SignerNoHash(hash, prikey)
 }

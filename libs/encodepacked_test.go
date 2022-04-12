@@ -1,31 +1,26 @@
 package libs
 
 import (
-	"encoding/hex"
 	"fmt"
+	"math/big"
+	"testing"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-func TestPacked() {
-	// bytes32 stateRoots
-	stateRoots := "3a53dc4890241dbe03e486e785761577d1c369548f6b09aa38017828dcdf5c27"
-	// uint256[2] calldata signatures
-	signatures := []string{
-		"3402053321874964899321528271743396700217057178612185975187363512030360053932",
-		"1235124644010117237054094970590473241953434069965207718920579820322861537001",
-	}
-	// uint256 feeReceivers,
-	feeReceivers := "0"
-	// bytes calldata txss
-	txss := "000000000000000100010000"
-
-	result := encodePacked(
-		encodeBytesString(stateRoots),
-		encodeUint256Array(signatures),
-		encodeUint256(feeReceivers),
-		encodeBytesString(txss),
+func TestPacked(t *testing.T) {
+	requestId, _ := big.NewInt(0).SetString("79242598130257478667448782863620113455545540517178919498485001773537412501089", 10)
+	bytes := ToEthSignedMessageHash(
+		"0x4272ffC0682d68aCF5eEbD2ABFDc38d721BCF55a", // token
+		"0x4bb718Cb404787BF97bB012Bb08096602fb9544B", // user
+		big.NewInt(99),   // amount
+		requestId,        // request id
+		"IMPORTS_ETH_v1", // version
 	)
 
-	got := hex.EncodeToString(result)
-	want := "3a53dc4890241dbe03e486e785761577d1c369548f6b09aa38017828dcdf5c2707857e73108d077c5b7ef89540d6493f70d940f1763a9d34c9d98418a39d28ac02bb0e4743a7d0586711ee3dd6311256579ab7abcd53c9c76f040bfde4d6d6e90000000000000000000000000000000000000000000000000000000000000000000000000000000100010000"
-	fmt.Println(got == want) // true
+	// 0x10fcf96e8de6cfe6237e51af6786fa9c32d0763866f4275b16df8db8a571ccf9
+	fmt.Printf("%+v\n", hexutil.Encode(bytes))
+	signedMessage, _ := SignerNoHash(bytes, "ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a")
+	// 0xc333fded0b74fbb5a56d92262deb040c2cd3d6c241d7d1ad2e6d6a0501e56176522f6c2021c4e0298e0d5a7ec8487529a0349120c32c9331946e106b3a19f7501c
+	fmt.Printf("%+v\n", hexutil.Encode(signedMessage))
 }
