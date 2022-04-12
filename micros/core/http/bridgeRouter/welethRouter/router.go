@@ -2,6 +2,7 @@ package welethRouter
 
 import (
 	log "bridge/service-managers/logger"
+	"fmt"
 	"math/big"
 	"net/http"
 
@@ -65,6 +66,7 @@ func wel2ethCashin(c *gin.Context) {
 		TokenAddress string `json:"token_address"`
 		Amount       string `json:"amount"`
 		ReqID        string `json:"request_id"`
+		ReqIDHex     string `json:"request_id_hex"`
 		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
 		SignatureHex string `json:"signature_hex"`
@@ -73,6 +75,7 @@ func wel2ethCashin(c *gin.Context) {
 		TokenAddress: tkAddr,
 		Amount:       amount,
 		ReqID:        reqIDu256.String(),
+		ReqIDHex:     "0x" + fmt.Sprintf("%x", reqIDraw),
 		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
 		SignatureHex: "0x" + common.Bytes2Hex(signature),
@@ -110,6 +113,7 @@ func eth2welCashout(c *gin.Context) {
 		TokenAddress string `json:"token_address"`
 		Amount       string `json:"amount"`
 		ReqID        string `json:"request_id"`
+		ReqIDHex     string `json:"request_id_hex"`
 		ReqIDRaw     []byte `json:"request_id_raw"`
 		Signature    []byte `json:"signature"`
 		SignatureHex string `json:"signature_hex"`
@@ -118,6 +122,7 @@ func eth2welCashout(c *gin.Context) {
 		TokenAddress: tkAddr,
 		Amount:       amount,
 		ReqID:        reqIDu256.String(),
+		ReqIDHex:     "0x" + fmt.Sprintf("%x", reqIDraw),
 		ReqIDRaw:     reqIDraw,
 		Signature:    signature,
 		SignatureHex: "0x" + common.Bytes2Hex(signature),
