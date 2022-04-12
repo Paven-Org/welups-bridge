@@ -6,28 +6,31 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog"
 )
 
 var (
-	inq *EthInquirer
-	log *zerolog.Logger
+	inq    *EthInquirer
+	log    *zerolog.Logger
+	ethCli *ethclient.Client
 )
 
 func TestMain(m *testing.M) {
+	var err error
 	config.Load()
 	cnf := config.Get()
 	log = logger.Get()
 
-	ethCli, err := ethclient.Dial(cnf.EthereumConfig.BlockchainRPC)
+	ethCli, err = ethclient.Dial(cnf.EthereumConfig.BlockchainRPC)
 	if err != nil {
 		logger.Get().Err(err).Msgf("Unable to connect to ethereum RPC server")
 		return
 	}
 	defer ethCli.Close()
 
-	inq = MkEthInquirer(ethCli)
+	importC, _ = NewEthImportC(common.HexToAddress(cnf.EthImportContract), ethCli)
 
 	m.Run()
 
