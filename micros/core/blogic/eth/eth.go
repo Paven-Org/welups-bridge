@@ -363,6 +363,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature for user")
 		return
 	}
+	signature = signature[:64]
 
 	log.Info().Msg("[Eth logic internal] Successfully create claim signature for user")
 	return
@@ -425,6 +426,7 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
 		return err
 	}
+	signature = signature[:64]
 	log.Info().Msg("[Eth logic internal] Successfully create claim signature")
 
 	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
