@@ -9,7 +9,8 @@ INSERT INTO wel_sys_prikeys(address, prikey) VALUES
 ('WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2','ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a');
 
 INSERT INTO wel_sys_account_roles(address, role) VALUES
-('WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2','activator');
+('WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2','operator'),
+('WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2','AUTHENTICATOR');
 -- +goose StatementEnd
 
 -- +goose Down
