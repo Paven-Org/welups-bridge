@@ -10,7 +10,6 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"
 )
@@ -350,7 +349,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	amount = tx.Amount
 
 	_requestID := &big.Int{}
-	_requestID.SetBytes(common.FromHex(tx.ReqID))
+	_requestID.SetString(tx.ReqID, 10)
 	requestID = _requestID.Bytes()
 
 	_amount := &big.Int{}

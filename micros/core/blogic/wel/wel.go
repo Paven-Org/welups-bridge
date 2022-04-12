@@ -11,7 +11,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
 	"go.temporal.io/sdk/client"
 )
 
@@ -377,7 +376,7 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 	amount = tx.Amount
 
 	_requestID := &big.Int{}
-	_requestID.SetBytes(common.FromHex(tx.ReqID))
+	_requestID.SetString(tx.ReqID, 10)
 	requestID = _requestID.Bytes()
 
 	_amount := &big.Int{}
