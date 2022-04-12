@@ -48,9 +48,9 @@ func ToEthSignedMessageHash(_token string, _user string, _amount *big.Int, _requ
 	// https://gist.github.com/trmaphi/04b5790328dd71693b591973e07a943a
 	token := common.HexToAddress(_token).Bytes()
 	user := common.HexToAddress(_user).Bytes()
-	amount := _amount.Bytes()
+	amount := common.LeftPadBytes(_amount.Bytes(), 32)
 
-	requestID := _requestID.Bytes()
+	requestID := common.LeftPadBytes(_requestID.Bytes(), 32)
 	version := []byte(_version)
 
 	hash := crypto.Keccak256Hash(token, user, amount, requestID, version)
@@ -65,5 +65,5 @@ func ToEthSignedMessageHash(_token string, _user string, _amount *big.Int, _requ
 
 func StdSignedMessageHash(_token string, _user string, _amount *big.Int, _requestID *big.Int, _version string, prikey string) ([]byte, error) {
 	hash := ToEthSignedMessageHash(_token, _user, _amount, _requestID, _version)
-	return SignerK256(hash, prikey)
+	return SignerNoHash(hash, prikey)
 }
