@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS wel_cashin_eth_trans (
 CREATE TABLE IF NOT EXISTS wel_cashin_eth_req (
   request_id varchar(100) PRIMARY KEY,
   tx_id integer REFERENCES wel_cashin_eth_trans(id),
-  status varchar(20) DEFAULT 'unconfirmed',
+  status varchar(20) DEFAULT 'pending',
   CHECK (status IN ('success','pending','expired','doubleclaimed'))
 );
 

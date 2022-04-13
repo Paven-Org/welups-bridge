@@ -170,7 +170,7 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	}
 
 	if tran.ClaimStatus != model.StatusSuccess {
-		err := e.WelCashinEthTransDAO.UpdateClaimWelCashinEth(tran.ID, reqID.String(), model.StatusSuccess, l.TxHash.Hex(), model.StatusSuccess)
+		err := e.WelCashinEthTransDAO.UpdateClaimWelCashinEth(tran.ID, reqID.String(), model.RequestSuccess, l.TxHash.Hex(), model.StatusSuccess)
 		if err != nil {
 			return err
 		}

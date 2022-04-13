@@ -110,7 +110,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 		}
 	} else if t.Status == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusSuccess, t.Hash, fee, model.StatusSuccess)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.RequestSuccess, t.Hash, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
