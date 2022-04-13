@@ -364,7 +364,6 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature for user")
 		return
 	}
-	//signature[64] += 27
 
 	log.Info().Msg("[Eth logic internal] Successfully create claim signature for user")
 	return
@@ -427,7 +426,7 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
 		return err
 	}
-	//signature[64] += 27
+
 	log.Info().Msg("[Eth logic internal] Successfully create claim signature")
 
 	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
@@ -446,7 +445,7 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 
 	opts := bind.NewKeyedTransactor(pkey)
 	opts.GasLimit = uint64(300000)
-	opts.Value = big.NewInt(1) // to make the transfer fail
+	opts.Value = big.NewInt(0)
 	opts.GasPrice = gasPrice
 	opts.Nonce = big.NewInt(int64(nonce))
 

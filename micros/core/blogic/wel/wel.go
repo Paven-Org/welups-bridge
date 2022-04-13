@@ -453,7 +453,6 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
 		return err
 	}
-	//signature[64] += 27
 	log.Info().Msgf("[Eth logic internal] Successfully create claim signature: %x\n", signature)
 
 	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
@@ -462,7 +461,7 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 		From:      address,
 		Prikey:    pkey,
 		Fee_limit: defaultFeeLimit,
-		T_amount:  1,
+		T_amount:  0,
 	}
 
 	tx, err := welExp.Claim(opts, inTokenAddr, address, _requestID, _amount, signature)
