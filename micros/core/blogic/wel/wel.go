@@ -2,15 +2,18 @@ package welLogic
 
 import (
 	"bridge/libs"
+	welABI "bridge/micros/core/abi/wel"
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/model"
 	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
 	welethModel "bridge/micros/weleth/model"
+	"bridge/service-managers/logger"
 	"context"
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"
 )
 
@@ -391,4 +394,79 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 
 	log.Info().Msg("[Wel logic internal] Successfully create claim signature for user")
 	return
+}
+
+func GetAuthenticatorKey() (string, error) {
+	sysAccounts.RLock()
+	defer sysAccounts.RUnlock()
+	prikey := sysAccounts.authenticator.Prikey
+	// if prikey == "", send notification mail to admin and return error
+	if prikey == "" {
+		ctx := context.Background()
+		problem := model.ErrWelAuthenticatorKeyUnavailable
+		wo := client.StartWorkflowOptions{
+			TaskQueue: notifier.NotifierQueue,
+		}
+
+		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
+		if err != nil {
+			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
+			return "", err
+		}
+		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
+		if err := we.Get(ctx, nil); err != nil {
+			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
+			return "", err
+		}
+		err = problem
+		return "", err
+	}
+
+	return prikey, nil
+}
+
+func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) error {
+	//ctx := context.Background()
+	prikey, err := GetAuthenticatorKey()
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Authenticator key not available")
+		return err
+	}
+	pkey, err := crypto.HexToECDSA(prikey)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] invalid private key")
+		return err
+	}
+
+	caller := crypto.PubkeyToAddress(pkey.PublicKey)
+	address, _ := libs.HexToB58(caller.Hex())
+	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
+
+	_requestID := &big.Int{}
+	_requestID.SetString(reqID, 10)
+
+	_amount := &big.Int{}
+	_amount.SetString(amount, 10)
+
+	signature, err := libs.StdSignedMessageHash(inTokenAddr, address, _amount, _requestID, contractVersion, prikey)
+	if err != nil {
+		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
+		return err
+	}
+	//signature[64] += 27
+	log.Info().Msgf("[Eth logic internal] Successfully create claim signature: %x\n", signature)
+
+	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
+	// call export claim
+	opts := &welABI.CallOpts{
+		From:      address,
+		Prikey:    pkey,
+		Fee_limit: defaultFeeLimit,
+		T_amount:  1,
+	}
+
+	tx, err := welExp.Claim(opts, inTokenAddr, address, _requestID, _amount, signature)
+	logger.Get().Err(err).Msgf("[Eth logic internal] failed tx: %v", tx)
+
+	return nil
 }

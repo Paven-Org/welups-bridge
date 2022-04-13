@@ -33,6 +33,10 @@ var (
 	log     *zerolog.Logger
 )
 
+const (
+	defaultFeeLimit = 8000000
+)
+
 func Init(d *dao.DAOs, tmpcli client.Client, wcli *welclient.GrpcClient) {
 	log = logger.Get()
 	exportContr := config.Get().WelExportContract

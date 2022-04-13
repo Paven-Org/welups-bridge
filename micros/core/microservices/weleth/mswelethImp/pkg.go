@@ -2,6 +2,7 @@ package mswelethImp
 
 import (
 	ethLogic "bridge/micros/core/blogic/eth"
+	welLogic "bridge/micros/core/blogic/wel"
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/weleth/model"
 	welethService "bridge/micros/weleth/temporal"
@@ -103,7 +104,7 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 	}
 	if tx.ClaimStatus == model.StatusPending { // if still pending after 1 minute
 		// TODO: add a deliberate fail claim contract call here to invalidate the ReqID
-		ethLogic.InvalidateRequestClaim(tx.EthTokenAddr, tx.Amount, tx.ReqID, "IMPORTS_ETH_v1")
+		ethLogic.InvalidateRequestClaim(tx.EthTokenAddr, "1", tx.ReqID, "IMPORTS_ETH_v1")
 		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimWelCashinEth, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, model.StatusUnknown).Get(ctx, nil); err != nil {
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
@@ -173,6 +174,7 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 	}
 	if tx.ClaimStatus == model.StatusPending { // if still pending after 1 minute
 		// TODO: add a deliberate fail claim contract call here to invalidate the ReqID
+		welLogic.InvalidateRequestClaim(tx.WelTokenAddr, "1", tx.ReqID, "EXPORT_WELUPS_v1")
 		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimEthCashoutWel, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, model.StatusUnknown).Get(ctx, nil); err != nil {
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
