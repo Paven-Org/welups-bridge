@@ -331,7 +331,7 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateE2WCashoutClaimRequestWF, cashoutTxId)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateE2WCashoutClaimRequestWF, cashoutTxId, userAddr)
 	if err != nil {
 		log.Err(err).Msg("[Wel logic internal] Unable to call CreateE2WCashoutClaimRequest workflow")
 		return

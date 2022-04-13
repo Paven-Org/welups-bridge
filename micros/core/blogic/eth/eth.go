@@ -307,7 +307,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId, userAddr)
 	if err != nil {
 		log.Err(err).Msg("[Eth logic internal] Unable to call CreateW2ECashinClaimRequest workflow")
 		return

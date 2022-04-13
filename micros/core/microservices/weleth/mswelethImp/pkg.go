@@ -41,7 +41,7 @@ func MkWeleth(cli client.Client) *Weleth {
 	}
 }
 
-func (cli *Weleth) CreateW2ECashinClaimRequestWF(ctx workflow.Context, txhash string) (tx model.WelCashinEthTrans, err error) {
+func (cli *Weleth) CreateW2ECashinClaimRequestWF(ctx workflow.Context, txhash string, userAddr string) (tx model.WelCashinEthTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Creating cashin claim request from wel to eth with wel's side txhash: " + txhash)
 
@@ -62,7 +62,7 @@ func (cli *Weleth) CreateW2ECashinClaimRequestWF(ctx workflow.Context, txhash st
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.CreateW2ECashinClaimRequest, txhash)
+	res := workflow.ExecuteActivity(ctx, welethService.CreateW2ECashinClaimRequest, txhash, userAddr)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity CreateW2ECashinClaimRequest in weleth microservice", err.Error())
 		return
@@ -111,7 +111,7 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 	}
 	return nil
 }
-func (cli *Weleth) CreateE2WCashoutClaimRequestWF(ctx workflow.Context, txhash string) (tx model.EthCashoutWelTrans, err error) {
+func (cli *Weleth) CreateE2WCashoutClaimRequestWF(ctx workflow.Context, txhash string, userAddr string) (tx model.EthCashoutWelTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Creating cashout claim request from eth to wel with eth's side txhash: " + txhash)
 
@@ -132,7 +132,7 @@ func (cli *Weleth) CreateE2WCashoutClaimRequestWF(ctx workflow.Context, txhash s
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.CreateE2WCashoutClaimRequest, txhash)
+	res := workflow.ExecuteActivity(ctx, welethService.CreateE2WCashoutClaimRequest, txhash, userAddr)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity CreateE2WCashoutClaimRequest in weleth microservice", err.Error())
 		return
