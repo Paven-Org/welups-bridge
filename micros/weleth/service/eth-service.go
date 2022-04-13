@@ -54,7 +54,7 @@ func (e *EthConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
 			Topic: crypto.Keccak256Hash(
 				[]byte(e.abi.Events["Imported"].Sig),
 			),
-			ParseEvent: e.DoneDepositParser,
+			ParseEvent: e.DoneClaimParser,
 		},
 		{
 			Address: common.HexToAddress(e.ContractAddr),
@@ -62,7 +62,7 @@ func (e *EthConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
 				[]byte(e.abi.Events["Withdraw"].Sig),
 			),
 
-			ParseEvent: e.DoneClaimParser,
+			ParseEvent: e.DoneDepositParser,
 		},
 	}, nil
 }
