@@ -89,6 +89,7 @@ func (s *WelListener) Handling(parentContext context.Context) (fn consts.Daemon,
 // offset is the number of block to scan before current block to make sure event is confirmed
 func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err error) {
 	fn = func() {
+		s.Logger.Info().Msgf("[wel listener] Begin scan...")
 		for {
 			select {
 			case <-parentContext.Done():
@@ -107,11 +108,11 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 					s.Logger.Err(err).Msg("[wel_listener] can't get head by number")
 				}
 				headNum := header.BlockHeader.RawData.Number
-				s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNume %d", lastScanned, headNum)
+				//s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNum %d", lastScanned, headNum)
 
 				brange := headNum - lastScanned + 1
-				if brange > 300000 {
-					brange = 300000
+				if brange > 600000 {
+					brange = 600000
 					lastScanned = headNum - brange + 1
 				}
 				//s.Logger.Info().Msgf("[wel listener] block range: %d", brange)
@@ -159,7 +160,6 @@ func (s *WelListener) matchEvent(tran *Transaction) (consumer *EventConsumer, po
 		//fmt.Println("[matchEvent] key: ", key)
 		consumer, isExisted := s.EventConsumerMap[key]
 		if isExisted {
-			//fmt.Println("[matchEvent] consumer: ", consumer)
 			return consumer, i
 		}
 	}
@@ -169,7 +169,7 @@ func (s *WelListener) matchEvent(tran *Transaction) (consumer *EventConsumer, po
 
 func (s *WelListener) consumeEvent(t *Transaction) {
 	consumer, position := s.matchEvent(t)
-	if position > 0 {
+	if position >= 0 {
 		err := consumer.ParseEvent(t, position)
 		if err != nil {
 			s.Logger.Err(err).Msg("[wel_listener] Consume event error")

@@ -98,6 +98,7 @@ func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon,
 // offset is the number of block to scan before current block to make sure event is confirmed
 func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err error) {
 	fn = func() {
+		s.Logger.Info().Msgf("[eth listener] Begin scan...")
 		for {
 			select {
 			case <-parentContext.Done():
@@ -113,53 +114,84 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				if err != nil {
 					s.Logger.Err(err).Msg("[eth_listener] can't get head by number")
 				}
-				currBlock := header.Number.String()
+				currBlock := header.Number
 
-				scannedBlock := &big.Int{}
-				if sysInfo.LastScannedBlock == 0 {
+				var scannedBlock *big.Int
+				if sysInfo.LastScannedBlock <= 0 {
 					// set first block
-					ok := true
-					scannedBlock, ok = scannedBlock.SetString(currBlock, 10)
-					if !ok {
-						panic("[eth_listener] can't parse current block number")
-					}
+					scannedBlock = big.NewInt(s.blockOffset)
 				} else {
 					scannedBlock = big.NewInt(sysInfo.LastScannedBlock)
 				}
 
 				// scanned a offset - 1 block before to sure event confirmed
-				scannedBlock.Sub(scannedBlock, big.NewInt(s.blockOffset-1))
+				scannedBlock = scannedBlock.Sub(scannedBlock, big.NewInt(s.blockOffset-1))
 
-				// if last scanned block is more than 300k blocks away just scan last 300k blocks
-				diff := big.NewInt(0).Sub(header.Number, scannedBlock)
-				if diff.Cmp(big.NewInt(300000)) > 0 {
-					scannedBlock.Sub(header.Number, big.NewInt(300000))
+				// if last scanned block is more than $BIGNUM blocks away just scan last $BIGNUM blocks
+				diff := big.NewInt(0).Sub(currBlock, scannedBlock)
+				if diff.Cmp(big.NewInt(600000)) > 0 {
+					diff = big.NewInt(600000)
+					scannedBlock = scannedBlock.Sub(currBlock, diff)
 				}
 
-				s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", scannedBlock.String(), header.Number.String()))
-
-				for _, query := range s.EventFilters {
-					go func(query ethereum.FilterQuery) {
-						query.FromBlock = scannedBlock
-						query.ToBlock = header.Number
-
-						s.Logger.Debug().Msg(fmt.Sprintf("[eth_listener] query %v", query))
-
-						// get all event
-						events, err := s.EthClient.FilterLogs(context.Background(), query)
-						if err != nil {
-							s.Logger.Err(err).Msg("[eth_listener]] Ethereum filter query err")
-							s.errC <- err
+				if diff.Cmp(big.NewInt(100)) > 0 {
+					// scan in 100-chunk
+					for begin := scannedBlock; currBlock.Cmp(begin) > 0; begin = begin.Add(begin, big.NewInt(100)) {
+						limit := big.NewInt(99)
+						curDiff := big.NewInt(0)
+						if curDiff.Sub(currBlock, begin).Cmp(limit) < 0 {
+							limit = currBlock.Sub(currBlock, begin)
 						}
-						for _, event := range events {
-							s.Log <- event
+						until := big.NewInt(0)
+						until = until.Add(begin, limit)
+						//s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", begin.String(), until.String()))
+
+						for _, query := range s.EventFilters {
+							go func(query ethereum.FilterQuery) {
+								query.FromBlock = begin
+								query.ToBlock = until
+
+								//s.Logger.Debug().Msg(fmt.Sprintf("[eth_listener] query %v", query))
+
+								// get all event
+								events, err := s.EthClient.FilterLogs(context.Background(), query)
+								if err != nil {
+									s.Logger.Err(err).Msg("[eth_listener]] Ethereum filter query err")
+									s.errC <- err
+								}
+								for _, event := range events {
+									s.Log <- event
+								}
+							}(query)
 						}
-					}(query)
+						// update last scan block
+						sysInfo.LastScannedBlock = until.Int64()
+						s.EthInfo.Update(sysInfo)
+					}
+				} else {
+					//s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", scannedBlock.String(), currBlock.String()))
+					for _, query := range s.EventFilters {
+						go func(query ethereum.FilterQuery) {
+							query.FromBlock = scannedBlock
+							query.ToBlock = currBlock
+
+							//s.Logger.Debug().Msg(fmt.Sprintf("[eth_listener] query %v", query))
+
+							// get all event
+							events, err := s.EthClient.FilterLogs(context.Background(), query)
+							if err != nil {
+								s.Logger.Err(err).Msg("[eth_listener]] Ethereum filter query err")
+								s.errC <- err
+							}
+							for _, event := range events {
+								s.Log <- event
+							}
+						}(query)
+					}
+					// update last scan block
+					sysInfo.LastScannedBlock = currBlock.Int64()
+					s.EthInfo.Update(sysInfo)
 				}
-
-				// update last scan block
-				sysInfo.LastScannedBlock = header.Number.Int64()
-				s.EthInfo.Update(sysInfo)
 
 				// TODO: either push this to delay message queue to run OR just sleep
 				consts.SleepContext(parentContext, time.Second*time.Duration(s.blockTime))
