@@ -29,3 +29,11 @@ func NewExtNodeClientWithTimeout(address string, timeout time.Duration) *ExtNode
 	}
 	return client
 }
+
+func NewExtNodeClientFromCli(cli *gotron.GrpcClient, timeout time.Duration) *ExtNodeClient {
+	client := &ExtNodeClient{
+		GrpcClient:  cli,
+		grpcTimeout: timeout,
+	}
+	return client
+}
