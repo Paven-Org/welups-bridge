@@ -13,10 +13,13 @@ import (
 	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
 	manager "bridge/service-managers"
+	ethListener "bridge/service-managers/listener/eth"
+	welListener "bridge/service-managers/listener/wel"
 	"bridge/service-managers/logger"
 	"context"
 	"net/http"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -151,6 +154,40 @@ func main() {
 	}
 
 	blogic.Init(initVector)
+
+	// sync stuff
+	wg := sync.WaitGroup{}
+	ctx := context.Background()
+
+	/// event listeners
+	// ethereum side
+	ethblockdao := daos.EthBlockDAO
+	ethListen := ethListener.NewEthListener(ethblockdao, ethCli, cnf.EthereumConfig.BlockTime, cnf.EthereumConfig.BlockOffSet, logger)
+
+	ethGovEvConsumer := ethService.NewGovEvConsumer(cnf.EthGovContract, daos, tempCli)
+	ethListen.RegisterConsumer(ethGovEvConsumer)
+
+	wg.Add(1)
+	go func() {
+		ethListen.Start(ctx)
+		wg.Done()
+	}()
+
+	// welups side
+	welExtcli := welListener.NewExtNodeClientFromCli(welCli, time.Minute*time.Duration(cnf.WelupsConfig.ClientTimeout))
+	welTransHandler := welListener.NewTransHandler(welExtcli, cnf.WelupsConfig.BlockOffSet)
+	welblockdao := daos.WelBlockDAO
+	welListen := welListener.NewWelListener(welblockdao, welTransHandler, cnf.WelupsConfig.BlockTime, cnf.WelupsConfig.BlockOffSet, logger)
+
+	welEvtConsumer := welService.NewGovEvConsumer(cnf.WelGovContract, daos, tempCli)
+	welListen.RegisterConsumer(welEvtConsumer)
+
+	wg.Add(1)
+	go func() {
+		welListen.Start(ctx)
+		wg.Done()
+	}()
+
 	/// HTTP server
 	// RBAC enforcer
 	enforcer, err := casbin.NewEnforcer(cnf.Casbin.ModelPath, cnf.Casbin.PolicyPath)
@@ -172,7 +209,7 @@ func main() {
 	// system validity check
 
 	// shutdown & cleanup
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
 	defer stop()
 	<-ctx.Done()
 	stop()
@@ -183,5 +220,9 @@ func main() {
 	if err := httpServ.Shutdown(ctx); err != nil {
 		logger.Err(err).Msg("[main] Failed to gracefully shutdown HTTP server")
 	}
+
+	logger.Info().Msg("[main] Waiting for daemons to stop...")
+	wg.Wait()
+	logger.Info().Msg("[main] Closing core process, cleaning up...")
 
 }
