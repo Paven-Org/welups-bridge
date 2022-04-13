@@ -110,8 +110,8 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNume %d", lastScanned, headNum)
 
 				brange := headNum - lastScanned + 1
-				if brange > 100000 {
-					brange = 100000
+				if brange > 300000 {
+					brange = 300000
 					lastScanned = headNum - brange + 1
 				}
 				//s.Logger.Info().Msgf("[wel listener] block range: %d", brange)

@@ -130,10 +130,10 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				// scanned a offset - 1 block before to sure event confirmed
 				scannedBlock.Sub(scannedBlock, big.NewInt(s.blockOffset-1))
 
-				// if last scanned block is more than 10k block away just scan last 10k block
+				// if last scanned block is more than 300k blocks away just scan last 300k blocks
 				diff := big.NewInt(0).Sub(header.Number, scannedBlock)
-				if diff.Cmp(big.NewInt(10000)) > 0 {
-					scannedBlock.Sub(header.Number, big.NewInt(10000))
+				if diff.Cmp(big.NewInt(300000)) > 0 {
+					scannedBlock.Sub(header.Number, big.NewInt(300000))
 				}
 
 				s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", scannedBlock.String(), header.Number.String()))
