@@ -8,7 +8,6 @@ import (
 	"bridge/micros/core/model"
 	"bridge/service-managers/logger"
 	"context"
-	"fmt"
 	"time"
 
 	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
@@ -21,9 +20,14 @@ import (
 )
 
 const (
+	GovContractQueue = "WelGovContractService"
+
+	// going to be deprecated
 	GrantRoleWorkflow  = "GrantRole"
 	RevokeRoleWorkflow = "RevokeRole"
-	GovContractQueue   = "WelGovContractService"
+
+	SaveRoleWF   = "SaveRoleWF"
+	RemoveRoleWF = "RemoveRoleWF"
 )
 
 type GovContractService struct {
@@ -83,24 +87,6 @@ func (ctr *GovContractService) GrantRoleOnContract(ctx context.Context, targetAd
 	return common.Bytes2Hex(tx.GetTxid()), nil
 }
 
-func (ctr *GovContractService) SaveRoleOnDB(ctx context.Context, address, role string) error {
-	logger.Get().Info().Msgf("[welAccount logic internal] Start saving role %s for welAccount %s...", role, address)
-	//welAccount, err := welDAO.GetWelAccount(address)
-	//if err != nil {
-	//	logger.Get().Err(err).Msgf("[welAccount logic internal] Failed to retrieve welAccount %s", address)
-	//	return err
-	//}
-	//
-
-	logger.Get().Info().Msgf("[Wel activity] Saving role %s for welAccount %s...", role, address)
-	if err := ctr.dao.GrantRole(address, role); err != nil {
-		logger.Get().Err(err).Msgf("[welAccount logic internal] Failed to save role %s for welAccount %s", role, address)
-		return err
-	}
-
-	return nil
-}
-
 func (ctr *GovContractService) GrantRoleWorkflow(ctx workflow.Context, target string, role string) (string, error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Wel workflow] start granting role " + role + " for account " + target)
@@ -129,50 +115,7 @@ func (ctr *GovContractService) GrantRoleWorkflow(ctx workflow.Context, target st
 	log.Info("Contract call succeeded")
 
 	// confirmation
-	log.Info("Confirm grantRole contract call...")
-
-	//grntEvent := workflow.ExecuteActivity(ctx, ctr.FilterRoleGranted, target, role)
-	//if err := grntEvent.Get(ctx, &res); err != nil {
-	//	log.Error("Failed to confirm contract call with event")
-	//	return txhash, err
-	//}
-
-	var has bool = false
-	interval := time.Second * 1
-
-	for !has {
-		workflow.Sleep(ctx, interval)
-		hasRolePromise := workflow.ExecuteActivity(ctx, ctr.HasRole, target, role)
-		if err := hasRolePromise.Get(ctx, &has); err != nil {
-			log.Error("Failed to call hasRole on governance contract, error: ", err.Error())
-		}
-		if has {
-			break
-		}
-
-		interval = interval * 3
-		if interval > time.Hour {
-			break
-		}
-	}
-	if !has {
-		err := fmt.Errorf("Failed to confirm grantRole")
-		log.Error(err.Error())
-		return txhash, err
-	}
-
-	log.Info("grantRole confirmed")
-
-	//save on DB
-	log.Info("Save address-role pair from DB...")
-
-	grntDB := workflow.ExecuteActivity(ctx, ctr.SaveRoleOnDB, target, role)
-	if err := grntDB.Get(ctx, nil); err != nil {
-		log.Error("Failed to save role for address in DB")
-		return txhash, err
-	}
-
-	log.Info("Role saved for address in DB")
+	log.Info("Delegate grantRole contract call confirmation to event listener...")
 
 	return txhash, nil
 }
@@ -219,24 +162,6 @@ func (ctr *GovContractService) RevokeRoleOnContract(ctx context.Context, targetA
 	return common.Bytes2Hex(tx.GetTxid()), nil
 }
 
-func (ctr *GovContractService) RemoveRoleOnDB(ctx context.Context, address, role string) error {
-	logger.Get().Info().Msgf("[Wel activity] Start removing role %s from welAccount %s...", role, address)
-	//welAccount, err := welDAO.GetWelAccount(address)
-	//if err != nil {
-	//	logger.Get().Err(err).Msgf("[welAccount logic internal] Failed to retrieve welAccount %s", address)
-	//	return err
-	//}
-	//
-
-	logger.Get().Info().Msgf("[Wel activity] Removing role %s for welAccount %s...", role, address)
-	if err := ctr.dao.RevokeRole(address, role); err != nil {
-		logger.Get().Err(err).Msgf("[Wel activity] Failed to remove role %s for welAccount %s", role, address)
-		return err
-	}
-
-	return nil
-}
-
 func (ctr *GovContractService) RevokeRoleWorkflow(ctx workflow.Context, target string, role string) (string, error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Wel workflow] start revoking role " + role + " for account " + target)
@@ -265,50 +190,8 @@ func (ctr *GovContractService) RevokeRoleWorkflow(ctx workflow.Context, target s
 
 	log.Info("Contract call succeeded")
 
-	//listen for event
-	log.Info("Confirm revokeRole call...")
-
-	//rvkEvent := workflow.ExecuteActivity(ctx, ctr.FilterRoleRevoked, target, role)
-	//if err := rvkEvent.Get(ctx, &res); err != nil {
-	//	log.Error("Failed to confirm contract call with event")
-	//	return txhash, err
-	//}
-	var has bool = true
-	interval := time.Second * 1
-
-	for has {
-		workflow.Sleep(ctx, interval)
-		hasRolePromise := workflow.ExecuteActivity(ctx, ctr.HasRole, target, role)
-		if err := hasRolePromise.Get(ctx, &has); err != nil {
-			log.Error("Failed to call hasRole on governance contract, error: ", err.Error())
-		}
-		if !has {
-			break
-		}
-
-		interval = interval * 3
-		if interval > time.Hour {
-			break
-		}
-	}
-	if has {
-		err := fmt.Errorf("Failed to confirm revokeRole call")
-		log.Error(err.Error())
-		return txhash, err
-	}
-
-	log.Info("revokeRole confirmed")
-
-	//save on DB
-	log.Info("Remove address-role pair from DB...")
-
-	rvkDB := workflow.ExecuteActivity(ctx, ctr.RemoveRoleOnDB, target, role)
-	if err := rvkDB.Get(ctx, nil); err != nil {
-		log.Error("Failed to remove role for address in DB")
-		return txhash, err
-	}
-
-	log.Info("Role removed for address in DB")
+	// confirmation
+	log.Info("Delegate revokeRole contract call confirmation to event listener...")
 
 	return txhash, nil
 }
@@ -338,18 +221,122 @@ func (ctr *GovContractService) HasRole(ctx context.Context, targetAddress string
 	return has, nil
 }
 
+func (ctr *GovContractService) SaveRole(ctx context.Context, address string, role string) error {
+	_, err := ctr.dao.GetWelAccount(address)
+	switch err {
+	case nil:
+		break
+	case model.ErrWelAccountNotFound:
+		if err := ctr.dao.AddWelAccount(address, model.WelAccountStatusOK); err != nil {
+			logger.Get().Err(err).Msgf("Unable to add eth account: %s", address)
+			return err
+		}
+	default:
+		logger.Get().Err(err).Msgf("Unable to retrieve eth account: %s", address)
+		return err
+	}
+
+	logger.Get().Info().Msgf("Saving role %s for ethAccount %s...", role, address)
+	if err := ctr.dao.GrantRole(address, role); err != nil {
+		logger.Get().Err(err).Msgf("Failed to save role %s for ethAccount %s", role, address)
+		return err
+	}
+	return nil
+}
+
+func (ctr *GovContractService) RemoveRole(ctx context.Context, address string, role string) error {
+	_, err := ctr.dao.GetWelAccount(address)
+	switch err {
+	case nil:
+		break
+	case model.ErrWelAccountNotFound:
+		logger.Get().Info().Msgf("Wel account %s isn't recognized", address)
+		return nil
+	default:
+		logger.Get().Err(err).Msgf("Unable to retrieve eth account: %s", address)
+		return err
+	}
+
+	logger.Get().Info().Msgf("Removing role %s for ethAccount %s...", role, address)
+	if err := ctr.dao.RevokeRole(address, role); err != nil {
+		logger.Get().Err(err).Msgf("Failed to remove role %s for ethAccount %s", role, address)
+		return err
+	}
+
+	return nil
+}
+
+func (ctr *GovContractService) SaveRoleWorkflow(ctx workflow.Context, target string, role string) error {
+	log := workflow.GetLogger(ctx)
+	log.Info("[Wel workflow] start saving role " + role + " for account " + target)
+	ao := workflow.ActivityOptions{
+		TaskQueue:              GovContractQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 100,
+			MaximumAttempts: 20,
+		},
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	res := workflow.ExecuteActivity(ctx, ctr.SaveRole, target, role)
+	if err := res.Get(ctx, nil); err != nil {
+		log.Error("Failed to save role")
+		return err
+	}
+
+	log.Info("Role " + role + " saved for " + target)
+
+	return nil
+}
+
+func (ctr *GovContractService) RemoveRoleWorkflow(ctx workflow.Context, target string, role string) error {
+	log := workflow.GetLogger(ctx)
+	log.Info("[Wel workflow] start revoking role " + role + " for account " + target)
+	ao := workflow.ActivityOptions{
+		TaskQueue:              GovContractQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 100,
+			MaximumAttempts: 20,
+		},
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	res := workflow.ExecuteActivity(ctx, ctr.RemoveRole, target, role)
+	if err := res.Get(ctx, nil); err != nil {
+		log.Error("Failed to remove role")
+		return err
+	}
+
+	log.Info("Role " + role + " removed from " + target)
+
+	return nil
+}
+
 // Worker
 func (ctr *GovContractService) registerService(w worker.Worker) {
 	w.RegisterActivity(ctr.GrantRoleOnContract)
-	w.RegisterActivity(ctr.SaveRoleOnDB)
-
-	w.RegisterActivity(ctr.HasRole)
-
 	w.RegisterActivity(ctr.RevokeRoleOnContract)
-	w.RegisterActivity(ctr.RemoveRoleOnDB)
+	w.RegisterActivity(ctr.HasRole)
 
 	w.RegisterWorkflowWithOptions(ctr.GrantRoleWorkflow, workflow.RegisterOptions{Name: GrantRoleWorkflow})
 	w.RegisterWorkflowWithOptions(ctr.RevokeRoleWorkflow, workflow.RegisterOptions{Name: RevokeRoleWorkflow})
+	//
+
+	w.RegisterActivity(ctr.SaveRole)
+	w.RegisterActivity(ctr.RemoveRole)
+
+	w.RegisterWorkflowWithOptions(ctr.SaveRoleWorkflow, workflow.RegisterOptions{Name: SaveRoleWF})
+	w.RegisterWorkflowWithOptions(ctr.RemoveRoleWorkflow, workflow.RegisterOptions{Name: RemoveRoleWF})
 }
 
 func (ctr *GovContractService) StartService() error {
