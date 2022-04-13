@@ -3,7 +3,6 @@ package main
 import (
 	"bridge/common/consts"
 	"bridge/libs"
-	welABI "bridge/micros/core/abi/wel"
 	"bridge/micros/core/blogic"
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
@@ -149,8 +148,6 @@ func main() {
 		TemporalCli:  tempCli,
 		WelCli:       welCli,
 		EthCli:       ethCli,
-
-		WelInquirer: welABI.MkWelInquirer(welCli),
 	}
 
 	blogic.Init(initVector)

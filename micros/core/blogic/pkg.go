@@ -2,7 +2,6 @@ package blogic
 
 import (
 	"bridge/libs"
-	welABI "bridge/micros/core/abi/wel"
 	ethLogic "bridge/micros/core/blogic/eth"
 	userLogic "bridge/micros/core/blogic/user"
 	welLogic "bridge/micros/core/blogic/wel"
@@ -24,12 +23,10 @@ type InitV struct {
 	TemporalCli  client.Client
 	WelCli       *welclient.GrpcClient
 	EthCli       *ethclient.Client
-
-	WelInquirer *welABI.WelInquirer
 }
 
 func Init(iv InitV) {
 	userLogic.Init(iv.DAOs, iv.RedisManager, iv.TokenService)
 	ethLogic.Init(iv.DAOs, iv.TemporalCli, iv.EthCli)
-	welLogic.Init(iv.DAOs, iv.TemporalCli, iv.WelInquirer)
+	welLogic.Init(iv.DAOs, iv.TemporalCli, iv.WelCli)
 }

@@ -22,8 +22,9 @@ type Env struct {
 	EthGovContract    string
 	EthImportContract string
 
-	WelupsConfig   common.WelupsConfig
-	WelGovContract string
+	WelupsConfig      common.WelupsConfig
+	WelGovContract    string
+	WelExportContract string
 }
 
 func parseEnv() Env {
@@ -109,7 +110,8 @@ func parseEnv() Env {
 			ClientTimeout: common.WithDefault("WEL_CLIENT_TIMEOUT", int64(5)),
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
-		WelGovContract: common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WE8RFVk1GA5NhK8yLxHWkpuP1E5UVqX9tQ"),
+		WelGovContract:    common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WE8RFVk1GA5NhK8yLxHWkpuP1E5UVqX9tQ"),
+		WelExportContract: common.WithDefault("WEL_EXPORT_CONTRACT_ADDRESS", "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"),
 	}
 }
 

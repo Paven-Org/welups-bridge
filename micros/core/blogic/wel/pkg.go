@@ -3,6 +3,7 @@ package welLogic
 import (
 	"bridge/libs"
 	welABI "bridge/micros/core/abi/wel"
+	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	userdao "bridge/micros/core/dao/user"
 	weldao "bridge/micros/core/dao/wel-account"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/client"
@@ -26,16 +28,22 @@ var (
 	//mailer  *manager.Mailer
 	tempcli client.Client
 	welInq  *welABI.WelInquirer
+	welExp  *welABI.WelExport
+	welcli  *welclient.GrpcClient
 	log     *zerolog.Logger
 )
 
-func Init(d *dao.DAOs, tmpcli client.Client, inq *welABI.WelInquirer) {
+func Init(d *dao.DAOs, tmpcli client.Client, wcli *welclient.GrpcClient) {
 	log = logger.Get()
+	exportContr := config.Get().WelExportContract
 	welDAO = d.Wel
 	userDAO = d.User
 	//mailer = m
 	tempcli = tmpcli
-	welInq = inq
+	welcli = wcli
+	welInq = welABI.MkWelInquirer(welcli)
+	welExp = welABI.MkWelExport(welcli, exportContr)
+
 	if problem := Healthcheck(); problem != nil {
 		ctx := context.Background()
 		wo := client.StartWorkflowOptions{
