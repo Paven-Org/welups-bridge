@@ -79,7 +79,7 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, time.Minute)
+	workflow.Sleep(ctx, 5*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
@@ -149,7 +149,7 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, time.Minute)
+	workflow.Sleep(ctx, 5*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
