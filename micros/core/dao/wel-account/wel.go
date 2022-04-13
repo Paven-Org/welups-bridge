@@ -127,7 +127,7 @@ func (dao *welDAO) GrantRole(address string, role string) error {
 	db := dao.db
 	log := logger.Get()
 
-	q := db.Rebind(`INSERT INTO wel_sys_account_roles (address, role) VALUES (?,?)`)
+	q := db.Rebind(`INSERT INTO wel_sys_account_roles (address, role) VALUES (?,?) ON CONFLICT (address,role) DO NOTHING`)
 	_, err := db.Exec(q, address, role)
 	if err != nil {
 		log.Err(err).Msgf("Error while granting role %s to address %s", role, address)
