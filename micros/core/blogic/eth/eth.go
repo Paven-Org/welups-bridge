@@ -349,6 +349,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	}
 
 	inTokenAddr = tx.EthTokenAddr
+	toAddress := tx.EthWalletAddr
 	amount = tx.Amount
 
 	_requestID := &big.Int{}
@@ -358,7 +359,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	_amount := &big.Int{}
 	_amount.SetString(tx.Amount, 10)
 
-	signature, err = libs.StdSignedMessageHash(inTokenAddr, userAddr, _amount, _requestID, contractVersion, prikey)
+	signature, err = libs.StdSignedMessageHash(inTokenAddr, toAddress, _amount, _requestID, contractVersion, prikey)
 	if err != nil {
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature for user")
 		return
