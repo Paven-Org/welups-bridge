@@ -8,10 +8,10 @@ import (
 
 var (
 	EthTokenFromWel map[string]string = map[string]string{
-		"0x4272ffC0682d68aCF5eEbD2ABFDc38d721BCF55a": "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb",
+		"0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57": "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb",
 	}
 	WelTokenFromEth map[string]string = map[string]string{
-		"W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb": "0x4272ffC0682d68aCF5eEbD2ABFDc38d721BCF55a",
+		"W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb": "0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57",
 	}
 )
 
