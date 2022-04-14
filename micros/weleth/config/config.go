@@ -83,7 +83,7 @@ func parseEnv() Env {
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0xE5a7d2F508579C22238688AD0d90db20f708e2A5"}),
+		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57"}),
 
 		WelupsConf: common.WelupsConfig{
 			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
