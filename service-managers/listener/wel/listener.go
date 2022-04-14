@@ -172,7 +172,7 @@ func (s *WelListener) consumeEvent(t *Transaction) {
 	if position >= 0 {
 		err := consumer.ParseEvent(t, position)
 		if err != nil {
-			s.Logger.Err(err).Msg("[wel_listener] Consume event error")
+			s.Logger.Err(err).Msgf("[wel_listener] Consume event error, tx with event: %v", t)
 		}
 	}
 }
