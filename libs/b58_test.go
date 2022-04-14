@@ -15,7 +15,13 @@ func TestB58toHex(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
-	fmt.Println(hex)
+	fmt.Println("hex: ", hex)
+
+	stdhex, err := B58toStdHex(b58test)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println("stdhex: ", stdhex)
 }
 
 func TestHexToB58(t *testing.T) {
