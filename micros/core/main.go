@@ -42,7 +42,7 @@ func main() {
 	// logger
 	logger.Init(cnf.Structured)
 	logger := logger.Get()
-	logger.Info().Msgf("[main] Initialize system with config: %+v ", *cnf)
+	//logger.Info().Msgf("[main] Initialize system with config: %+v ", *cnf)
 	defer logger.Info().Msg("[main] Core exited")
 
 	//	ctx = logger.WithContext(ctx)

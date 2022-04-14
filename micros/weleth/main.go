@@ -29,7 +29,7 @@ func main() {
 	// logger
 	logger.Init(config.Get().Structured)
 	logger := logger.Get()
-	logger.Info().Msgf("Initialize system with config: %+v ", *config.Get())
+	//logger.Info().Msgf("Initialize system with config: %+v ", *config.Get())
 
 	//	ctx = logger.WithContext(ctx)
 	//	zerolog.Ctx(ctx).Info().Msgf("getting log from context: ", ctx)
