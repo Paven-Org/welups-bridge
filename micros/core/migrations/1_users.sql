@@ -35,8 +35,8 @@ INSERT INTO roles (role) VALUES
 -- default password: root
 -- must be changed immediately upon operation of course
 INSERT INTO users (username, password, email) VALUES
-  ('root', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'nhatanh02@gmail.com'),
-  ('weleth_bridge', '$2a$10$TP.3Z1/JJyGJwtDaX0xSs.FrO76FEz17DNwujGO0FKpBxr9gKCZpm', 'nhatanh02@gmail.com');
+  ('root', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'welbridgeroot@gmail.com'),
+  ('weleth_bridge', '$2a$10$TP.3Z1/JJyGJwtDaX0xSs.FrO76FEz17DNwujGO0FKpBxr9gKCZpm', 'welbridgeroot@gmail.com');
 
 INSERT INTO user_roles(user_id, role)
   SELECT id, 'root' FROM users WHERE username = 'root'
