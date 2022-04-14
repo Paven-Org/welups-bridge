@@ -35,7 +35,7 @@ func (w *ethCashoutWelTransDAO) CreateEthCashoutWelTrans(t *model.EthCashoutWelT
 			"wel_token_addr":  t.WelTokenAddr,
 			"eth_token_addr":  t.EthTokenAddr,
 			"eth_wallet_addr": t.EthWalletAddr,
-			"wel_wallet_addr": t.EthWalletAddr,
+			"wel_wallet_addr": t.WelWalletAddr,
 			"network_id":      t.NetworkID,
 			"amount":          t.Amount,
 			"fee":             t.Fee,
