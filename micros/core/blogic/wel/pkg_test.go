@@ -91,7 +91,7 @@ func TestKeyAndAddress(t *testing.T) {
 	}
 	fmt.Println(b58)
 
-	hex, err := libs.KeyToHexAddr(testkey)
+	hex, err := libs.KeyToWelHexAddr(testkey)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
