@@ -79,7 +79,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(data["user"].(common.Address).Bytes())) //FIX!
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
-	total := big.NewInt{0}
+	total := big.NewInt(0)
 	total = total.Add(data["amount"].(*big.Int), data["fee"].(*big.Int))
 
 	tran, err := e.EthCashoutWelTransDAO.SelectTransByRqId(rqId)

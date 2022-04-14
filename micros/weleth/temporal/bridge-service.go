@@ -198,10 +198,10 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 	return
 }
 
-func (s *WelethBridgeService) UpdateClaimEthCashoutWel(ctx context.Context, id int64, reqID string, reqStatus string, claimTxHash string, fee string, status string) error {
+func (s *WelethBridgeService) UpdateClaimEthCashoutWel(ctx context.Context, id int64, reqID string, reqStatus string, claimTxHash string, amount string, fee string, status string) error {
 	log := logger.Get()
 	log.Info().Msgf("[E2W update claim request] updating cashout transaction")
-	err := s.CashoutTransDAO.UpdateClaimEthCashoutWel(id, reqID, reqStatus, claimTxHash, fee, status)
+	err := s.CashoutTransDAO.UpdateClaimEthCashoutWel(id, reqID, reqStatus, claimTxHash, amount, fee, status)
 	if err != nil {
 		log.Err(err).Msg("[E2W update claim request] failed to update cashout request ")
 		return err
