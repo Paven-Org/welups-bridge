@@ -56,7 +56,6 @@ func Init(d *dao.DAOs, tmpcli client.Client, ethcli *ethclient.Client) {
 	}
 	//	mailer = m
 	tempcli = tmpcli
-	SetCurrentAuthenticator("ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a") // quick and dirty for now
 
 	if problem := Healthcheck(); problem != nil {
 		ctx := context.Background()
