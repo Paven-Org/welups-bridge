@@ -1,10 +1,11 @@
 package welLogic
 
 import (
-	"bridge/common"
 	"bridge/libs"
+	welABI "bridge/micros/core/abi/wel"
 	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
+	"bridge/micros/core/model"
 	welService "bridge/micros/core/service/wel"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
@@ -27,13 +28,13 @@ const (
 var GovService *welService.GovContractService
 
 func TestMain(m *testing.M) {
-	mCnf := common.Mailerconf{
-		SmtpHost: "smtp.gmail.com",
-		SmtpPort: 587,
-		Address:  "bridgemail.welups@gmail.com",
-		Password: "showmethemoney11!1",
-	}
-	mailer = manager.MkMailer(mCnf)
+	//mCnf := common.Mailerconf{
+	//	SmtpHost: "smtp.gmail.com",
+	//	SmtpPort: 587,
+	//	Address:  "bridgemail.welups@gmail.com",
+	//	Password: "showmethemoney11!1",
+	//}
+	//mailer = manager.MkMailer(mCnf)
 
 	config.Load()
 	cnf := config.Get()
@@ -68,6 +69,9 @@ func TestMain(m *testing.M) {
 		logger.Get().Err(err).Msgf("Unable to start welCli's GRPC connection")
 		return
 	}
+
+	exportContr := cnf.WelExportContract
+	welExp = welABI.MkWelExport(welCli, exportContr)
 
 	GovService, err = welService.MkGovContractService(welCli, tempcli, daos, cnf.WelGovContract)
 	if err != nil {
@@ -117,6 +121,25 @@ func TestRevokeRole(t *testing.T) {
 		t.Fatal("Error: ", err.Error())
 	}
 	fmt.Println(tx)
+}
+
+func TestInvalidate(t *testing.T) {
+	reqID := "36520334248965224490069560844488943606812912433996205144170613492011902220912"
+	tokenAddr := "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb"
+	testAddr := "WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2"
+	testKey := "ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a"
+	contractVersion := "EXPORT_WELS_v1"
+	//pkey, err := crypto.HexToECDSA(testKey)
+	//if err != nil {
+	//	t.Fatal("Error: ", err.Error())
+	//}
+	sysAccounts.authenticator.Address = testAddr
+	sysAccounts.authenticator.Prikey = testKey
+	sysAccounts.authenticator.Status = model.WelAccountStatusOK
+
+	if err := InvalidateRequestClaim(tokenAddr, "0", reqID, contractVersion); err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
 }
 
 //func TestSendMailToAdmins(t *testing.T) {

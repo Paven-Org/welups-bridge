@@ -114,7 +114,7 @@ func TestClaim(t *testing.T) {
 	}
 	tokenAddr := "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb"
 	_token, _ := libs.B58toHex(tokenAddr)
-	testAddr := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
+	//testAddr := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
 	//tokenAddr := "0x00000000000000000000"
 	fmt.Println(tokenAddr)
 
@@ -125,8 +125,7 @@ func TestClaim(t *testing.T) {
 
 	signature, err := libs.StdSignedMessageHash(_token, caller.Hex(), _amount, _requestID, contractVersion, testKey)
 
-	fmt.Printf("%x\n", []byte{100})
-	tx, err := exp.Claim(opts, _token, testAddr, _requestID, _amount, signature)
+	tx, err := exp.Claim(opts, tokenAddr, testAddr, _requestID, _amount, signature)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}

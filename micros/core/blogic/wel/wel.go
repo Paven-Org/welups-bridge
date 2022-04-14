@@ -440,7 +440,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 	}
 
 	caller := crypto.PubkeyToAddress(pkey.PublicKey)
-	address, _ := libs.HexToB58(caller.Hex())
+	address, _ := libs.KeyToB58Addr(prikey)
 	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
 
 	_token, _ := libs.B58toStdHex(outTokenAddr)
