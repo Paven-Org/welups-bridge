@@ -466,7 +466,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 		T_amount:  0,
 	}
 
-	tx, err := welExp.Claim(opts, inTokenAddr, address, _requestID, _amount, signature)
+	tx, err := welExp.Claim(opts, _token, address, _requestID, _amount, signature)
 	logger.Get().Err(err).Msgf("[Eth logic internal] failed tx: %v", tx)
 
 	return nil
