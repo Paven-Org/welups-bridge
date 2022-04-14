@@ -7,6 +7,7 @@ import (
 	"bridge/micros/weleth/model"
 	welethService "bridge/micros/weleth/temporal"
 	"bridge/service-managers/logger"
+	"context"
 	"time"
 
 	"go.temporal.io/sdk/client"
@@ -75,11 +76,14 @@ func (cli *Weleth) CreateW2ECashinClaimRequestWF(ctx workflow.Context, txhash st
 	return tx, nil
 }
 
+func (cli *Weleth) InvalidateW2ECashinClaim(ctx context.Context, tokenAddr, reqid string) error {
+	return ethLogic.InvalidateRequestClaim(tokenAddr, "0", reqid, "EXPORT_WELUPS_v1")
+}
 func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, txhash string) error {
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, 2*time.Minute)
+	workflow.Sleep(ctx, 3*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
@@ -104,7 +108,11 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 	}
 	if tx.ClaimStatus == model.StatusPending { // if still pending after 1 minute
 		// TODO: add a deliberate fail claim contract call here to invalidate the ReqID
-		ethLogic.InvalidateRequestClaim(tx.EthTokenAddr, "0", tx.ReqID, "IMPORTS_ETH_v1")
+		//ethLogic.InvalidateRequestClaim(tx.EthTokenAddr, "0", tx.ReqID, "IMPORTS_ETH_v1")
+		if err := workflow.ExecuteActivity(ctx, cli.InvalidateW2ECashinClaim, tx.WelTokenAddr, tx.ReqID).Get(ctx, nil); err != nil {
+			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
+			return err
+		}
 		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimWelCashinEth, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, model.StatusUnknown).Get(ctx, nil); err != nil {
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
@@ -146,11 +154,15 @@ func (cli *Weleth) CreateE2WCashoutClaimRequestWF(ctx workflow.Context, txhash s
 	return tx, nil
 }
 
+func (cli *Weleth) InvalidateE2WCashoutClaim(ctx context.Context, tokenAddr, reqid string) error {
+	return welLogic.InvalidateRequestClaim(tokenAddr, "0", reqid, "EXPORT_WELUPS_v1")
+}
+
 func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, txhash string) error {
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, 2*time.Minute)
+	workflow.Sleep(ctx, 3*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
@@ -175,7 +187,10 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 	}
 	if tx.ClaimStatus == model.StatusPending { // if still pending after 1 minute
 		// TODO: add a deliberate fail claim contract call here to invalidate the ReqID
-		welLogic.InvalidateRequestClaim(tx.WelTokenAddr, "0", tx.ReqID, "EXPORT_WELUPS_v1")
+		if err := workflow.ExecuteActivity(ctx, cli.InvalidateE2WCashoutClaim, tx.WelTokenAddr, tx.ReqID).Get(ctx, nil); err != nil {
+			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
+			return err
+		}
 		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimEthCashoutWel, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, model.StatusUnknown).Get(ctx, nil); err != nil {
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
@@ -318,7 +333,10 @@ func (cli *Weleth) registerService(w worker.Worker) {
 	w.RegisterWorkflowWithOptions(cli.CreateW2ECashinClaimRequestWF, workflow.RegisterOptions{Name: CreateW2ECashinClaimRequestWF})
 	w.RegisterWorkflowWithOptions(cli.CreateE2WCashoutClaimRequestWF, workflow.RegisterOptions{Name: CreateE2WCashoutClaimRequestWF})
 
+	w.RegisterActivity(cli.InvalidateE2WCashoutClaim)
 	w.RegisterWorkflowWithOptions(cli.WaitForPendingW2ECashinClaimRequestWF, workflow.RegisterOptions{Name: WaitForPendingW2ECashinClaimRequestWF})
+
+	w.RegisterActivity(cli.InvalidateW2ECashinClaim)
 	w.RegisterWorkflowWithOptions(cli.WaitForPendingE2WCashoutClaimRequestWF, workflow.RegisterOptions{Name: WaitForPendingE2WCashoutClaimRequestWF})
 
 }

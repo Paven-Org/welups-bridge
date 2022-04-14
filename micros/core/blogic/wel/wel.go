@@ -442,7 +442,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 	address, _ := libs.HexToB58(caller.Hex())
 	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
 
-	_token, _ := libs.B58toHex(outTokenAddr)
+	_token, _ := libs.B58toStdHex(outTokenAddr)
 
 	_requestID := &big.Int{}
 	_requestID.SetString(reqID, 10)
@@ -466,7 +466,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 		T_amount:  0,
 	}
 
-	tx, err := welExp.Claim(opts, _token, address, _requestID, _amount, signature)
+	tx, err := welExp.Claim(opts, outTokenAddr, address, _requestID, _amount, signature)
 	logger.Get().Err(err).Msgf("[Eth logic internal] failed tx: %v", tx)
 
 	return nil
