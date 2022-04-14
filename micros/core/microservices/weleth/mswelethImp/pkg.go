@@ -191,7 +191,7 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
 		}
-		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimEthCashoutWel, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, model.StatusUnknown).Get(ctx, nil); err != nil {
+		if err := workflow.ExecuteActivity(ctx, welethService.UpdateClaimEthCashoutWel, tx.ID, tx.ReqID, model.RequestExpired, tx.ClaimTxHash, tx.Fee, model.StatusUnknown).Get(ctx, nil); err != nil {
 			log.Info("[Temporal BG] Error while processing pending claim request: ", err.Error())
 			return err
 		}
