@@ -209,6 +209,8 @@ func main() {
 	// system validity check
 
 	// shutdown & cleanup
+	logger.Info().Msg("[main] Waiting for daemons to stop...")
+
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT)
 	defer stop()
 	<-ctx.Done()
@@ -221,7 +223,6 @@ func main() {
 		logger.Err(err).Msg("[main] Failed to gracefully shutdown HTTP server")
 	}
 
-	logger.Info().Msg("[main] Waiting for daemons to stop...")
 	wg.Wait()
 	logger.Info().Msg("[main] Closing core process, cleaning up...")
 
