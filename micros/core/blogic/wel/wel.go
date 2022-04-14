@@ -375,7 +375,8 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 		return "", "", nil, nil, err
 	}
 
-	outTokenAddr, _ = libs.B58toStdHex(tx.WelTokenAddr)
+	outTokenAddr = tx.WelTokenAddr
+	_token, _ := libs.B58toStdHex(outTokenAddr)
 	toAddress, _ := libs.B58toStdHex(tx.WelWalletAddr)
 	amount = tx.Amount
 
@@ -386,7 +387,7 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 	_amount := &big.Int{}
 	_amount.SetString(amount, 10)
 
-	signature, err = libs.StdSignedMessageHash(outTokenAddr, toAddress, _amount, _requestID, contractVersion, prikey)
+	signature, err = libs.StdSignedMessageHash(_token, toAddress, _amount, _requestID, contractVersion, prikey)
 	if err != nil {
 		log.Err(err).Msg("[Wel logic internal] Failed to create claim signature for user")
 		return
