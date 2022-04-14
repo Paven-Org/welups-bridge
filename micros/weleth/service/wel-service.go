@@ -80,7 +80,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
 
-	tran, err := e.EthCashoutWelTransDAO.SelectTransById(rqId)
+	tran, err := e.EthCashoutWelTransDAO.SelectTransByRqId(rqId)
 	if err != nil {
 		return err
 	}
