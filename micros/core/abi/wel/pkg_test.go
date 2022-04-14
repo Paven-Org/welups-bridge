@@ -1,6 +1,7 @@
 package wel
 
 import (
+	"bridge/libs"
 	"bridge/micros/core/config"
 	"bridge/service-managers/logger"
 	"fmt"
@@ -86,11 +87,46 @@ func TestExp(t *testing.T) {
 		T_amount:  1,
 	}
 	tokenAddr := "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb"
-	testAddr := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
+	//testAddr := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
 	//tokenAddr := "0x00000000000000000000"
 	fmt.Println(tokenAddr)
 	fmt.Printf("%x\n", []byte{100})
 	tx, err := exp.Withdraw(opts, tokenAddr, testAddr, big.NewInt(1), 1)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println(tx.Transaction)
+}
+func TestClaim(t *testing.T) {
+	pkey, err := crypto.HexToECDSA(testKey)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	caller := crypto.PubkeyToAddress(pkey.PublicKey)
+	//target := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
+	reqID := "33520334248965224490069560844488943606812912433996205144170613492011902220912"
+	contractVersion := "EXPORT_WELS_v1"
+	opts := &CallOpts{
+		From:      testAddr,
+		Prikey:    pkey,
+		Fee_limit: 8000000,
+		T_amount:  0,
+	}
+	tokenAddr := "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb"
+	_token, _ := libs.B58toHex(tokenAddr)
+	testAddr := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
+	//tokenAddr := "0x00000000000000000000"
+	fmt.Println(tokenAddr)
+
+	_requestID := &big.Int{}
+	_requestID.SetString(reqID, 10)
+
+	_amount := big.NewInt(0)
+
+	signature, err := libs.StdSignedMessageHash(_token, caller.Hex(), _amount, _requestID, contractVersion, testKey)
+
+	fmt.Printf("%x\n", []byte{100})
+	tx, err := exp.Claim(opts, _token, testAddr, _requestID, _amount, signature)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}

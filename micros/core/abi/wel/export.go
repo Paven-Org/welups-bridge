@@ -84,7 +84,7 @@ func (ex *WelExport) Withdraw(opts *CallOpts, tokenAddr string, account string, 
 
 func (ex *WelExport) Claim(opts *CallOpts, tokenAddr string, account string, requestID *big.Int, amount *big.Int, sig []byte) (*api.TransactionExtention, error) {
 	jsonString := fmt.Sprintf(`[{"address": "%s"},{"address":"%s"},{"uint256": "%s"},{"uint256":"%s"},{"bytes":"%x"}]`, tokenAddr, account, requestID.String(), amount.String(), sig)
-	res, err := ex.cli.TriggerContract(opts.From, ex.address, "claim(address,address,uint256,uint256,bytes)", jsonString, opts.Fee_limit, opts.T_amount, "", opts.T_amount)
+	res, err := ex.cli.TriggerContract(opts.From, ex.address, "claim(address,address,uint256,uint256,bytes)", jsonString, opts.Fee_limit, opts.T_amount, "", amount.Int64())
 	if err != nil {
 		logger.Get().Err(err).Msgf("RPC to make contract call failed")
 		return nil, err

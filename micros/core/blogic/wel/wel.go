@@ -425,7 +425,7 @@ func GetAuthenticatorKey() (string, error) {
 	return prikey, nil
 }
 
-func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) error {
+func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string) error {
 	//ctx := context.Background()
 	prikey, err := GetAuthenticatorKey()
 	if err != nil {
@@ -442,13 +442,15 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 	address, _ := libs.HexToB58(caller.Hex())
 	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
 
+	_token, _ := libs.B58toHex(outTokenAddr)
+
 	_requestID := &big.Int{}
 	_requestID.SetString(reqID, 10)
 
 	_amount := &big.Int{}
 	_amount.SetString(amount, 10)
 
-	signature, err := libs.StdSignedMessageHash(inTokenAddr, caller.Hex(), _amount, _requestID, contractVersion, prikey)
+	signature, err := libs.StdSignedMessageHash(_token, caller.Hex(), _amount, _requestID, contractVersion, prikey)
 	if err != nil {
 		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
 		return err
