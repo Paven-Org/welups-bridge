@@ -12,7 +12,7 @@ type IEthCashoutWelTransDAO interface {
 
 	UpdateDepositEthCashoutWelConfirmed(depositTxHash, ethWalletAddr, amount string) error
 
-	UpdateClaimEthCashoutWel(id int64, reqID, reqStatus, claimTxHash, fee, status string) error
+	UpdateClaimEthCashoutWel(id int64, reqID, reqStatus, claimTxHash, amount, fee, status string) error
 
 	SelectTransByDepositTxHash(txHash string) (*model.EthCashoutWelTrans, error)
 	SelectTransById(id string) (*model.EthCashoutWelTrans, error)
@@ -57,15 +57,16 @@ func (w *ethCashoutWelTransDAO) UpdateDepositEthCashoutWelConfirmed(depositTxHas
 	return err
 }
 
-func (w *ethCashoutWelTransDAO) UpdateClaimEthCashoutWel(id int64, reqID, reqStatus, claimTxHash, fee, status string) error {
+func (w *ethCashoutWelTransDAO) UpdateClaimEthCashoutWel(id int64, reqID, reqStatus, claimTxHash, amount, fee, status string) error {
 	tx, err := w.db.Beginx()
 	if err != nil {
 		return err
 	}
-	_, err = tx.NamedExec(`UPDATE eth_cashout_wel_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status, fee = :fee WHERE id= :id`,
+	_, err = tx.NamedExec(`UPDATE eth_cashout_wel_trans SET claim_tx_hash = :claim_tx_hash, claim_status = :claim_status, amount = :amount, fee = :fee WHERE id= :id`,
 		map[string]interface{}{
 			"claim_tx_hash": claimTxHash,
 			"claim_status":  status,
+			"amount":        amount,
 			"fee":           fee,
 			"id":            id,
 		})

@@ -79,12 +79,14 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	welWalletAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(data["user"].(common.Address).Bytes())) //FIX!
 	amount := data["amount"].(*big.Int).String()
 	fee := data["fee"].(*big.Int).String()
+	total := big.NewInt{0}
+	total = total.Add(data["amount"].(*big.Int), data["fee"].(*big.Int))
 
 	tran, err := e.EthCashoutWelTransDAO.SelectTransByRqId(rqId)
 	if err != nil {
 		return err
 	}
-	if amount != tran.Amount {
+	if total.String() != tran.Amount { // if amount + fee != originally cashed out amount
 		return fmt.Errorf("Claim wrong amount")
 	}
 	if tran.WelWalletAddr != welWalletAddr {
@@ -103,14 +105,14 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 
 	if t.Status == "unconfirmed" {
 		if tran.ClaimStatus != model.StatusPending { // Invalid state!
-			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusPending, t.Hash, fee, model.StatusPending)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.StatusPending, t.Hash, amount, fee, model.StatusPending)
 			if err != nil {
 				return err
 			}
 		}
 	} else if t.Status == "confirmed" {
 		if tran.ClaimStatus != model.StatusSuccess {
-			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.RequestSuccess, t.Hash, fee, model.StatusSuccess)
+			err := e.EthCashoutWelTransDAO.UpdateClaimEthCashoutWel(tran.ID, rqId, model.RequestSuccess, t.Hash, amount, fee, model.StatusSuccess)
 			if err != nil {
 				return err
 			}
