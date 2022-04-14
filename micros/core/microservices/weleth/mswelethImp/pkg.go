@@ -79,7 +79,7 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, 5*time.Minute)
+	workflow.Sleep(ctx, 2*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
@@ -110,6 +110,7 @@ func (cli *Weleth) WaitForPendingW2ECashinClaimRequestWF(ctx workflow.Context, t
 			return err
 		}
 	}
+	log.Info("[Temporal] nothing to do")
 	return nil
 }
 func (cli *Weleth) CreateE2WCashoutClaimRequestWF(ctx workflow.Context, txhash string, userAddr string) (tx model.EthCashoutWelTrans, err error) {
@@ -149,7 +150,7 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 	log := workflow.GetLogger(ctx)
 
 	log.Info("[Core MSWeleth] Waiting for claim request...")
-	workflow.Sleep(ctx, 5*time.Minute)
+	workflow.Sleep(ctx, 2*time.Minute)
 
 	log.Info("[Core MSWeleth] Pending duration expired, checking claim request status...")
 	ao := workflow.ActivityOptions{
@@ -180,6 +181,7 @@ func (cli *Weleth) WaitForPendingE2WCashoutClaimRequestWF(ctx workflow.Context, 
 			return err
 		}
 	}
+	log.Info("[Temporal] nothing to do")
 	return nil
 }
 func (cli *Weleth) GetWelToEthCashinByTxHashWF(ctx workflow.Context, txhash string) (tx welethService.BridgeTx, err error) {
