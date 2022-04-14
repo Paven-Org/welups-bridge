@@ -29,7 +29,7 @@ type ethCashoutWelTransDAO struct {
 }
 
 func (w *ethCashoutWelTransDAO) CreateEthCashoutWelTrans(t *model.EthCashoutWelTrans) error {
-	_, err := w.db.NamedExec(`INSERT INTO eth_cashout_wel_trans(deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, wel_wallet_addr, network_id, amount, deposit_at, deposit_status) VALUES (:id, :deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
+	_, err := w.db.NamedExec(`INSERT INTO eth_cashout_wel_trans(deposit_tx_hash, wel_token_addr, eth_token_addr, eth_wallet_addr, wel_wallet_addr, network_id, amount, fee, deposit_at, deposit_status) VALUES (:deposit_tx_hash, :wel_token_addr, :eth_token_addr, :eth_wallet_addr, :wel_wallet_addr, :network_id, :amount, :fee, :deposit_at, :deposit_status)`,
 		map[string]interface{}{
 			"deposit_tx_hash": t.DepositTxHash,
 			"wel_token_addr":  t.WelTokenAddr,
