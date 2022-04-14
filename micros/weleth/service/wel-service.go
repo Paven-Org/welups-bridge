@@ -158,7 +158,7 @@ func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) 
 		event.DepositTxHash = t.Hash
 		event.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
 		event.Amount = amount
-		event.EthTokenAddr = model.WelTokenFromEth[welTokenAddr]
+		event.EthTokenAddr = model.EthTokenFromWel[welTokenAddr]
 		event.DepositStatus = status
 		event.Fee = fee
 
