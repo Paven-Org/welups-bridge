@@ -128,7 +128,7 @@ func eth2welCashout(c *gin.Context) {
 		SignatureHex: "0x" + common.Bytes2Hex(signature),
 	}
 
-	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
+	logger.Info().Msg("[Claim E2W cashout] successfully generated claim request")
 	c.JSON(http.StatusOK, resp)
 }
 

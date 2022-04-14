@@ -430,18 +430,18 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 	//ctx := context.Background()
 	prikey, err := GetAuthenticatorKey()
 	if err != nil {
-		log.Err(err).Msgf("[Eth logic internal] Authenticator key not available")
+		log.Err(err).Msgf("[Wel logic internal] Authenticator key not available")
 		return err
 	}
 	pkey, err := crypto.HexToECDSA(prikey)
 	if err != nil {
-		log.Err(err).Msgf("[Eth logic internal] invalid private key")
+		log.Err(err).Msgf("[Wel logic internal] invalid private key")
 		return err
 	}
 
 	caller := crypto.PubkeyToAddress(pkey.PublicKey)
 	address, _ := libs.KeyToB58Addr(prikey)
-	log.Info().Msgf("[Eth logic internal] operator address: %s", address)
+	log.Info().Msgf("[Wel logic internal] operator address: %s", address)
 
 	_token, _ := libs.B58toStdHex(outTokenAddr)
 
@@ -453,12 +453,12 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 
 	signature, err := libs.StdSignedMessageHash(_token, caller.Hex(), _amount, _requestID, contractVersion, prikey)
 	if err != nil {
-		log.Err(err).Msg("[Eth logic internal] Failed to create claim signature")
+		log.Err(err).Msg("[Wel logic internal] Failed to create claim signature")
 		return err
 	}
-	log.Info().Msgf("[Eth logic internal] Successfully create claim signature: %x\n", signature)
+	log.Info().Msgf("[Wel logic internal] Successfully create claim signature: %x\n", signature)
 
-	log.Info().Msg("[Eth logic internal] Invalidating request ID " + reqID)
+	log.Info().Msg("[Wel logic internal] Invalidating request ID " + reqID)
 	// call export claim
 	opts := &welABI.CallOpts{
 		From:      address,
@@ -468,7 +468,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 	}
 
 	tx, err := welExp.Claim(opts, outTokenAddr, address, _requestID, _amount, signature)
-	logger.Get().Err(err).Msgf("[Eth logic internal] failed tx: %v", tx)
+	logger.Get().Err(err).Msgf("[Wel logic internal] failed tx: %v", tx)
 
 	return nil
 }
