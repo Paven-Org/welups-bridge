@@ -121,8 +121,10 @@ func parseFlags() Flags {
 }
 
 type TokensMap []struct {
-	Wel string `json:"wel"`
-	Eth string `json:"eth"`
+	Eth     string `json:"eth"`
+	Wel     string `json:"wel"`
+	EthName string `json:"eth_name"` // not actually used right now, but it's nice to have some clarity
+	WelName string `json:"wel_name"` // not actually used right now, but it's nice to have some clarity
 }
 
 func ParseTokensMap() TokensMap {
