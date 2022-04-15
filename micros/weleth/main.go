@@ -4,6 +4,7 @@ import (
 	"bridge/common/consts"
 	"bridge/micros/weleth/config"
 	"bridge/micros/weleth/dao"
+	"bridge/micros/weleth/model"
 	"bridge/micros/weleth/service"
 	welethService "bridge/micros/weleth/temporal"
 	manager "bridge/service-managers"
@@ -22,7 +23,6 @@ import (
 
 func main() {
 	manager.SetOSParams()
-	//ctx := context.Background()
 
 	config.Load()
 	//// layer 1 setup: foundation
@@ -31,6 +31,14 @@ func main() {
 	logger := logger.Get()
 	//logger.Info().Msgf("Initialize system with config: %+v ", *config.Get())
 
+	// load cross chain tokens map
+	tkMap := config.Get().TokensMap
+	for _, pair := range tkMap {
+		model.WelTokenFromEth[pair.Eth] = pair.Wel
+		model.EthTokenFromWel[pair.Wel] = pair.Eth
+	}
+	logger.Info().Msgf("[main] Eth->Wel: %+v", model.WelTokenFromEth)
+	logger.Info().Msgf("[main] Wel->Eth: %+v", model.EthTokenFromWel)
 	//	ctx = logger.WithContext(ctx)
 	//	zerolog.Ctx(ctx).Info().Msgf("getting log from context: ", ctx)
 	// loading config, secret, key

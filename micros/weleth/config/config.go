@@ -2,8 +2,10 @@ package config
 
 import (
 	"bridge/common"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -33,7 +35,6 @@ func parseEnv() Env {
 	}
 	CORSstring := common.WithDefault("APP_CORS", "*")
 	CORS := strings.Split(CORSstring, ":")
-	fmt.Println(CORS)
 
 	return Env{
 
@@ -119,9 +120,32 @@ func parseFlags() Flags {
 	}
 }
 
+type TokensMap []struct {
+	Wel string `json:"wel"`
+	Eth string `json:"eth"`
+}
+
+func ParseTokensMap() TokensMap {
+	mapfile, err := os.Open("tokens-map.json")
+	if err != nil {
+		fmt.Println("[config] Unable to load tokens map, error: ", err.Error())
+		panic(err)
+	}
+	defer mapfile.Close()
+
+	var tkMaps TokensMap
+	decoder := json.NewDecoder(mapfile)
+	if err := decoder.Decode(&tkMaps); err != nil {
+		fmt.Println("[config] Unable to parse tokens map, error: ", err.Error())
+		panic(err)
+	}
+	return tkMaps
+}
+
 type Config struct {
 	Env
 	Flags
+	TokensMap
 }
 
 var cnf *Config
@@ -136,10 +160,14 @@ func Load() {
 	// parse env
 	env := parseEnv()
 
+	// tokens map
+	tkmap := ParseTokensMap()
+
 	// init config
 	cnf = &Config{
-		Env:   env,
-		Flags: flags,
+		Env:       env,
+		Flags:     flags,
+		TokensMap: tkmap,
 	}
 	return
 }

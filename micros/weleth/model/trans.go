@@ -7,12 +7,8 @@ import (
 )
 
 var (
-	WelTokenFromEth map[string]string = map[string]string{
-		"0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57": "W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb",
-	}
-	EthTokenFromWel map[string]string = map[string]string{
-		"W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb": "0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57",
-	}
+	WelTokenFromEth map[string]string = make(map[string]string)
+	EthTokenFromWel map[string]string = make(map[string]string)
 )
 
 const (
