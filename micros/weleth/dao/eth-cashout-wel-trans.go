@@ -136,7 +136,7 @@ func (w *ethCashoutWelTransDAO) SelectTransByRqId(rid string) (*model.EthCashout
 
 func (w *ethCashoutWelTransDAO) GetClaimRequest(reqID string) (*model.ClaimRequest, error) {
 	var req = &model.ClaimRequest{}
-	err := w.db.Get(req, `SELECT * FROM eth_cashout_wel_trans WHERE request_id = $1`, reqID)
+	err := w.db.Get(req, `SELECT * FROM eth_cashout_wel_req WHERE request_id = $1`, reqID)
 	return req, err
 }
 
