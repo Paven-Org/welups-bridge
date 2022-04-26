@@ -24,8 +24,9 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.POST("/set/authenticator-prikey", setKey)
 	gr.POST("/unset/authenticator-prikey", unsetKey)
 	gr.POST("/remove/:acc", removeWelAccount)
-	gr.POST("/grant/:role/to/:acc", grantRole)
-	gr.POST("/revoke/:role/from/:acc", revokeRole)
+	// deprecated, calls contract method grantRole/revokeRole from FE instead
+	//gr.POST("/grant/:role/to/:acc", grantRole)
+	//gr.POST("/revoke/:role/from/:acc", revokeRole)
 	gr.GET("/roles/of/:acc", getAccRoles)
 	gr.GET("/haverole/:role/:page", getAccsWithRole)
 	gr.GET("/accounts/:page", getAccs)
