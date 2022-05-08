@@ -43,6 +43,12 @@ const (
 	GetTx2Treasury          = "GetUnconfirmedTx2Treasury"
 	CreateEthCashinWelTrans = "CreateEthCashinWelTrans"
 	UpdateEthCashinWelTrans = "UpdateEthCashinWelTrans"
+
+	UpdateWelCashoutEthTrans = "UpdateWelCashoutEthTrans"
+
+	//
+	MapWelTokenToEth = "MapWelTokenToEth"
+	MapEthTokenToWel = "MapEthTokenToWel"
 )
 
 type BridgeTx struct {
@@ -69,6 +75,22 @@ func MkWelethBridgeService(cli client.Client, daos *dao.DAOs) *WelethBridgeServi
 		Eth2WelCashoutTransDAO: daos.EthCashoutWelTransDAO,
 		tempCli:                cli,
 	}
+}
+
+func (s *WelethBridgeService) MapWelTokenToEth(ctx context.Context, welTk string) (string, error) {
+	ethTk, ok := model.EthTokenFromWel[welTk]
+	if !ok {
+		return "", fmt.Errorf("corresponding token not found")
+	}
+	return ethTk, nil
+}
+
+func (s *WelethBridgeService) MapEthTokenToWel(ctx context.Context, ethTk string) (string, error) {
+	welTk, ok := model.WelTokenFromEth[ethTk]
+	if !ok {
+		return "", fmt.Errorf("corresponding token not found")
+	}
+	return welTk, nil
 }
 
 func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txhash string) (tx model.WelCashinEthTrans, err error) {
@@ -277,6 +299,9 @@ func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetUnconfirmedTx2Treasury, activity.RegisterOptions{Name: GetTx2Treasury})
 	w.RegisterActivityWithOptions(s.CreateEthCashinWelTrans, activity.RegisterOptions{Name: CreateEthCashinWelTrans})
 	w.RegisterActivityWithOptions(s.UpdateEthCashinWelTrans, activity.RegisterOptions{Name: UpdateEthCashinWelTrans})
+
+	w.RegisterActivityWithOptions(s.MapEthTokenToWel, activity.RegisterOptions{Name: MapEthTokenToWel})
+	w.RegisterActivityWithOptions(s.MapWelTokenToEth, activity.RegisterOptions{Name: MapWelTokenToEth})
 }
 
 func (s *WelethBridgeService) StartService() error {

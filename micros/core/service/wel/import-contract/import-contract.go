@@ -279,11 +279,21 @@ func (ctr *ImportContractService) WatchForTx2Treasury(ctx workflow.Context, from
 			log.Error("[WatchForTx2Treasury] error while getting tx2treasury", err)
 			return err
 		}
+
+		var welToken string
+		res = workflow.ExecuteActivity(ctx, welethService.MapEthTokenToWel, token)
+		err = res.Get(ctx, &welToken)
+
+		if err != nil {
+			log.Error("[WatchForTx2Treasury] error while getting corresponding wel token", err)
+			return err
+		}
+
 		cashinTx := welethModel.EthCashinWelTrans{
 			EthTxHash: tx.TxID,
 
 			EthTokenAddr: token,
-			WelTokenAddr: welethModel.WelTokenFromEth[token],
+			WelTokenAddr: welToken,
 
 			EthWalletAddr: from,
 			WelWalletAddr: to,
