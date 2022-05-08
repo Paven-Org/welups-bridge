@@ -18,3 +18,9 @@ type IEventConsumer interface {
 }
 
 type EventParser func(types.Log) error
+
+//-----------------------------------------------------------//
+type ITxMonitor interface {
+	MonitoredAddress() common.Address
+	TxParse(t *types.Transaction, from, to, tokenAddr, amount string) error
+}
