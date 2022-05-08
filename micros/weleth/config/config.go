@@ -13,16 +13,19 @@ import (
 )
 
 type Env struct {
-	HttpConfig         common.HttpConf
-	DBconfig           common.DBconf
-	RedisConfig        common.Redisconf
-	Secrets            common.Secrets
-	EtherumConf        common.EtherumConfig
-	WelupsConf         common.WelupsConfig
-	WelContractAddress []string
-	EthContractAddress []string
-	Mailerconf         common.Mailerconf
-	TemporalCliConfig  common.TemporalCliconf
+	HttpConfig            common.HttpConf
+	DBconfig              common.DBconf
+	RedisConfig           common.Redisconf
+	Secrets               common.Secrets
+	EtherumConf           common.EtherumConfig
+	WelupsConf            common.WelupsConfig
+	WelContractAddress    []string
+	EthContractAddress    []string
+	EthTreasuryAddress    string
+	EthMultisenderAddress string
+	WelImportAddress      string
+	Mailerconf            common.Mailerconf
+	TemporalCliConfig     common.TemporalCliconf
 }
 
 func parseEnv() Env {
@@ -84,7 +87,9 @@ func parseEnv() Env {
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthContractAddress: common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0xE5a7d2F508579C22238688AD0d90db20f708e2A5"}),
+		EthContractAddress:    common.WithDefault("ETH_CONTRACT_ADDRESS", []string{"0xE5a7d2F508579C22238688AD0d90db20f708e2A5"}),
+		EthTreasuryAddress:    common.WithDefault("ETH_TREASURY_ADDRESS", "0x25e8370E0e2cf3943Ad75e768335c892434bD090"),
+		EthMultisenderAddress: common.WithDefault("ETH_MULTISENDER_ADDRESS", "0xBa5968e13BDc78B5B51f2D5EB1cbBb99221c77Ec"),
 
 		WelupsConf: common.WelupsConfig{
 			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
@@ -93,6 +98,7 @@ func parseEnv() Env {
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
 		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"}),
+		WelImportAddress:   common.WithDefault("WEL_IMPORT_ADDRESS", "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j"),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),
