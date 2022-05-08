@@ -5,6 +5,7 @@ import (
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	ethListener "bridge/service-managers/listener/eth"
+	"bridge/service-managers/logger"
 	"database/sql"
 	"fmt"
 	"math/big"
@@ -176,5 +177,45 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 		}
 	}
 
+	return nil
+}
+
+//---------------------------------------------------------------//
+type TreasuryMonitor struct {
+	treasury_address string
+	EthCashinWelDAO  dao.IEthCashinWelTransDAO
+}
+
+func MkTreasuryMonitor(address string) ethListener.ITxMonitor {
+	return &TreasuryMonitor{
+		treasury_address: address,
+	}
+}
+
+func (tm *TreasuryMonitor) MonitoredAddress() common.Address {
+	return common.HexToAddress(tm.treasury_address)
+}
+
+func (tm *TreasuryMonitor) TxParse(t *types.Transaction, from, to, tokenAddr, amount string) error {
+	fmt.Printf("transaction: %x\n", t.Hash())
+	tx2treasury := &model.TxToTreasury{}
+
+	tx2treasury.TxID = t.Hash().Hex()
+	tx2treasury.FromAddress = from
+	tx2treasury.TreasuryAddr = to
+	tx2treasury.TokenAddr = tokenAddr
+	tx2treasury.Amount = amount
+
+	tx_fee := t.Cost()
+	tx_fee = tx_fee.Sub(tx_fee, t.Value())
+	tx2treasury.TxFee = tx_fee.String()
+	tx2treasury.Status = "unconfirmed"
+	tx2treasury.CreatedAt = time.Now()
+	fmt.Printf("record tx to treasury: %+v\n", tx2treasury)
+	if err := tm.EthCashinWelDAO.CreateTx2Treasury(tx2treasury); err != nil {
+		logger.Get().Err(err).Msg("Unable to record transaction to treasury")
+		return err
+	}
+	logger.Get().Info().Msg("Recorded transaction to treasury")
 	return nil
 }
