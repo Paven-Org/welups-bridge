@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
@@ -22,7 +23,10 @@ type WelConsumer struct {
 	ContractAddr          string
 	WelCashinEthTransDAO  dao.IWelCashinEthTransDAO
 	EthCashoutWelTransDAO dao.IEthCashoutWelTransDAO
-	abi                   abi.ABI
+	exportAbi             abi.ABI
+
+	EthCashinWelTransDAO dao.IEthCashinWelTransDAO
+	importAbi            abi.ABI
 }
 
 func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
@@ -33,7 +37,19 @@ func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
 
 	defer exportAbiJSON.Close()
 
-	abi, err := abi.JSON(exportAbiJSON)
+	exportabi, err := abi.JSON(exportAbiJSON)
+	if err != nil {
+		panic(err)
+	}
+
+	importAbiJSON, err := os.Open("abi/wel/Import.json")
+	if err != nil {
+		panic(err)
+	}
+
+	defer importAbiJSON.Close()
+
+	importabi, err := abi.JSON(importAbiJSON)
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +58,10 @@ func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
 		ContractAddr:          addr,
 		WelCashinEthTransDAO:  daos.WelCashinEthTransDAO,
 		EthCashoutWelTransDAO: daos.EthCashoutWelTransDAO,
-		abi:                   abi,
+		exportAbi:             exportabi,
+
+		EthCashinWelTransDAO: daos.EthCashinWelTransDAO,
+		importAbi:            importabi,
 	}
 }
 
@@ -51,24 +70,111 @@ func (e *WelConsumer) GetConsumer() ([]*welListener.EventConsumer, error) {
 		{
 			Address: e.ContractAddr,
 			Topic: crypto.Keccak256Hash(
-				[]byte(e.abi.Events["Withdraw"].Sig),
+				[]byte(e.exportAbi.Events["Withdraw"].Sig),
 			),
 			ParseEvent: e.DoneDepositParser,
 		},
 		{
 			Address: e.ContractAddr,
 			Topic: crypto.Keccak256Hash(
-				[]byte(e.abi.Events["Returned"].Sig),
+				[]byte(e.exportAbi.Events["Returned"].Sig),
 			),
 
 			ParseEvent: e.DoneReturnParser,
 		},
+		{
+			Address: e.ContractAddr,
+			Topic: crypto.Keccak256Hash(
+				[]byte(e.exportAbi.Events["Imported"].Sig),
+			),
+
+			ParseEvent: e.DoneImportedParser,
+		},
 	}, nil
+}
+
+func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int) error {
+	confirmStatus := model.EthCashinWelConfirmed
+	if t.Status != model.EthCashinWelConfirmed {
+		logger.Get().Info().Msg("[ImportedEV] Imported event unconfirmed")
+		//return nil
+		confirmStatus = model.EthCashinWelUnconfirmed
+	}
+	data := make(map[string]interface{})
+	e.exportAbi.UnpackIntoMap(
+		data,
+		"Imported",
+		t.Log[logpos].Data,
+	)
+
+	welTokenAddr, _ := libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
+
+	_receivers := data["receivers"].([]common.Address)
+	receivers := libs.Map(
+		func(rawAddr common.Address) string {
+			hexAddr := rawAddr.Hex()
+			_, hexAddr, _ = strings.Cut(hexAddr, "0x")
+			ret, _ := libs.HexToB58("0x41" + hexAddr)
+			return ret
+		},
+		_receivers)
+	fmt.Println("Receivers: ", receivers)
+
+	_amounts := data["amounts"].([]*big.Int)
+	amounts := libs.Map(
+		func(amount *big.Int) string {
+			return amount.String()
+		},
+		_amounts)
+	fmt.Println("Amounts: ", amounts)
+
+	fee := data["fee"].(*big.Int).String()
+	fmt.Println("total fee: ", fee)
+
+	amountOfReceiver := make(map[string]string)
+	for i, receiver := range receivers {
+		rAmount := amounts[i]
+		amountOfReceiver[receiver] = rAmount
+	}
+
+	// the rest of this should probably be implemented as a temporal workflow instead, but meh
+	trans, err := e.EthCashinWelTransDAO.SelectTransByIssueTxHash(t.Hash)
+	if err != nil {
+		logger.Get().Err(err).Msgf("[ImportedEV] error while retrieving transactions with issue txhash %s", t.Hash)
+		return err
+	}
+	fmt.Println("trans: ", trans)
+
+	for _, tran := range trans {
+		if welTokenAddr != tran.WelTokenAddr {
+			tran.WelTokenAddr = welTokenAddr
+		}
+		amount := &big.Int{}
+		amount.SetString(amountOfReceiver[tran.WelWalletAddr], 10)
+		tran.Amount = amount.String()
+
+		total := big.NewInt(0)
+		total.SetString(tran.Total, 10)
+
+		fee := &big.Int{}
+		fee = fee.Sub(total, amount)
+		tran.CommissionFee = fee.String()
+
+		tran.Status = confirmStatus
+
+		fmt.Println("[ImportedEV] tran to be saved: ", tran)
+		if err := e.EthCashinWelTransDAO.UpdateEthCashinWelTx(tran); err != nil {
+			logger.Get().Err(err).Msgf("[ImportedEV] error while saving transaction", tran)
+		}
+
+	}
+
+	return nil
 }
 
 func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) error {
 	data := make(map[string]interface{})
-	e.abi.UnpackIntoMap(
+	e.exportAbi.UnpackIntoMap(
 		data,
 		"Returned",
 		t.Log[logpos].Data,
@@ -128,7 +234,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 
 func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) error {
 	data := make(map[string]interface{})
-	e.abi.UnpackIntoMap(
+	e.exportAbi.UnpackIntoMap(
 		data,
 		"Withdraw",
 		t.Log[logpos].Data,
