@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
+	"sync"
 	"time"
 
 	"bridge/common/consts"
+	"bridge/micros/weleth/model"
 	"bridge/service-managers/daemon"
+	"bridge/service-managers/logger"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog"
 )
@@ -22,6 +28,7 @@ type EthListener struct {
 	EthClient        *ethclient.Client
 	EventFilters     []ethereum.FilterQuery
 	EventConsumerMap map[string]*EventConsumer
+	TxMonitors       map[common.Address]ITxMonitor
 	Logger           *zerolog.Logger
 	errC             chan error
 	blockTime        uint64
@@ -39,6 +46,7 @@ func NewEthListener(
 		EthInfo:          ethInfo,
 		EthClient:        ethClient,
 		EventConsumerMap: make(map[string]*EventConsumer),
+		TxMonitors:       make(map[common.Address]ITxMonitor),
 		Log:              make(chan types.Log),
 		errC:             make(chan error),
 		Logger:           logger,
@@ -66,6 +74,20 @@ func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 
 	s.EventFilters = append(s.EventFilters, consumer.GetFilterQuery())
 	return nil
+}
+
+func (s *EthListener) RegisterTxMonitor(monitor ITxMonitor) error {
+	if monitor == nil {
+		fmt.Println("Register nil monitor")
+		return fmt.Errorf("Nil monitor")
+	}
+	address := monitor.MonitoredAddress()
+	if _, ok := s.TxMonitors[address]; !ok {
+		s.TxMonitors[address] = monitor
+		fmt.Println("Monitor for " + fmt.Sprintf("0x%x", address) + " Added")
+		return nil
+	}
+	return fmt.Errorf("Monitor for " + fmt.Sprintf("0x%x", address) + " already existed")
 }
 
 func (s *EthListener) Start(ctx context.Context) {
@@ -146,6 +168,72 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 						until = until.Add(begin, limit)
 						//s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", begin.String(), until.String()))
 
+						// tx scan
+						wg := sync.WaitGroup{}
+						wg.Add(1)
+						go func(from *big.Int, to *big.Int) {
+							for i := from; i.Cmp(to) < 1; i = i.Add(i, big.NewInt(1)) {
+								currBlock, err := s.EthClient.BlockByNumber(context.Background(), i)
+								if err != nil {
+									s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx scan err")
+									s.errC <- err
+									continue
+								}
+								trans := currBlock.Transactions()
+								for _, t := range trans {
+									if t.To() == nil { // contract deployment, ignore
+										continue
+									}
+									var isContractCall = false
+									receipt, err := s.EthClient.TransactionReceipt(context.Background(), t.Hash())
+									if err != nil {
+										s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx receipt retrieval err")
+										continue
+									}
+									if receipt.Status != 1 {
+										s.Logger.Info().Msgf("[eth_listener]] Skipping failed Ethereum tx %s...", t.Hash().Hex())
+										continue
+									}
+									// check if this is an ERC20 transfer
+									if len(t.Data()) > 0 {
+										isContractCall = true
+										abiJson := strings.NewReader(`[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`)
+										abi, _ := abi.JSON(abiJson)
+										topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
+										for _, log := range receipt.Logs {
+											if log.Topics[0] == topic {
+												_to := common.HexToAddress(log.Topics[2].Hex())
+												if monitor, ok := s.TxMonitors[_to]; ok {
+													data := make(map[string]interface{})
+													abi.UnpackIntoMap(data, "Transfer", log.Data)
+													from := common.HexToAddress(log.Topics[1].Hex()).Hex()
+													to := _to.Hex()
+													contract := t.To().Hex()
+													amount := data["amount"].(*big.Int).String()
+													monitor.TxParse(t, from, to, contract, amount)
+												}
+											}
+										}
+									}
+
+									if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
+										fmt.Println("tran to: ", *t.To())
+										msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
+										if err != nil {
+											logger.Get().Err(err).Msg("Unable to convert transaction to message")
+											continue
+										}
+										from := msg.From().Hex()
+										to := msg.To().Hex()
+										amount := t.Value().String()
+										monitor.TxParse(t, from, to, model.EthereumTk, amount)
+									}
+								}
+							}
+							wg.Done()
+						}(begin, until)
+
+						// events scan
 						for _, query := range s.EventFilters {
 							go func(query ethereum.FilterQuery) {
 								query.FromBlock = begin
@@ -164,12 +252,79 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 								}
 							}(query)
 						}
+						wg.Wait()
 						// update last scan block
 						sysInfo.LastScannedBlock = until.Int64()
 						s.EthInfo.Update(sysInfo)
 					}
 				} else {
 					//s.Logger.Info().Msg(fmt.Sprintf("[eth_listener] scan from block %s to %s", scannedBlock.String(), currBlock.String()))
+					// tx scan
+					wg := sync.WaitGroup{}
+					wg.Add(1)
+					go func(from *big.Int, to *big.Int) {
+						for i := from; i.Cmp(to) < 1; i = i.Add(i, big.NewInt(1)) {
+							currBlock, err := s.EthClient.BlockByNumber(context.Background(), i)
+							if err != nil {
+								s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx scan err")
+								s.errC <- err
+								continue
+							}
+							trans := currBlock.Transactions()
+							for _, t := range trans {
+								if t.To() == nil { // contract deployment
+									continue
+								}
+								var isContractCall = false
+								receipt, err := s.EthClient.TransactionReceipt(context.Background(), t.Hash())
+								if err != nil {
+									s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx receipt retrieval err")
+									continue
+								}
+								if receipt.Status != 1 {
+									s.Logger.Info().Msgf("[eth_listener]] Skipping failed Ethereum tx %s...", t.Hash().Hex())
+									continue
+								}
+								// check if this is an ERC20 transfer
+								if len(t.Data()) > 0 {
+									isContractCall = true
+									abiJson := strings.NewReader(`[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`)
+									abi, _ := abi.JSON(abiJson)
+									topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
+									for _, log := range receipt.Logs {
+										if log.Topics[0] == topic {
+											_to := common.HexToAddress(log.Topics[2].Hex())
+											if monitor, ok := s.TxMonitors[_to]; ok {
+												data := make(map[string]interface{})
+												abi.UnpackIntoMap(data, "Transfer", log.Data)
+												from := common.HexToAddress(log.Topics[1].Hex()).Hex()
+												to := _to.Hex()
+												contract := t.To().Hex()
+												amount := data["amount"].(*big.Int).String()
+												monitor.TxParse(t, from, to, contract, amount)
+											}
+										}
+									}
+								}
+
+								if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
+									fmt.Println("tran to: ", *t.To())
+									msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
+									if err != nil {
+										logger.Get().Err(err).Msg("Unable to convert transaction to message")
+										continue
+									}
+									from := msg.From().Hex()
+									to := msg.To().Hex()
+									amount := t.Value().String()
+									monitor.TxParse(t, from, to, model.EthereumTk, amount)
+								}
+							}
+						}
+						wg.Done()
+					}(scannedBlock, currBlock)
+
+					// events scan
 					for _, query := range s.EventFilters {
 						go func(query ethereum.FilterQuery) {
 							query.FromBlock = scannedBlock
@@ -188,6 +343,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 							}
 						}(query)
 					}
+					wg.Wait()
 					// update last scan block
 					sysInfo.LastScannedBlock = currBlock.Int64()
 					s.EthInfo.Update(sysInfo)
