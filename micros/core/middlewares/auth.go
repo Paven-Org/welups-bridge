@@ -37,6 +37,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] Unable to parse JWT")
 			c.JSON(http.StatusBadRequest, "Unable to parse JWT")
+			c.Abort()
 			return
 		}
 		username := claims.Username
@@ -46,6 +47,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] No cookie in request")
 			c.JSON(http.StatusBadRequest, "No cookie in request")
+			c.Abort()
 			return
 		}
 
@@ -58,6 +60,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")
+			c.Abort()
 			return
 		}
 
@@ -65,6 +68,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 			err := model.ErrInconsistentCredentials
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusUnauthorized, "Unable to authorize user")
+			c.Abort()
 			return
 		}
 		// save claims into context
@@ -74,6 +78,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")
+			c.Abort()
 			return
 		}
 		c.Set("roles", roles)
@@ -101,6 +106,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		if !authorized {
 			logger.Debug().Msgf("[AuthMW] Failed to authorize user %s", claims.Username)
 			c.JSON(http.StatusUnauthorized, "Unable to authorize user")
+			c.Abort()
 			return
 		}
 		// next
