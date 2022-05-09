@@ -6,14 +6,14 @@ import (
 )
 
 type User struct {
-	Id       uint64
-	Username string
-	Password string `json:"-"`
-	Email    string
-	Status   string
+	Id       uint64 `json:"id" db:"id"`
+	Username string `json:"username" db:"username"`
+	Password string `json:"-" db:"password"`
+	Email    string `json:"email" db:"email"`
+	Status   string `json:"status" db:"status"`
 
-	Created_at time.Time
-	Updated_at time.Time
+	Created_at time.Time `json:"created_at" db:"created_at"`
+	Updated_at time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }
 
 type Claims struct {

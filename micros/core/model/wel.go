@@ -6,12 +6,12 @@ import (
 )
 
 type WelAccount struct {
-	Address string
-	Prikey  string
-	Status  string
+	Address string `json:"address" db:"address"`
+	Prikey  string `json:"-" db:"prikey"`
+	Status  string `json:"status" db:"status"`
 
-	Created_at time.Time
-	Updated_at time.Time
+	Created_at time.Time `json:"created_at" db:"created_at"`
+	Updated_at time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }
 
 const (
