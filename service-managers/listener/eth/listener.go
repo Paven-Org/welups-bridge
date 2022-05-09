@@ -204,6 +204,10 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 										abi, _ := abi.JSON(abiJson)
 										topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
 										for _, log := range receipt.Logs {
+											if len(log.Topics) < 3 {
+												s.Logger.Warn().Msgf("[eth listener] topics length too short in log: %+v\n", log)
+												continue
+											}
 											if log.Topics[0] == topic {
 												_to := common.HexToAddress(log.Topics[2].Hex())
 												if monitor, ok := s.TxMonitors[_to]; ok {
@@ -295,6 +299,10 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 									abi, _ := abi.JSON(abiJson)
 									topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
 									for _, log := range receipt.Logs {
+										if len(log.Topics) < 3 {
+											s.Logger.Warn().Msgf("[eth listener] topics length too short in log: %+v\n", log)
+											continue
+										}
 										if log.Topics[0] == topic {
 											_to := common.HexToAddress(log.Topics[2].Hex())
 											if monitor, ok := s.TxMonitors[_to]; ok {
