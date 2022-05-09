@@ -45,6 +45,7 @@ func NewWelListener(
 func (s *WelListener) RegisterConsumer(consumer IEventConsumer) error {
 	consumerHandler, err := consumer.GetConsumer()
 	if err != nil {
+		s.Logger.Err(err).Msg("[wel listener] Unable to get consumer")
 		return err
 	}
 
@@ -99,13 +100,15 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				sysInfo, err := s.WelInfo.Get()
 				if err != nil {
 					s.Logger.Err(err).Msg("[wel_listener] can't get system info")
+					continue
 				}
 				lastScanned := sysInfo.LastScannedBlock
 				//s.Logger.Info().Msgf("[wel listener] sysinfo: %d", lastScanned)
 
 				header, err := s.TransHandler.Client.GetNowBlock()
 				if err != nil {
-					s.Logger.Err(err).Msg("[wel_listener] can't get head by number")
+					s.Logger.Err(err).Msg("[wel_listener] can't get head by number, possibly due to rpc node failure")
+					continue
 				}
 				headNum := header.BlockHeader.RawData.Number
 				//s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNum %d", lastScanned, headNum)

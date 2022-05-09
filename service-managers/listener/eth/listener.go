@@ -11,7 +11,6 @@ import (
 	"bridge/common/consts"
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/daemon"
-	"bridge/service-managers/logger"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -66,6 +65,7 @@ func (s *EthListener) AddFilterQuery(query ethereum.FilterQuery) {
 func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 	consumerHandler, err := consumer.GetConsumer()
 	if err != nil {
+		s.Logger.Err(err).Msg("[eth listener] Unable to get consumer")
 		return err
 	}
 	for i := 0; i < len(consumerHandler); i++ {
@@ -78,13 +78,14 @@ func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 
 func (s *EthListener) RegisterTxMonitor(monitor ITxMonitor) error {
 	if monitor == nil {
-		fmt.Println("Register nil monitor")
-		return fmt.Errorf("Nil monitor")
+		err := fmt.Errorf("Nil monitor")
+		s.Logger.Err(err).Msg("[eth listener] Register nil monitor")
+		return err
 	}
 	address := monitor.MonitoredAddress()
 	if _, ok := s.TxMonitors[address]; !ok {
 		s.TxMonitors[address] = monitor
-		fmt.Println("Monitor for " + fmt.Sprintf("0x%x", address) + " Added")
+		s.Logger.Info().Msg("Monitor for " + fmt.Sprintf("0x%x", address) + " Added")
 		return nil
 	}
 	return fmt.Errorf("Monitor for " + fmt.Sprintf("0x%x", address) + " already existed")
@@ -130,11 +131,13 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 				sysInfo, err := s.EthInfo.Get()
 				if err != nil {
 					s.Logger.Err(err).Msg("[eth_listener] can't get system info")
+					continue
 				}
 
 				header, err := s.EthClient.HeaderByNumber(parentContext, nil)
 				if err != nil {
-					s.Logger.Err(err).Msg("[eth_listener] can't get head by number")
+					s.Logger.Err(err).Msg("[eth_listener] can't get head by number, possibly due to rpc node failure")
+					continue
 				}
 				currBlock := header.Number
 
@@ -220,7 +223,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 										fmt.Println("tran to: ", *t.To())
 										msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
 										if err != nil {
-											logger.Get().Err(err).Msg("Unable to convert transaction to message")
+											s.Logger.Err(err).Msg("Unable to convert transaction to message")
 											continue
 										}
 										from := msg.From().Hex()
@@ -311,7 +314,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 									fmt.Println("tran to: ", *t.To())
 									msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
 									if err != nil {
-										logger.Get().Err(err).Msg("Unable to convert transaction to message")
+										s.Logger.Err(err).Msg("Unable to convert transaction to message")
 										continue
 									}
 									from := msg.From().Hex()
