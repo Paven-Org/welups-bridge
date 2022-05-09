@@ -205,7 +205,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 											abi, _ := abi.JSON(abiJson)
 											topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
 											for _, log := range receipt.Logs {
-												if len(log.Topics) < 1 {
+												if len(log.Topics) < 3 {
 													//s.Logger.Debug().Msgf("[eth listener] topics length too short in log: %+v\n", log)
 													continue
 												}
@@ -303,7 +303,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 										abi, _ := abi.JSON(abiJson)
 										topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
 										for _, log := range receipt.Logs {
-											if len(log.Topics) < 1 {
+											if len(log.Topics) < 3 {
 												//s.Logger.Debug().Msgf("[eth listener] topics length too short in log: %+v\n", log)
 												continue
 											}
