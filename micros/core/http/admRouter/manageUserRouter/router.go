@@ -162,10 +162,10 @@ func updateUser(c *gin.Context) {
 	// request
 	type updateRequest struct {
 		Username    string `json:"username"`
-		NewUsername string `json:"new_username"`
-		Email       string `json:"email"`
-		Password    string `json:"password"`
-		Status      string `json:"status"`
+		NewUsername string `json:"new_username,omitempty"`
+		Email       string `json:"email,omitempty"`
+		Password    string `json:"password,omitempty"`
+		Status      string `json:"status,omitempty"`
 	}
 	var req updateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
