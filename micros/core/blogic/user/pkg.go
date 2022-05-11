@@ -91,7 +91,7 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 
 	if email != "" {
 		log.Info().Msgf("[user logic internal] change email from %s to %s", user.Email, email)
-		user.Username = email
+		user.Email = email
 	}
 
 	if status != "" {
