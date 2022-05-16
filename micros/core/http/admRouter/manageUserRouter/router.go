@@ -108,10 +108,25 @@ func getUsers(c *gin.Context) {
 		return
 	}
 
+	total, err := userLogic.TotalUsers()
+	if err != nil && err != model.ErrUserNotFound {
+		logger.Err(err).Msgf("[get total handler] Unable to get total users")
+		c.JSON(http.StatusInternalServerError, "Unable to get total users")
+		return
+	}
+
 	// response
+	type response struct {
+		Users []model.User `json:"users,omitempty"`
+		Total uint64       `json:"total,omitempty"`
+	}
+	resp := response{
+		Users: users,
+		Total: total,
+	}
 
 	logger.Info().Msgf("[get users handler] Get users successfully")
-	c.JSON(http.StatusOK, &users)
+	c.JSON(http.StatusOK, resp)
 	return
 }
 
