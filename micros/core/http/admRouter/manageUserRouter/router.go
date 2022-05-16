@@ -160,8 +160,8 @@ func addUser(c *gin.Context) {
 
 func updateUser(c *gin.Context) {
 	// request
+	username := c.Param("user")
 	type updateRequest struct {
-		Username    string `json:"username"`
 		NewUsername string `json:"new_username,omitempty"`
 		Email       string `json:"email,omitempty"`
 		Password    string `json:"password,omitempty"`
@@ -174,7 +174,7 @@ func updateUser(c *gin.Context) {
 		return
 	}
 	// process
-	if err := userLogic.AdminUpdateUserInfo(req.Username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
+	if err := userLogic.AdminUpdateUserInfo(username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
 		logger.Err(err).Msgf("[update handler] Unable to update user")
 		c.JSON(http.StatusInternalServerError, "Unable to update user")
 		return
