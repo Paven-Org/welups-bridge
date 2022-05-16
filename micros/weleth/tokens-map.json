@@ -1,8 +1,14 @@
 [
   {
-    "eth":"0x1353D8554331c7A9f174Ff528D8e1F7dEF3CCd57",
+    "eth":"0xb60bd744550b46DBBDc3f17ccea62E619d772502",
     "wel":"W9yD14Nj9j7xAB4dbGeiX9h8unkKHxuTtb",
     "eth_name": "WWEL",
     "wel_name": "WEL"
+  },
+  {
+    "eth":"0x0000000000000000000000000000000000000000",
+    "wel":"WLNYdo8jy9xxuyGhQtqU2DAgcptBgJu4jd",
+    "eth_name": "ETH",
+    "wel_name": "WETH"
   }
 ]
