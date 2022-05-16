@@ -99,6 +99,10 @@ const (
 	EthCashinWelUnconfirmed = "unconfirmed"
 	EthCashinWelConfirmed   = "confirmed"
 	EthCashinWelFailed      = "failed"
+
+	WelCashoutEthUnconfirmed = "unconfirmed"
+	WelCashoutEthConfirmed   = "confirmed"
+	WelCashoutEthRetry       = "retry"
 )
 
 var (
@@ -141,4 +145,29 @@ type EthCashinWelTrans struct {
 
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	IssuedAt  time.Time `json:"issued_at" db:"issued_at,omitempty"`
+}
+
+type WelCashoutEthTrans struct {
+	ID int64 `json:"id,omitempty" db:"id,omitempty"`
+
+	EthDisperseTxHash string `json:"eth_disperse_tx_hash,omitempty" db:"eth_disperse_tx_hash,omitempty"`
+	WelWithdrawTxHash string `json:"wel_withdraw_tx_hash" db:"wel_withdraw_tx_hash,omitempty"`
+
+	EthTokenAddr string `json:"eth_token_addr" db:"eth_token_addr,omitempty"`
+	WelTokenAddr string `json:"wel_token_addr" db:"wel_token_addr,omitempty"`
+
+	EthWalletAddr string `json:"eth_wallet_addr" db:"eth_wallet_addr,omitempty"`
+	WelWalletAddr string `json:"wel_wallet_addr,omitempty" db:"wel_wallet_addr,omitempty"`
+
+	NetworkID string `json:"network_id" db:"network_id,omitempty"`
+
+	Total         string `json:"total" db:"total,omitempty"`
+	Amount        string `json:"amount" db:"amount,omitempty"`
+	CommissionFee string `json:"commission_fee" db:"commission_fee,omitempty"`
+
+	CashoutStatus  string `json:"cashout_status" db:"disperse_status"`
+	DisperseStatus string `json:"disperse_status" db:"cashout_status"`
+
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	DispersedAt time.Time `json:"issued_at" db:"dispersed_at,omitempty"`
 }
