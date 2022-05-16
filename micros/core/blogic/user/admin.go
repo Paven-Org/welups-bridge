@@ -108,3 +108,14 @@ func GetAllRoles() ([]string, error) {
 
 	return roles, nil
 }
+
+func TotalUsers() (uint64, error) {
+	log.Info().Msgf("[user logic internal] Getting total number of users...")
+	total, err := userDAO.TotalUsers()
+	if err != nil {
+		log.Err(err).Msg("[user logic internal] Failed to retrieve total number of users")
+		return 0, err
+	}
+
+	return total, nil
+}
