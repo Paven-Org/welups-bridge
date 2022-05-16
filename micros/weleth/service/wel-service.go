@@ -2,10 +2,12 @@ package service
 
 import (
 	"bridge/libs"
+	coreEthService "bridge/micros/core/service/eth"
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	welListener "bridge/service-managers/listener/wel"
 	"bridge/service-managers/logger"
+	"context"
 	"database/sql"
 	"fmt"
 	"math/big"
@@ -17,19 +19,24 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"go.temporal.io/sdk/client"
 )
 
 type WelConsumer struct {
-	ContractAddr          string
+	ExportContractAddr    string
+	ImportContractAddr    string
 	WelCashinEthTransDAO  dao.IWelCashinEthTransDAO
 	EthCashoutWelTransDAO dao.IEthCashoutWelTransDAO
 	exportAbi             abi.ABI
 
-	EthCashinWelTransDAO dao.IEthCashinWelTransDAO
-	importAbi            abi.ABI
+	EthCashinWelTransDAO  dao.IEthCashinWelTransDAO
+	WelCashoutEthTransDAO dao.IWelCashoutEthTransDAO
+	importAbi             abi.ABI
+
+	tempCli client.Client
 }
 
-func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
+func NewWelConsumer(iaddr, eaddr string, tempCli client.Client, daos *dao.DAOs) *WelConsumer {
 	exportAbiJSON, err := os.Open("abi/wel/Export.json")
 	if err != nil {
 		panic(err)
@@ -55,27 +62,31 @@ func NewWelConsumer(addr string, daos *dao.DAOs) *WelConsumer {
 	}
 
 	return &WelConsumer{
-		ContractAddr:          addr,
+		ExportContractAddr:    eaddr,
+		ImportContractAddr:    iaddr,
 		WelCashinEthTransDAO:  daos.WelCashinEthTransDAO,
 		EthCashoutWelTransDAO: daos.EthCashoutWelTransDAO,
 		exportAbi:             exportabi,
 
-		EthCashinWelTransDAO: daos.EthCashinWelTransDAO,
-		importAbi:            importabi,
+		EthCashinWelTransDAO:  daos.EthCashinWelTransDAO,
+		WelCashoutEthTransDAO: daos.WelCashoutEthTransDAO,
+		importAbi:             importabi,
+
+		tempCli: tempCli,
 	}
 }
 
 func (e *WelConsumer) GetConsumer() ([]*welListener.EventConsumer, error) {
 	return []*welListener.EventConsumer{
 		{
-			Address: e.ContractAddr,
+			Address: e.ExportContractAddr,
 			Topic: crypto.Keccak256Hash(
 				[]byte(e.exportAbi.Events["Withdraw"].Sig),
 			),
 			ParseEvent: e.DoneDepositParser,
 		},
 		{
-			Address: e.ContractAddr,
+			Address: e.ExportContractAddr,
 			Topic: crypto.Keccak256Hash(
 				[]byte(e.exportAbi.Events["Returned"].Sig),
 			),
@@ -83,14 +94,72 @@ func (e *WelConsumer) GetConsumer() ([]*welListener.EventConsumer, error) {
 			ParseEvent: e.DoneReturnParser,
 		},
 		{
-			Address: e.ContractAddr,
+			Address: e.ImportContractAddr,
 			Topic: crypto.Keccak256Hash(
-				[]byte(e.exportAbi.Events["Imported"].Sig),
+				[]byte(e.importAbi.Events["Imported"].Sig),
 			),
 
 			ParseEvent: e.DoneImportedParser,
 		},
+		{
+			Address: e.ImportContractAddr,
+			Topic: crypto.Keccak256Hash(
+				[]byte(e.importAbi.Events["Withdraw"].Sig),
+			),
+
+			ParseEvent: e.DoneIWithdrawParser,
+		},
 	}, nil
+}
+
+func (e *WelConsumer) DoneIWithdrawParser(t *welListener.Transaction, logpos int) error {
+	if t.Status != "confirmed" {
+		logger.Get().Info().Msg("[DoneIWithdraw] unconfirmed transaction, skipped")
+		return nil
+	}
+	data := make(map[string]interface{})
+	e.importAbi.UnpackIntoMap(
+		data,
+		"Withdraw",
+		t.Log[logpos].Data,
+	)
+
+	var tx model.WelCashoutEthTrans
+
+	tx.EthWalletAddr = data["to"].(common.Address).Hex()
+	tx.WelWalletAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[2][12:]))
+
+	tx.Amount = data["amount"].(*big.Int).String()
+	tx.CommissionFee = data["fee"].(*big.Int).String()
+	_total := big.NewInt(0).Add(data["amount"].(*big.Int), data["fee"].(*big.Int))
+	tx.Total = _total.String()
+
+	tx.WelTokenAddr, _ = libs.HexToB58("0x41" + GotronCommon.Bytes2Hex(t.Log[logpos].Topics[1][12:]))
+	tx.EthTokenAddr = model.EthTokenFromWel[tx.WelTokenAddr]
+
+	tx.NetworkID = (&big.Int{}).SetBytes(t.Log[logpos].Topics[3]).String()
+
+	tx.CashoutStatus = model.WelCashoutEthConfirmed
+	tx.DisperseStatus = model.WelCashoutEthUnconfirmed
+
+	tx.WelWithdrawTxHash = t.Hash
+
+	// save tx
+	id, err := e.WelCashoutEthTransDAO.CreateWelCashoutEthTrans(&tx)
+	if err != nil {
+		logger.Get().Err(err).Msgf("[DoneIWithdraw] can't create W2E cashout transaction %s", t.Hash)
+		return err
+	}
+	tx.ID = id
+
+	// send signal to batch tx
+	err = e.tempCli.SignalWorkflow(context.Background(), coreEthService.BatchDisperseID, "", coreEthService.BatchDisperseSignal, tx)
+	if err != nil {
+		logger.Get().Err(err).Msgf("[DoneIWithdraw] Error sending BatchDisperseWF tx %+v", tx)
+		return err
+	}
+
+	return nil
 }
 
 func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int) error {
@@ -161,6 +230,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 		tran.CommissionFee = fee.String()
 
 		tran.Status = confirmStatus
+		tran.IssuedAt = time.Now()
 
 		fmt.Println("[ImportedEV] tran to be saved: ", tran)
 		if err := e.EthCashinWelTransDAO.UpdateEthCashinWelTx(tran); err != nil {
