@@ -173,6 +173,7 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 				}
 				// update e2wcashin txs with wel issue txhash
 				for _, tran := range allTxQueues[welToken].queue {
+					tran.WelIssueTxHash = txhash
 					res = workflow.ExecuteActivity(ctx, welethService.UpdateEthCashinWelTrans, tran)
 					if err := res.Get(ctx, nil); err != nil {
 						log.Error("Failed to update E2W cashin trans")
@@ -222,6 +223,7 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 					}
 					// update e2wcashin txs with wel issue txhash
 					for _, tran := range allTxQueues[welToken].queue {
+						tran.WelIssueTxHash = txhash
 						res = workflow.ExecuteActivity(ctx, welethService.UpdateEthCashinWelTrans, tran)
 						if err := res.Get(ctx, nil); err != nil {
 							log.Error("Failed to update E2W cashin trans")
