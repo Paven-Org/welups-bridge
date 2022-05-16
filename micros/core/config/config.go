@@ -97,12 +97,12 @@ func parseEnv() Env {
 		},
 
 		EthereumConfig: common.EtherumConfig{
-			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://rinkeby.infura.io/v3/4e7b43c678a14cffbe49ed691311ff1a"),
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://eth-goerli.alchemyapi.io/v2/Ls_mnBZPnKr6Ndt5bYUzZB034n6lM23Z"),
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthGovContract:    common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x6150f59d1fd1A3C6Dc22619973D574e3CC7bA6E2"),
-		EthImportContract: common.WithDefault("ETH_IMPORT_CONTRACT_ADDRESS", "0xE5a7d2F508579C22238688AD0d90db20f708e2A5"),
+		EthGovContract:    common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x45863E5eF99b33AFc7c3B47C77da50Ccddda5EF3"),
+		EthImportContract: common.WithDefault("ETH_IMPORT_CONTRACT_ADDRESS", "0x47469dd8bb847df5bAe03A9E3644C4db9c7d779B"),
 
 		WelupsConfig: common.WelupsConfig{
 			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
