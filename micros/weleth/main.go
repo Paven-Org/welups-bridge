@@ -58,6 +58,14 @@ func main() {
 		}
 		logger.Info().Msg("[main] db closed successfully")
 	}()
+	// temporal cli
+	tempCli, err := manager.MkTemporalClient(config.Get().TemporalCliConfig, []string{})
+	if err != nil {
+		logger.Err(err).Msgf("Unable to connect to temporal backend")
+		panic(err)
+	}
+	defer tempCli.Close()
+
 	// Redis
 
 	// Message queue
@@ -81,8 +89,10 @@ func main() {
 	ethSysDAO := daos.EthSysDAO
 	ethListen := ethListener.NewEthListener(ethSysDAO, ethClient, config.Get().EtherumConf.BlockTime, config.Get().EtherumConf.BlockOffSet, logger)
 
-	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], daos)
+	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], config.Get().EthMultisenderAddress, tempCli, daos)
 	ethListen.RegisterConsumer(ethEvtConsumer)
+	ethTreasuryMonitor := service.MkTreasuryMonitor(config.Get().EthTreasuryAddress)
+	ethListen.RegisterTxMonitor(ethTreasuryMonitor)
 
 	wg.Add(1)
 	go func() {
@@ -106,7 +116,7 @@ func main() {
 	welSysDAO := daos.WelSysDAO
 	welListen := welListener.NewWelListener(welSysDAO, welTransHandler, config.Get().WelupsConf.BlockTime, config.Get().WelupsConf.BlockOffSet, logger)
 
-	welEvtConsumer := service.NewWelConsumer(config.Get().WelContractAddress[0], daos)
+	welEvtConsumer := service.NewWelConsumer(config.Get().WelImportAddress, config.Get().WelContractAddress[0], tempCli, daos)
 	welListen.RegisterConsumer(welEvtConsumer)
 
 	wg.Add(1)
@@ -115,13 +125,7 @@ func main() {
 		wg.Done()
 	}()
 
-	//// Temporal
-	tempCli, err := manager.MkTemporalClient(config.Get().TemporalCliConfig, []string{})
-	if err != nil {
-		logger.Err(err).Msgf("Unable to connect to temporal backend")
-		panic(err)
-	}
-	defer tempCli.Close()
+	//// Temporal workers
 
 	welethMS := welethService.MkWelethBridgeService(tempCli, daos)
 	if err := welethMS.StartService(); err != nil {
