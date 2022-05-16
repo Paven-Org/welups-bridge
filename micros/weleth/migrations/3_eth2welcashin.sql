@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS eth_cashin_wel_trans (
   status varchar(20),
 
   created_at timestamp DEFAULT NOW(),
-  issue_at timestamp,
+  issued_at timestamp,
 
   CHECK (status IN ('unconfirmed', 'confirmed', 'failed'))
 );
