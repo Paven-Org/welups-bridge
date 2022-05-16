@@ -44,6 +44,7 @@ const (
 	CreateEthCashinWelTrans = "CreateEthCashinWelTrans"
 	UpdateEthCashinWelTrans = "UpdateEthCashinWelTrans"
 
+	CreateWelCashoutEthTrans = "CreateWelCashoutEthTrans"
 	UpdateWelCashoutEthTrans = "UpdateWelCashoutEthTrans"
 
 	//
@@ -64,6 +65,7 @@ type WelethBridgeService struct {
 	Wel2EthCashinTransDAO  dao.IWelCashinEthTransDAO
 	Eth2WelCashoutTransDAO dao.IEthCashoutWelTransDAO
 	Eth2WelCashinTransDAO  dao.IEthCashinWelTransDAO
+	Wel2EthCashoutTransDAO dao.IWelCashoutEthTransDAO
 	tempCli                client.Client
 	worker                 worker.Worker
 }
@@ -73,6 +75,8 @@ func MkWelethBridgeService(cli client.Client, daos *dao.DAOs) *WelethBridgeServi
 	return &WelethBridgeService{
 		Wel2EthCashinTransDAO:  daos.WelCashinEthTransDAO,
 		Eth2WelCashoutTransDAO: daos.EthCashoutWelTransDAO,
+		Eth2WelCashinTransDAO:  daos.EthCashinWelTransDAO,
+		Wel2EthCashoutTransDAO: daos.WelCashoutEthTransDAO,
 		tempCli:                cli,
 	}
 }
@@ -283,6 +287,28 @@ func (s *WelethBridgeService) UpdateEthCashinWelTrans(ctx context.Context, tx mo
 	return nil
 }
 
+func (s *WelethBridgeService) CreateWelCashoutEthTrans(ctx context.Context, tx model.WelCashoutEthTrans) (int64, error) {
+	log := logger.Get()
+	log.Info().Msgf("[E2W tx2treasury get] creating W2E cashout transaction")
+	newID, err := s.Wel2EthCashoutTransDAO.CreateWelCashoutEthTrans(&tx)
+	if err != nil {
+		log.Err(err).Msg("[E2W tx2treasury get] failed to create W2E cashout transaction")
+		return newID, err
+	}
+	return newID, nil
+}
+
+func (s *WelethBridgeService) UpdateWelCashoutEthTrans(ctx context.Context, tx model.WelCashoutEthTrans) error {
+	log := logger.Get()
+	log.Info().Msgf("[E2W tx2treasury get] updating W2E cashout transaction")
+	err := s.Wel2EthCashoutTransDAO.UpdateWelCashoutEthTx(&tx)
+	if err != nil {
+		log.Err(err).Msg("[E2W tx2treasury get] failed to update W2E cashout transaction")
+		return err
+	}
+	return nil
+}
+
 func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetWelToEthCashinByTxHash, activity.RegisterOptions{Name: GetWelToEthCashinByTxHash})
 	w.RegisterActivityWithOptions(s.GetEthToWelCashoutByTxHash, activity.RegisterOptions{Name: GetEthToWelCashoutByTxHash})
@@ -299,6 +325,9 @@ func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetUnconfirmedTx2Treasury, activity.RegisterOptions{Name: GetTx2Treasury})
 	w.RegisterActivityWithOptions(s.CreateEthCashinWelTrans, activity.RegisterOptions{Name: CreateEthCashinWelTrans})
 	w.RegisterActivityWithOptions(s.UpdateEthCashinWelTrans, activity.RegisterOptions{Name: UpdateEthCashinWelTrans})
+
+	w.RegisterActivityWithOptions(s.CreateWelCashoutEthTrans, activity.RegisterOptions{Name: CreateWelCashoutEthTrans})
+	w.RegisterActivityWithOptions(s.UpdateWelCashoutEthTrans, activity.RegisterOptions{Name: UpdateWelCashoutEthTrans})
 
 	w.RegisterActivityWithOptions(s.MapEthTokenToWel, activity.RegisterOptions{Name: MapEthTokenToWel})
 	w.RegisterActivityWithOptions(s.MapWelTokenToEth, activity.RegisterOptions{Name: MapWelTokenToEth})
