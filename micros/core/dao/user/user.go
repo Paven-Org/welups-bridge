@@ -22,6 +22,8 @@ type IUserDAO interface {
 	RevokeRole(name string, role string) error
 	GetUserRoles(name string) ([]string, error)
 	GetAllRoles() ([]string, error)
+
+	TotalUsers() (uint64, error)
 }
 
 type userDAO struct {
@@ -281,4 +283,20 @@ func (dao *userDAO) GetAllRoles() ([]string, error) {
 	}
 
 	return roles, nil
+}
+
+func (dao *userDAO) TotalUsers() (uint64, error) {
+	db := dao.db
+	log := logger.Get()
+	var total uint64
+
+	q := db.Rebind("SELECT users FROM total_rows_of")
+	err := db.QueryRow(q).Scan(&total)
+
+	if err != nil {
+		log.Err(err).Msgf("Error while getting total rows of users table")
+		return 0, err
+	}
+
+	return total, nil
 }
