@@ -169,19 +169,19 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 
 func (w *ethCashinWelTransDAO) SelectTransByDepositTxHash(txHash string) (*model.EthCashinWelTrans, error) {
 	var t = &model.EthCashinWelTrans{}
-	err := w.db.Get(t, "SELECT * FROM wel_cashin_eth_trans WHERE eth_tx_hash = $1", txHash)
+	err := w.db.Get(t, "SELECT * FROM eth_cashin_wel_trans WHERE eth_tx_hash = $1", txHash)
 	return t, err
 }
 
 func (w *ethCashinWelTransDAO) SelectTransByIssueTxHash(txHash string) ([]*model.EthCashinWelTrans, error) {
 	var txs = []*model.EthCashinWelTrans{}
-	err := w.db.Select(txs, "SELECT * FROM wel_cashin_eth_trans WHERE wel_issue_tx_hash = $1", txHash)
+	err := w.db.Select(txs, "SELECT * FROM eth_cashin_wel_trans WHERE wel_issue_tx_hash = $1", txHash)
 	return txs, err
 }
 
 func (w *ethCashinWelTransDAO) SelectTransById(id string) (*model.EthCashinWelTrans, error) {
 	var t = &model.EthCashinWelTrans{}
-	err := w.db.Get(t, "SELECT * FROM wel_cashin_eth_trans WHERE id = $1", id)
+	err := w.db.Get(t, "SELECT * FROM eth_cashin_wel_trans WHERE id = $1", id)
 	return t, err
 }
 
