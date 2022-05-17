@@ -210,7 +210,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 													continue
 												}
 												if log.Topics[0] == topic {
-													s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
+													//s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
 													_to := common.HexToAddress(log.Topics[2].Hex())
 													if monitor, ok := s.TxMonitors[_to]; ok {
 														data := make(map[string]interface{})
@@ -308,7 +308,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 												continue
 											}
 											if log.Topics[0] == topic {
-												s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
+												//s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
 												_to := common.HexToAddress(log.Topics[2].Hex())
 												if monitor, ok := s.TxMonitors[_to]; ok {
 													data := make(map[string]interface{})
