@@ -350,9 +350,10 @@ type TreasuryMonitor struct {
 	EthCashinWelDAO  dao.IEthCashinWelTransDAO
 }
 
-func MkTreasuryMonitor(address string) ethListener.ITxMonitor {
+func MkTreasuryMonitor(address string, daos *dao.DAOs) ethListener.ITxMonitor {
 	return &TreasuryMonitor{
 		treasury_address: address,
+		EthCashinWelDAO:  daos.EthCashinWelTransDAO,
 	}
 }
 

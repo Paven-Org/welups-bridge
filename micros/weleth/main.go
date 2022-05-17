@@ -91,7 +91,7 @@ func main() {
 
 	ethEvtConsumer := service.NewEthConsumer(config.Get().EthContractAddress[0], config.Get().EthMultisenderAddress, tempCli, daos)
 	ethListen.RegisterConsumer(ethEvtConsumer)
-	ethTreasuryMonitor := service.MkTreasuryMonitor(config.Get().EthTreasuryAddress)
+	ethTreasuryMonitor := service.MkTreasuryMonitor(config.Get().EthTreasuryAddress, daos)
 	ethListen.RegisterTxMonitor(ethTreasuryMonitor)
 
 	wg.Add(1)
