@@ -83,7 +83,7 @@ func parseEnv() Env {
 		},
 
 		EtherumConf: common.EtherumConfig{
-			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://eth-goerli.alchemyapi.io/v2/Ls_mnBZPnKr6Ndt5bYUzZB034n6lM23Z"),
+			BlockchainRPC: common.WithDefault("ETH_BLOCKCHAIN_RPC", "https://eth-goerli.alchemyapi.io/v2/fTsNANWphvAVnwh9ll2iKoDkUfmJ1pMy"),
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
