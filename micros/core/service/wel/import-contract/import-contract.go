@@ -50,8 +50,7 @@ type ImportContractService struct {
 const (
 	ImportContractQueue = welService.ImportContractQueue
 
-	Withdraw = welService.Withdraw
-	Issue    = welService.Issue
+	Issue = welService.Issue
 
 	WatchForTx2TreasuryWF = welService.WatchForTx2TreasuryWF
 	// signal
@@ -338,6 +337,8 @@ func (ctr *ImportContractService) WatchForTx2Treasury(ctx workflow.Context, from
 	// main
 	if err := getTx2Treasury(); err == welethModel.ErrTx2TreasuryNotFound {
 		selector.Select(ctx)
+	} else if err != nil {
+		return err
 	}
 
 	return nil
@@ -346,10 +347,10 @@ func (ctr *ImportContractService) WatchForTx2Treasury(ctx workflow.Context, from
 // Worker
 func (ctr *ImportContractService) registerService(w worker.Worker) {
 	//w.RegisterActivity(ctr.Withdraw)
-	//w.RegisterActivity(ctr.Issue)
+	w.RegisterActivity(ctr.Issue)
 
-	//w.RegisterWorkflowWithOptions(ctr.WithdrawWorkflow, workflow.RegisterOptions{Name: WithdrawWorkflow})
-	//w.RegisterWorkflowWithOptions(ctr.IssueWorkflow, workflow.RegisterOptions{Name: IssueWorkflow})
+	w.RegisterWorkflowWithOptions(ctr.WatchForTx2Treasury, workflow.RegisterOptions{Name: WatchForTx2TreasuryWF})
+	w.RegisterWorkflow(ctr.BatchIssueWF)
 }
 
 func (ctr *ImportContractService) StartService() error {

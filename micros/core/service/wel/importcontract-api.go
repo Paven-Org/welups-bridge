@@ -3,8 +3,7 @@ package welService
 const (
 	ImportContractQueue = "WelImportContractService"
 
-	Withdraw = "Withdraw"
-	Issue    = "Issue"
+	Issue = "Issue"
 
 	WatchForTx2TreasuryWF = "WatchForTx2TreasuryWF"
 	// signal
