@@ -1,6 +1,7 @@
 package welethService
 
 import (
+	"bridge/micros/weleth/config"
 	"bridge/micros/weleth/dao"
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/logger"
@@ -254,6 +255,11 @@ func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, tx
 func (s *WelethBridgeService) GetUnconfirmedTx2Treasury(ctx context.Context, from, treasury, token, amount string) (model.TxToTreasury, error) {
 	log := logger.Get()
 	log.Info().Msgf("[E2W tx2treasury get] getting tx2treasury transaction")
+	if treasury != config.Get().EthTreasuryAddress {
+		err := fmt.Errorf("Wrong treasury address")
+		log.Err(err).Msg("[E2W tx2treasury get] Wrong treasury address: " + treasury)
+		return model.TxToTreasury{}, err
+	}
 	t, err := s.Eth2WelCashinTransDAO.GetUnconfirmedTx2Treasury(from, treasury, token, amount)
 	if err != nil {
 		log.Err(err).Msg("[E2W tx2treasury get] failed to get tx2treasury transaction")
