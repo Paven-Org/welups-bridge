@@ -11,20 +11,22 @@ import (
 )
 
 type Env struct {
-	HttpConfig        common.HttpConf
-	DBconfig          common.DBconf
-	RedisConfig       common.Redisconf
-	Secrets           common.Secrets
-	Mailerconf        common.Mailerconf
-	TemporalCliConfig common.TemporalCliconf
-	Casbin            common.CasbinCnf
-	EthereumConfig    common.EtherumConfig
-	EthGovContract    string
-	EthImportContract string
+	HttpConfig         common.HttpConf
+	DBconfig           common.DBconf
+	RedisConfig        common.Redisconf
+	Secrets            common.Secrets
+	Mailerconf         common.Mailerconf
+	TemporalCliConfig  common.TemporalCliconf
+	Casbin             common.CasbinCnf
+	EthereumConfig     common.EtherumConfig
+	EthGovContract     string
+	EthImportContract  string
+	EthMulsendContract string
 
 	WelupsConfig      common.WelupsConfig
 	WelGovContract    string
 	WelExportContract string
+	WelImportContract string
 }
 
 func parseEnv() Env {
@@ -101,8 +103,9 @@ func parseEnv() Env {
 			BlockTime:     common.WithDefault("ETH_BLOCK_TIME", uint64(14)),
 			BlockOffSet:   common.WithDefault("ETH_BLOCK_OFFSET", int64(5)),
 		},
-		EthGovContract:    common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x45863E5eF99b33AFc7c3B47C77da50Ccddda5EF3"),
-		EthImportContract: common.WithDefault("ETH_IMPORT_CONTRACT_ADDRESS", "0x47469dd8bb847df5bAe03A9E3644C4db9c7d779B"),
+		EthGovContract:     common.WithDefault("ETH_GOV_CONTRACT_ADDRESS", "0x45863E5eF99b33AFc7c3B47C77da50Ccddda5EF3"),
+		EthImportContract:  common.WithDefault("ETH_IMPORT_CONTRACT_ADDRESS", "0x47469dd8bb847df5bAe03A9E3644C4db9c7d779B"),
+		EthMulsendContract: common.WithDefault("ETH_MULSEND_CONTRACT_ADDRESS", "0x3a9c1A3D0DDa6a025794626Afd2A4C7B7e740712"),
 
 		WelupsConfig: common.WelupsConfig{
 			Nodes:         common.WithDefault("WEL_NODES", []string{"54.179.208.1:16669"}),
@@ -112,6 +115,7 @@ func parseEnv() Env {
 		},
 		WelGovContract:    common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WE8RFVk1GA5NhK8yLxHWkpuP1E5UVqX9tQ"),
 		WelExportContract: common.WithDefault("WEL_EXPORT_CONTRACT_ADDRESS", "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"),
+		WelImportContract: common.WithDefault("WEL_IMPORT_CONTRACT_ADDRESS", "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j"),
 	}
 }
 
