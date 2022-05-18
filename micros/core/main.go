@@ -10,8 +10,10 @@ import (
 	"bridge/micros/core/microservices/weleth/mswelethImp"
 	"bridge/micros/core/middlewares"
 	ethService "bridge/micros/core/service/eth"
+	ethMulsend "bridge/micros/core/service/eth/mulsend"
 	"bridge/micros/core/service/notifier"
 	welService "bridge/micros/core/service/wel"
+	importcontract "bridge/micros/core/service/wel/import-contract"
 	manager "bridge/service-managers"
 	ethListener "bridge/service-managers/listener/eth"
 	welListener "bridge/service-managers/listener/wel"
@@ -114,6 +116,15 @@ func main() {
 	ethGovService.StartService()
 	defer ethGovService.StopService()
 
+	ethMulsendService, err := ethMulsend.MkMulsendContractService(ethCli, tempCli, daos, cnf.EthMulsendContract)
+	if err != nil {
+		logger.Err(err).Msgf("Unable to initialize ethererum MulsendContractService")
+		return
+	}
+
+	ethMulsendService.StartService()
+	defer ethMulsendService.StopService()
+
 	// WEL chain stuff
 	welCli := welclient.NewGrpcClient(cnf.WelupsConfig.Nodes[0])
 	defer welCli.Stop()
@@ -131,6 +142,14 @@ func main() {
 	welGovService.StartService()
 	defer welGovService.StopService()
 
+	welImportService, err := importcontract.MkImportContractService(welCli, tempCli, daos, cnf.WelImportContract)
+	if err != nil {
+		logger.Err(err).Msgf("Unable to initialize welups WelImportService")
+		return
+	}
+
+	welImportService.StartService()
+	defer welImportService.StopService()
 	// Bridge microservices
 	//weleth
 	msWelEth := mswelethImp.MkWeleth(tempCli)
