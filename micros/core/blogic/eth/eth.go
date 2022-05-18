@@ -6,6 +6,7 @@ import (
 	"bridge/micros/core/model"
 	ethService "bridge/micros/core/service/eth"
 	"bridge/micros/core/service/notifier"
+	welService "bridge/micros/core/service/wel"
 	welethModel "bridge/micros/weleth/model"
 	"bridge/service-managers/logger"
 	"context"
@@ -456,6 +457,20 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 	//	return err
 	//}
 
+	return nil
+}
+
+func WatchTx2TreasuryRequest(from, to, treasury, netid, token, amount string) error {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: welService.ImportContractQueue,
+	}
+
+	we, err := tempcli.ExecuteWorkflow(context.Background(), wo, welService.WatchForTx2TreasuryWF, from, to, treasury, netid, token, amount)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to request BE to watch for transaction to treasury from %s", from)
+		return err
+	}
+	log.Info().Msgf("[Eth logic internal] Request BE to watch for transaction to treasury, WF ID: %s, run ID: %s", we.GetID(), we.GetRunID())
 	return nil
 }
 
