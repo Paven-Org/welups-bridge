@@ -3,7 +3,6 @@ package ethService
 const (
 	MulsendContractQueue = "EthMulsendContractService"
 
-	Withdraw = "Withdraw"
 	Disperse = "Disperse"
 
 	// signal

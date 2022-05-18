@@ -51,7 +51,6 @@ type MulsendContractService struct {
 const (
 	MulsendContractQueue = ethService.MulsendContractQueue
 
-	Withdraw = ethService.Withdraw
 	Disperse = ethService.Disperse
 
 	// signal
@@ -273,100 +272,12 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 	return nil
 }
 
-func (ctr *MulsendContractService) WatchForTx2Treasury(ctx workflow.Context, from, to, treasury, netid, token, amount string) error {
-	//	log := workflow.GetLogger(ctx)
-	//
-	//	ao := workflow.ActivityOptions{
-	//		TaskQueue:              welethService.WelethServiceQueue,
-	//		ScheduleToCloseTimeout: time.Second * 60,
-	//		ScheduleToStartTimeout: time.Second * 60,
-	//		StartToCloseTimeout:    time.Second * 60,
-	//		HeartbeatTimeout:       time.Second * 10,
-	//		WaitForCancellation:    false,
-	//		RetryPolicy: &temporal.RetryPolicy{
-	//			MaximumInterval: time.Second * 30,
-	//		},
-	//	}
-	//	ctx = workflow.WithActivityOptions(ctx, ao)
-	//
-	//	getTx2Treasury := func() error {
-	//		var tx welethModel.TxToTreasury
-	//		res := workflow.ExecuteActivity(ctx, welethService.GetTx2Treasury, from, treasury, token, amount)
-	//		err := res.Get(ctx, &tx)
-	//
-	//		if err != nil {
-	//			log.Error("[WatchForTx2Treasury] error while getting tx2treasury", err)
-	//			return err
-	//		}
-	//
-	//		var welToken string
-	//		res = workflow.ExecuteActivity(ctx, welethService.MapEthTokenToWel, token)
-	//		err = res.Get(ctx, &welToken)
-	//
-	//		if err != nil {
-	//			log.Error("[WatchForTx2Treasury] error while getting corresponding wel token", err)
-	//			return err
-	//		}
-	//
-	//		cashinTx := welethModel.WelCashoutEthTrans{
-	//			EthTxHash: tx.TxID,
-	//
-	//			EthTokenAddr: token,
-	//			WelTokenAddr: welToken,
-	//
-	//			EthWalletAddr: from,
-	//			WelWalletAddr: to,
-	//
-	//			NetworkID: netid,
-	//			Total:     tx.Amount,
-	//
-	//			//CommissionFee:
-	//			Status: welethModel.WelCashoutEthUnconfirmed,
-	//		}
-	//		res = workflow.ExecuteActivity(ctx, welethService.CreateWelCashoutEthTrans, cashinTx)
-	//		err = res.Get(ctx, &(cashinTx.ID))
-	//		if err != nil {
-	//			log.Error("[WatchForTx2Treasury] error while createing W2ECashin trans", err)
-	//			return err
-	//		}
-	//
-	//		se := workflow.SignalExternalWorkflow(ctx, ctr.batchDisperseID, "", BatchDisperseSignal, tx)
-	//		err = se.Get(ctx, nil)
-	//		if err != nil {
-	//			log.Error("[WatchForTx2Treasury] error while sending tx to BatchDisperse", err)
-	//			return err
-	//		}
-	//		return nil
-	//	}
-	//
-	//	// txQueue := ...
-	//	timer := workflow.NewTimer(ctx, 2*time.Minute) // check pending queue every 2 min
-	//	selector := workflow.NewSelector(ctx)
-	//
-	//	selector.AddReceive(ctx.Done(), func(channel workflow.ReceiveChannel, more bool) {})
-	//	selector.AddFuture(timer, func(f workflow.Future) {
-	//		if err := getTx2Treasury(); err == welethModel.ErrTx2TreasuryNotFound {
-	//			log.Error("[WatchForTx2Treasury] tx2treasury not found")
-	//			return
-	//		}
-	//		log.Info("[WatchForTx2Treasury] tx enqueued for BatchDisperseWF")
-	//	})
-	//
-	//	// main
-	//	if err := getTx2Treasury(); err == welethModel.ErrTx2TreasuryNotFound {
-	//		selector.Select(ctx)
-	//	}
-	//
-	return nil
-}
-
 // Worker
 func (ctr *MulsendContractService) registerService(w worker.Worker) {
 	//w.RegisterActivity(ctr.Withdraw)
-	//w.RegisterActivity(ctr.Disperse)
+	w.RegisterActivity(ctr.Disperse)
 
-	//w.RegisterWorkflowWithOptions(ctr.WithdrawWorkflow, workflow.RegisterOptions{Name: WithdrawWorkflow})
-	//w.RegisterWorkflowWithOptions(ctr.DisperseWorkflow, workflow.RegisterOptions{Name: DisperseWorkflow})
+	w.RegisterWorkflow(ctr.BatchDisperseWF)
 }
 
 func (ctr *MulsendContractService) StartService() error {
