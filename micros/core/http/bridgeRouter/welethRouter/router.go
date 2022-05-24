@@ -162,7 +162,7 @@ func eth2welCashin(c *gin.Context) {
 	}
 
 	// response
-	c.JSON(http.StatusOK, fmt.Sprintf("BE is watching for transaction to %s from %s", req.From, req.Treasury))
+	c.JSON(http.StatusOK, fmt.Sprintf("BE is watching for transaction to %s from %s", req.Treasury, req.From))
 }
 
 func wel2ethCashout(c *gin.Context) {

@@ -57,7 +57,7 @@ func (w *ethCashinWelTransDAO) GetUnconfirmedTx2Treasury(from, treasury, token, 
 			WHERE from_address = ?,
 						treasury_address = ?,
 						token_address = ?,
-						amount = ?
+						amount = ?,
 						status = 'unconfirmed'
 			ORDER BY created_at DESC`)
 
