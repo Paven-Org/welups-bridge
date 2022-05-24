@@ -54,10 +54,10 @@ func (w *ethCashinWelTransDAO) GetUnconfirmedTx2Treasury(from, treasury, token, 
 	var res model.TxToTreasury
 	q := db.Rebind(
 		`SELECT * FROM tx_to_treasury
-			WHERE from_address = ?,
-						treasury_address = ?,
-						token_address = ?,
-						amount = ?,
+			WHERE from_address = ? AND
+						treasury_address = ? AND
+						token_address = ? AND
+						amount = ? AND
 						status = 'unconfirmed'
 			ORDER BY created_at DESC`)
 
