@@ -227,7 +227,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 
 										if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
 											fmt.Println("tran to: ", *t.To())
-											msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
+											msg, err := t.AsMessage(types.LatestSignerForChainID(t.ChainId()), nil)
 											if err != nil {
 												s.Logger.Err(err).Msg("Unable to convert transaction to message")
 												continue
@@ -325,7 +325,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 
 									if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
 										fmt.Println("tran to: ", *t.To())
-										msg, err := t.AsMessage(types.NewEIP155Signer(t.ChainId()), nil)
+										msg, err := t.AsMessage(types.LatestSignerForChainID(t.ChainId()), nil)
 										if err != nil {
 											s.Logger.Err(err).Msg("Unable to convert transaction to message")
 											continue
