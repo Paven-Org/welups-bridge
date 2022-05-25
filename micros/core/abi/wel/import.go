@@ -85,16 +85,18 @@ func (ex *WelImport) Withdraw(opts *CallOpts, tokenAddr string, account string, 
 }
 
 func (ex *WelImport) Issue(opts *CallOpts, tokenAddr string, receivers []string, values []*big.Int) (*api.TransactionExtention, error) {
-	valuesStr := "[" + strings.Join(
+	valuesStr := strings.Join(
 		libs.Map(
 			func(val *big.Int) string {
-				return val.String()
+				return `"` + val.String() + `"`
 			},
-			values[1:]),
-		",") + "]"
-	receiversStr := "[" + strings.Join(receivers, ",") + "]"
+			values),
+		",")
+	_receivers := libs.Map(func(rev string) string { return "\"" + rev + "\"" }, receivers)
 
-	jsonString := fmt.Sprintf(`[{"address": "%s"},{"address[]": "%s"},{"uint256[]": "%s"}]`, tokenAddr, receiversStr, valuesStr)
+	receiversStr := strings.Join(_receivers, ",")
+
+	jsonString := fmt.Sprintf(`[{"address":"%s"},{"address[]":[%s]},{"uint256[]":[%s]}]`, tokenAddr, receiversStr, valuesStr)
 
 	res, err := ex.cli.TriggerContract(opts.From, ex.address, "issue(address,address[],uint256[])", jsonString, opts.Fee_limit, opts.T_amount, "", opts.T_tokenAmount)
 	if err != nil {

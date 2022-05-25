@@ -312,7 +312,7 @@ func (ctr *ImportContractService) WatchForTx2Treasury(ctx workflow.Context, from
 			return err
 		}
 
-		se := workflow.SignalExternalWorkflow(ctx, ctr.batchIssueID, "", BatchIssueSignal, tx)
+		se := workflow.SignalExternalWorkflow(ctx, ctr.batchIssueID, "", BatchIssueSignal, cashinTx)
 		err = se.Get(ctx, nil)
 		if err != nil {
 			log.Error("[WatchForTx2Treasury] error while sending tx to BatchIssue", err)

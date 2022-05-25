@@ -16,6 +16,7 @@ import (
 var (
 	inq      *WelInquirer
 	exp      *WelExport
+	imp      *WelImport
 	log      *zerolog.Logger
 	testAddr = "WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2"
 	testKey  = "ce0d51b2062e5694d28a21ad64b7efd583856ba20afe437ae4c4ad7d7a5ae34a"
@@ -35,6 +36,7 @@ func TestMain(m *testing.M) {
 
 	inq = MkWelInquirer(welCli)
 	exp = MkWelExport(welCli, "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E")
+	imp = MkWelImport(welCli, "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j")
 
 	m.Run()
 
@@ -126,6 +128,29 @@ func TestClaim(t *testing.T) {
 	signature, err := libs.StdSignedMessageHash(_token, caller.Hex(), _amount, _requestID, contractVersion, testKey)
 
 	tx, err := exp.Claim(opts, tokenAddr, testAddr, _requestID, _amount, signature)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	fmt.Println(tx.Transaction)
+}
+
+func TestIssue(t *testing.T) {
+	pkey, err := crypto.HexToECDSA(testKey)
+	if err != nil {
+		t.Fatal("Error: ", err.Error())
+	}
+	//target := "0x25e8370E0e2cf3943Ad75e768335c892434bD090"
+	opts := &CallOpts{
+		From:      testAddr,
+		Prikey:    pkey,
+		Fee_limit: 100000000,
+		T_amount:  0,
+	}
+	tokenAddr := "WLNYdo8jy9xxuyGhQtqU2DAgcptBgJu4jd"
+	v, _ := big.NewInt(0).SetString("10000000000000000", 10)
+	amount := []*big.Int{v}
+	toAddr := []string{"WDReBjymEzH5Bi4avyfUqXa4rhyvAT7DY2"}
+	tx, err := imp.Issue(opts, tokenAddr, toAddr, amount)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
