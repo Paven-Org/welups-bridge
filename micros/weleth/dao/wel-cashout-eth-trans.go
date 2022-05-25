@@ -43,7 +43,7 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 				eth_wallet_addr,
 				wel_wallet_addr,
 				amount,
-				commnission_fee,
+				commission_fee,
 				cashout_status,
 				disperser_status) VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
 	var id int64
@@ -95,7 +95,7 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 		    eth_wallet_addr = ?,
 		    wel_wallet_addr = ?,
 		    amount = ?,
-		    commnission_fee = ?,
+		    commission_fee = ?,
 		    cashout_status = ?, 
 		    disperse_status = ? 
 		    WHERE id = ?`)

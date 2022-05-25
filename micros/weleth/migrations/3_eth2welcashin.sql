@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS eth_cashin_wel_trans (
   wel_wallet_addr varchar(100),
 
   total varchar(40),
-  amount varchar(40),
-  commnission_fee varchar(40),
+  amount varchar(40) DEFAULT '',
+  commission_fee varchar(40) DEFAULT '',
   status varchar(20),
 
   created_at timestamp DEFAULT NOW(),

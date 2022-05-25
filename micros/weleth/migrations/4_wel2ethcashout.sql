@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS wel_cashout_eth_trans (
 
   total varchar(40),
   amount varchar(40),
-  commnission_fee varchar(40),
+  commission_fee varchar(40),
   cashout_status varchar(20),
   disperse_status varchar(20),
 

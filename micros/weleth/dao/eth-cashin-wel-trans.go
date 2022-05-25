@@ -93,7 +93,7 @@ func (w *ethCashinWelTransDAO) CreateEthCashinWelTrans(t *model.EthCashinWelTran
 				eth_wallet_addr,
 				wel_wallet_addr,
 				amount,
-				commnission_fee,
+				commission_fee,
 				status) VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id`)
 	var id int64
 	err = tx.
@@ -143,7 +143,7 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 		    eth_wallet_addr = ?,
 		    wel_wallet_addr = ?,
 		    amount = ?,
-		    commnission_fee = ?,
+		    commission_fee = ?,
 		    status = ? 
 		    WHERE id = ?`)
 	_, err := db.
@@ -175,7 +175,7 @@ func (w *ethCashinWelTransDAO) SelectTransByDepositTxHash(txHash string) (*model
 
 func (w *ethCashinWelTransDAO) SelectTransByIssueTxHash(txHash string) ([]*model.EthCashinWelTrans, error) {
 	var txs = []*model.EthCashinWelTrans{}
-	err := w.db.Select(txs, "SELECT * FROM eth_cashin_wel_trans WHERE wel_issue_tx_hash = $1", txHash)
+	err := w.db.Select(&txs, "SELECT * FROM eth_cashin_wel_trans WHERE wel_issue_tx_hash = $1", txHash)
 	return txs, err
 }
 
