@@ -170,7 +170,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 		confirmStatus = model.EthCashinWelUnconfirmed
 	}
 	data := make(map[string]interface{})
-	e.exportAbi.UnpackIntoMap(
+	e.importAbi.UnpackIntoMap(
 		data,
 		"Imported",
 		t.Log[logpos].Data,
@@ -230,7 +230,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 		tran.CommissionFee = fee.String()
 
 		tran.Status = confirmStatus
-		tran.IssuedAt = time.Now()
+		tran.IssuedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
 		fmt.Println("[ImportedEV] tran to be saved: ", tran)
 		if err := e.EthCashinWelTransDAO.UpdateEthCashinWelTx(tran); err != nil {

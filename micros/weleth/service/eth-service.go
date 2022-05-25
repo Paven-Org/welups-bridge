@@ -191,7 +191,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 		//tran.CommissionFee = fee.String()
 
 		tran.DisperseStatus = model.WelCashoutEthConfirmed
-		tran.DispersedAt = time.Now()
+		tran.DispersedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
 		fmt.Println("[DisperseEV] tran to be updated: ", tran)
 		if err := e.WelCashoutEthTransDAO.UpdateWelCashoutEthTx(tran); err != nil {
