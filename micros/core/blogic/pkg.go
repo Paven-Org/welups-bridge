@@ -8,7 +8,7 @@ import (
 	"bridge/micros/core/dao"
 	manager "bridge/service-managers"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"go.temporal.io/sdk/client"

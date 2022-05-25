@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
-	"github.com/Clownsss/gotron-sdk/pkg/proto/api"
-	CoreProto "github.com/Clownsss/gotron-sdk/pkg/proto/core"
+	GotronCommon "github.com/Paven-Org/gotron-sdk/pkg/common"
+	"github.com/Paven-Org/gotron-sdk/pkg/proto/api"
+	CoreProto "github.com/Paven-Org/gotron-sdk/pkg/proto/core"
 	"github.com/fatih/structs"
 	proto "github.com/golang/protobuf/proto"
 )

@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"strings"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
-	"github.com/Clownsss/gotron-sdk/pkg/proto/api"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
+	"github.com/Paven-Org/gotron-sdk/pkg/proto/api"
 	"github.com/ethereum/go-ethereum/crypto"
 	"google.golang.org/protobuf/proto"
 )

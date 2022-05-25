@@ -3,7 +3,7 @@ package wel
 import (
 	"time"
 
-	gotron "github.com/Clownsss/gotron-sdk/pkg/client"
+	gotron "github.com/Paven-Org/gotron-sdk/pkg/client"
 )
 
 //CNodeClient is the wrapper of the nodeClient

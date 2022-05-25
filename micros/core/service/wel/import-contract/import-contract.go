@@ -15,7 +15,7 @@ import (
 	"sort"
 	"time"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"

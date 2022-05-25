@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"testing"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 
 	"github.com/DATA-DOG/go-txdb"
 	"github.com/ethereum/go-ethereum/common"

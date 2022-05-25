@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"math/big"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
-	"github.com/Clownsss/gotron-sdk/pkg/proto/api"
-	"github.com/Clownsss/gotron-sdk/pkg/proto/core"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
+	"github.com/Paven-Org/gotron-sdk/pkg/proto/api"
+	"github.com/Paven-Org/gotron-sdk/pkg/proto/core"
 	"google.golang.org/protobuf/proto"
 )
 

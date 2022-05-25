@@ -3,7 +3,7 @@ package libs
 import (
 	"strings"
 
-	"github.com/Clownsss/gotron-sdk/pkg/common"
+	"github.com/Paven-Org/gotron-sdk/pkg/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 

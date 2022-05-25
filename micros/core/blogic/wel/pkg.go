@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/client"

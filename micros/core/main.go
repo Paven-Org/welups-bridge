@@ -25,7 +25,8 @@ import (
 	"syscall"
 	"time"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	patchedWelclient "github.com/Paven-Org/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -142,7 +143,13 @@ func main() {
 	welGovService.StartService()
 	defer welGovService.StopService()
 
-	welImportService, err := importcontract.MkImportContractService(welCli, tempCli, daos, cnf.WelImportContract)
+	patchedWelCli := patchedWelclient.NewGrpcClient(cnf.WelupsConfig.Nodes[0])
+	defer patchedWelCli.Stop()
+	if err := patchedWelCli.Start(); err != nil {
+		logger.Err(err).Msgf("Unable to start patchedWelCli's GRPC connection")
+		return
+	}
+	welImportService, err := importcontract.MkImportContractService(patchedWelCli, tempCli, daos, cnf.WelImportContract)
 	if err != nil {
 		logger.Err(err).Msgf("Unable to initialize welups WelImportService")
 		return

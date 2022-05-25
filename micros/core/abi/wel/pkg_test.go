@@ -8,7 +8,8 @@ import (
 	"math/big"
 	"testing"
 
-	welclient "github.com/Clownsss/gotron-sdk/pkg/client"
+	patchedWelclient "github.com/Paven-Org/gotron-sdk/pkg/client"
+	welclient "github.com/Paven-Org/gotron-sdk/pkg/client"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/rs/zerolog"
 )
@@ -34,9 +35,16 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	patchedWelCli := patchedWelclient.NewGrpcClient(cnf.WelupsConfig.Nodes[0])
+	defer patchedWelCli.Stop()
+	if err := patchedWelCli.Start(); err != nil {
+		logger.Get().Err(err).Msgf("Unable to start patchedWelCli's GRPC connection")
+		return
+	}
+
 	inq = MkWelInquirer(welCli)
 	exp = MkWelExport(welCli, "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E")
-	imp = MkWelImport(welCli, "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j")
+	imp = MkWelImport(patchedWelCli, "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j")
 
 	m.Run()
 

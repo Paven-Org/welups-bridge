@@ -8,7 +8,7 @@ import (
 	"bridge/common/consts"
 	"bridge/service-managers/daemon"
 
-	GotronCommon "github.com/Clownsss/gotron-sdk/pkg/common"
+	GotronCommon "github.com/Paven-Org/gotron-sdk/pkg/common"
 	"github.com/rs/zerolog"
 )
 
