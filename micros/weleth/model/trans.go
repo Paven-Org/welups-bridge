@@ -143,8 +143,8 @@ type EthCashinWelTrans struct {
 
 	Status string `json:"status" db:"status"`
 
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	IssuedAt  time.Time `json:"issued_at" db:"issued_at,omitempty"`
+	CreatedAt time.Time    `json:"created_at" db:"created_at"`
+	IssuedAt  sql.NullTime `json:"issued_at" db:"issued_at,omitempty"`
 }
 
 type WelCashoutEthTrans struct {
@@ -168,6 +168,6 @@ type WelCashoutEthTrans struct {
 	CashoutStatus  string `json:"cashout_status" db:"disperse_status"`
 	DisperseStatus string `json:"disperse_status" db:"cashout_status"`
 
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	DispersedAt time.Time `json:"issued_at" db:"dispersed_at,omitempty"`
+	CreatedAt   time.Time    `json:"created_at" db:"created_at"`
+	DispersedAt sql.NullTime `json:"issued_at" db:"dispersed_at,omitempty"`
 }
