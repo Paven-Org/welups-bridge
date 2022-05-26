@@ -110,7 +110,10 @@ func (s *WelListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 					s.Logger.Err(err).Msg("[wel_listener] can't get head by number, possibly due to rpc node failure")
 					continue
 				}
-				headNum := header.BlockHeader.RawData.Number
+				headNum := header.BlockHeader.RawData.Number - s.blockOffset // offset by 20 blocks to guarantee confirmaed transaction
+				if headNum <= lastScanned {                                  // just in case
+					lastScanned = headNum - 1
+				}
 				//s.Logger.Info().Msgf("[wel listener] scan from lastScanned %d to headNum %d", lastScanned, headNum)
 
 				brange := headNum - lastScanned + 1
