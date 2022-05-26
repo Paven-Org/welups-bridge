@@ -174,9 +174,23 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 				}
 				// update e2wcashin txs with wel issue txhash
 				for _, tran := range allTxQueues[welToken].queue {
+					ao_welethService := workflow.ActivityOptions{
+						TaskQueue:              welethService.WelethServiceQueue,
+						ScheduleToCloseTimeout: time.Second * 60,
+						ScheduleToStartTimeout: time.Second * 60,
+						StartToCloseTimeout:    time.Second * 60,
+						HeartbeatTimeout:       time.Second * 10,
+						WaitForCancellation:    false,
+						RetryPolicy: &temporal.RetryPolicy{
+							MaximumInterval: time.Second * 100,
+							MaximumAttempts: 10,
+						},
+					}
+					ctx_welethService := workflow.WithActivityOptions(ctx, ao_welethService)
+
 					tran.WelIssueTxHash = txhash
-					res = workflow.ExecuteActivity(ctx, welethService.UpdateEthCashinWelTrans, tran)
-					if err := res.Get(ctx, nil); err != nil {
+					res = workflow.ExecuteActivity(ctx_welethService, welethService.UpdateEthCashinWelTrans, tran)
+					if err := res.Get(ctx_welethService, nil); err != nil {
 						log.Error("Failed to update E2W cashin trans")
 					} else {
 						log.Info("update E2W cashin trans succeeded")
@@ -224,9 +238,23 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 					}
 					// update e2wcashin txs with wel issue txhash
 					for _, tran := range allTxQueues[welToken].queue {
+						ao_welethService := workflow.ActivityOptions{
+							TaskQueue:              welethService.WelethServiceQueue,
+							ScheduleToCloseTimeout: time.Second * 60,
+							ScheduleToStartTimeout: time.Second * 60,
+							StartToCloseTimeout:    time.Second * 60,
+							HeartbeatTimeout:       time.Second * 10,
+							WaitForCancellation:    false,
+							RetryPolicy: &temporal.RetryPolicy{
+								MaximumInterval: time.Second * 100,
+								MaximumAttempts: 10,
+							},
+						}
+						ctx_welethService := workflow.WithActivityOptions(ctx, ao_welethService)
+
 						tran.WelIssueTxHash = txhash
-						res = workflow.ExecuteActivity(ctx, welethService.UpdateEthCashinWelTrans, tran)
-						if err := res.Get(ctx, nil); err != nil {
+						res = workflow.ExecuteActivity(ctx_welethService, welethService.UpdateEthCashinWelTrans, tran)
+						if err := res.Get(ctx_welethService, nil); err != nil {
 							log.Error("Failed to update E2W cashin trans")
 						} else {
 							log.Info("update E2W cashin trans succeeded")
