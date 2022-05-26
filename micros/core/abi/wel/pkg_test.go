@@ -77,11 +77,12 @@ func TestBalance(t *testing.T) {
 	}
 	fmt.Println("balance: ", balance)
 
-	tBalance, err := inq.WRC20balanceOf("WXXybedJRgXd6G675VFaGo14U6YzzfGY9A", testAddr)
+	//tBalance, err := inq.WRC20balanceOf("WXXybedJRgXd6G675VFaGo14U6YzzfGY9A", testAddr)
+	tBalance, err := inq.WRC20balanceOf("WLNYdo8jy9xxuyGhQtqU2DAgcptBgJu4jd", testAddr)
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
-	fmt.Println(tBalance.String())
+	fmt.Println("WRC20 balance: ", tBalance.String())
 }
 
 func TestExp(t *testing.T) {

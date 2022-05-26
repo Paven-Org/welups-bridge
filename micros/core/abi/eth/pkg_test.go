@@ -30,6 +30,7 @@ func TestMain(m *testing.M) {
 	}
 	defer ethCli.Close()
 
+	inq = MkEthInquirer(ethCli)
 	importC, _ = NewEthImportC(common.HexToAddress(cnf.EthImportContract), ethCli)
 	multiSenderC, _ = NewEthMultiSenderC(common.HexToAddress(cnf.EthMulsendContract), ethCli)
 
@@ -44,7 +45,8 @@ func TestInq(t *testing.T) {
 	}
 	fmt.Println(balance.String())
 
-	balance, err = inq.BalanceOf("0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D", "0x25e8370E0e2cf3943Ad75e768335c892434bD090")
+	//balance, err = inq.BalanceOf("0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D", "0x25e8370E0e2cf3943Ad75e768335c892434bD090")
+	balance, err = inq.BalanceOf("0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6", "0x25e8370E0e2cf3943Ad75e768335c892434bD090")
 	if err != nil {
 		t.Fatal("Error: ", err.Error())
 	}
