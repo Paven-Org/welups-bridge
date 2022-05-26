@@ -31,6 +31,7 @@ func TestMain(m *testing.M) {
 	defer ethCli.Close()
 
 	importC, _ = NewEthImportC(common.HexToAddress(cnf.EthImportContract), ethCli)
+	multiSenderC, _ = NewEthMultiSenderC(common.HexToAddress(cnf.EthMulsendContract), ethCli)
 
 	m.Run()
 
