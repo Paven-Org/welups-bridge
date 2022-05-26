@@ -218,6 +218,9 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 
 			for _, welToken := range welTokens {
 				if workflow.Now(ctx).Sub(allTxQueues[welToken].lastIssuance).Seconds() > 120.0 {
+					if len(allTxQueues[welToken].queue) < 1 {
+						continue
+					}
 					receivers := libs.Map(
 						func(tx welethModel.WelCashoutEthTrans) string {
 							return tx.WelWalletAddr
