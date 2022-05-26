@@ -78,6 +78,8 @@ func NewEthConsumer(iaddr, msaddr string, tempCli client.Client, daos *dao.DAOs)
 }
 
 func (e *EthConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
+	fmt.Println("Mulsend's disperse address ", e.MulsendContractAddr)
+	fmt.Println("Mulsend's disperse signature ", crypto.Keccak256Hash([]byte(e.mulsendAbi.Events["Disperse"].Sig)))
 	return []*ethListener.EventConsumer{
 		{
 			Address: common.HexToAddress(e.ImportContractAddr),
@@ -96,42 +98,57 @@ func (e *EthConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
 		{
 			Address: common.HexToAddress(e.MulsendContractAddr),
 			Topic: crypto.Keccak256Hash(
-				[]byte(e.importAbi.Events["Decline"].Sig),
+				[]byte(e.mulsendAbi.Events["Decline"].Sig),
 			),
 			ParseEvent: e.DeclineParser,
 		},
 		{
 			Address: common.HexToAddress(e.MulsendContractAddr),
 			Topic: crypto.Keccak256Hash(
-				[]byte(e.importAbi.Events["Disperse"].Sig),
+				[]byte(e.mulsendAbi.Events["Disperse"].Sig),
 			),
 			ParseEvent: e.DisperseParser,
 		},
 	}, nil
 }
 
-func (e *EthConsumer) GetFilterQuery() ethereum.FilterQuery {
-	return ethereum.FilterQuery{
-		Addresses: []common.Address{common.HexToAddress(e.ImportContractAddr)},
-		Topics: [][]common.Hash{{
-			crypto.Keccak256Hash(
-				[]byte(e.importAbi.Events["Withdraw"].Sig),
-			),
-			crypto.Keccak256Hash(
-				[]byte(e.importAbi.Events["Imported"].Sig),
-			),
-		}},
+func (e *EthConsumer) GetFilterQuery() []ethereum.FilterQuery {
+	return []ethereum.FilterQuery{
+		ethereum.FilterQuery{
+			Addresses: []common.Address{common.HexToAddress(e.ImportContractAddr)},
+			Topics: [][]common.Hash{{
+				crypto.Keccak256Hash(
+					[]byte(e.importAbi.Events["Withdraw"].Sig),
+				),
+				crypto.Keccak256Hash(
+					[]byte(e.importAbi.Events["Imported"].Sig),
+				),
+			}},
+		},
+		ethereum.FilterQuery{
+			Addresses: []common.Address{common.HexToAddress(e.MulsendContractAddr)},
+			Topics: [][]common.Hash{{
+				crypto.Keccak256Hash(
+					[]byte(e.mulsendAbi.Events["Decline"].Sig),
+				),
+				crypto.Keccak256Hash(
+					[]byte(e.mulsendAbi.Events["Disperse"].Sig),
+				),
+			}},
+		},
 	}
 
 }
 
 func (e *EthConsumer) DisperseParser(l types.Log) error {
+	fmt.Println("[DisperseEV] Disperse event caught")
 	data := make(map[string]interface{})
-	e.importAbi.UnpackIntoMap(
+	e.mulsendAbi.UnpackIntoMap(
 		data,
 		"Disperse",
 		l.Data,
 	)
+	fmt.Printf("data: %+v\b", data)
 	ethTx := l.TxHash.Hex()
 	fmt.Println("eth tx: ", ethTx)
 
@@ -204,7 +221,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 
 func (e *EthConsumer) DeclineParser(l types.Log) error {
 	data := make(map[string]interface{})
-	e.importAbi.UnpackIntoMap(
+	e.mulsendAbi.UnpackIntoMap(
 		data,
 		"Decline",
 		l.Data,

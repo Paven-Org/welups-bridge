@@ -14,7 +14,7 @@ type EventConsumer struct {
 
 type IEventConsumer interface {
 	GetConsumer() ([]*EventConsumer, error)
-	GetFilterQuery() ethereum.FilterQuery
+	GetFilterQuery() []ethereum.FilterQuery
 }
 
 type EventParser func(types.Log) error

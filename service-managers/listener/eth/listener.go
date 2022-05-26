@@ -11,6 +11,7 @@ import (
 	"bridge/common/consts"
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/daemon"
+	"bridge/service-managers/logger"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -69,10 +70,11 @@ func (s *EthListener) RegisterConsumer(consumer IEventConsumer) error {
 		return err
 	}
 	for i := 0; i < len(consumerHandler); i++ {
+		logger.Get().Debug().Msgf("Key for comsumer: %+v, +%v", KeyFromBEConsumer(consumerHandler[i].Address.Hex(), consumerHandler[i].Topic.Hex()))
 		s.EventConsumerMap[KeyFromBEConsumer(consumerHandler[i].Address.Hex(), consumerHandler[i].Topic.Hex())] = consumerHandler[i]
 	}
 
-	s.EventFilters = append(s.EventFilters, consumer.GetFilterQuery())
+	s.EventFilters = append(s.EventFilters, consumer.GetFilterQuery()...)
 	return nil
 }
 
@@ -104,6 +106,7 @@ func (s *EthListener) Handling(parentContext context.Context) (fn consts.Daemon,
 				s.Logger.Err(err).Msg("[eth_listener] Ethereum client scan block err")
 
 			case vLog := <-s.Log:
+				logger.Get().Debug().Msgf("[eth_listner] handling event log: %+v", vLog)
 				go func(vLog types.Log) {
 					s.consumeEvent(vLog)
 				}(vLog)
@@ -177,6 +180,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 							wg.Add(1)
 							go func(from *big.Int, to *big.Int) {
 								for i := from; i.Cmp(to) < 1; i = i.Add(i, big.NewInt(1)) {
+									logger.Get().Info().Msgf("[eth_listener] start scanning transfer in block %s", i.String())
 									currBlock, err := s.EthClient.BlockByNumber(context.Background(), i)
 									if err != nil {
 										s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx scan err")
@@ -226,7 +230,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 										}
 
 										if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
-											fmt.Println("tran to: ", *t.To())
+											logger.Get().Debug().Msgf("tran to: %+v", *t.To())
 											msg, err := t.AsMessage(types.LatestSignerForChainID(t.ChainId()), nil)
 											if err != nil {
 												s.Logger.Err(err).Msg("Unable to convert transaction to message")
@@ -245,11 +249,12 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 
 						// events scan
 						for _, query := range s.EventFilters {
+							wg.Add(1)
 							go func(query ethereum.FilterQuery) {
 								query.FromBlock = begin
 								query.ToBlock = until
 
-								//s.Logger.Debug().Msg(fmt.Sprintf("[eth_listener] query %v", query))
+								s.Logger.Debug().Msgf("[eth_listener] query %+v", query)
 
 								// get all event
 								events, err := s.EthClient.FilterLogs(context.Background(), query)
@@ -257,9 +262,12 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 									s.Logger.Err(err).Msg("[eth_listener]] Ethereum filter query err")
 									s.errC <- err
 								}
+								logger.Get().Debug().Msgf("[eth_listener] events: %+v", events)
 								for _, event := range events {
+									logger.Get().Debug().Msgf("[eth_listener] queuing event log: %+v", event)
 									s.Log <- event
 								}
+								wg.Done()
 							}(query)
 						}
 						wg.Wait()
@@ -275,6 +283,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 						wg.Add(1)
 						go func(from *big.Int, to *big.Int) {
 							for i := from; i.Cmp(to) < 1; i = i.Add(i, big.NewInt(1)) {
+								logger.Get().Info().Msgf("[eth_listener] start scanning transfer in block %s", i.String())
 								currBlock, err := s.EthClient.BlockByNumber(context.Background(), i)
 								if err != nil {
 									s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx scan err")
@@ -324,7 +333,7 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 									}
 
 									if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
-										fmt.Println("tran to: ", *t.To())
+										logger.Get().Debug().Msgf("tran to: %+v", *t.To())
 										msg, err := t.AsMessage(types.LatestSignerForChainID(t.ChainId()), nil)
 										if err != nil {
 											s.Logger.Err(err).Msg("Unable to convert transaction to message")
@@ -343,11 +352,12 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 
 					// events scan
 					for _, query := range s.EventFilters {
+						wg.Add(1)
 						go func(query ethereum.FilterQuery) {
 							query.FromBlock = scannedBlock
 							query.ToBlock = currBlock
 
-							//s.Logger.Debug().Msg(fmt.Sprintf("[eth_listener] query %v", query))
+							s.Logger.Debug().Msgf("[eth_listener] query %+v", query)
 
 							// get all event
 							events, err := s.EthClient.FilterLogs(context.Background(), query)
@@ -355,9 +365,12 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 								s.Logger.Err(err).Msg("[eth_listener]] Ethereum filter query err")
 								s.errC <- err
 							}
+							logger.Get().Debug().Msgf("[eth_listener] events: %+v", events)
 							for _, event := range events {
+								logger.Get().Debug().Msgf("[eth_listener] queuing event: %+v", event)
 								s.Log <- event
 							}
+							wg.Done()
 						}(query)
 					}
 					wg.Wait()
@@ -376,12 +389,14 @@ func (s *EthListener) Scan(parentContext context.Context) (fn consts.Daemon, err
 
 func (s *EthListener) matchEvent(vLog types.Log) (*EventConsumer, bool) {
 	key := KeyFromBEConsumer(vLog.Address.Hex(), vLog.Topics[0].Hex())
+	logger.Get().Debug().Msgf("key for event: %+v", key)
 	consumer, isExisted := s.EventConsumerMap[key]
 
 	if !isExisted {
 		key = KeyFromBEConsumer(common.Address{}.Hex(), vLog.Topics[0].Hex())
 		consumer, isExisted = s.EventConsumerMap[key]
 	}
+	logger.Get().Debug().Msgf("consumer if existed: %+v", consumer)
 
 	return consumer, isExisted
 }
