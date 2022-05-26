@@ -42,10 +42,11 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 				network_id,
 				eth_wallet_addr,
 				wel_wallet_addr,
+				total,
 				amount,
 				commission_fee,
 				cashout_status,
-				disperser_status) VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
+				disperser_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
 	var id int64
 	err = tx.
 		Get(&id,
@@ -57,6 +58,7 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 			t.NetworkID,
 			t.EthWalletAddr,
 			t.WelWalletAddr,
+			t.Total,
 			t.Amount,
 			t.CommissionFee,
 			t.CashoutStatus,

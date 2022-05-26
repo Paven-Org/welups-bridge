@@ -142,7 +142,7 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 		    network_id = ?,
 		    eth_wallet_addr = ?,
 		    wel_wallet_addr = ?,
-		    amount = ?,
+				total = ?,
 		    commission_fee = ?,
 		    status = ? 
 		    WHERE id = ?`)
@@ -155,7 +155,7 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 			t.NetworkID,
 			t.EthWalletAddr,
 			t.WelWalletAddr,
-			t.Amount,
+			t.Total,
 			t.CommissionFee,
 			t.Status,
 			t.ID)
