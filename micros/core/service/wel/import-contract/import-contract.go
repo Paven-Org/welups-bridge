@@ -94,8 +94,9 @@ func (ctr *ImportContractService) Issue(ctx context.Context, tokenAddr string, r
 		logger.Get().Err(err).Msgf("Unable to trigger import contract")
 		return "", err
 	}
-	logger.Get().Info().Msgf("Contract call done with tx: %+v", tx)
-	return common.Bytes2Hex(tx.GetTxid()), nil
+	txhash := common.Bytes2Hex(tx.GetTxid())
+	logger.Get().Info().Msgf("Contract call done with txhash: %s", txhash)
+	return txhash, nil
 }
 
 //type txQueue = []welethModel.EthCashinWelTrans
@@ -139,6 +140,7 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 		selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
 			var tx = welethModel.EthCashinWelTrans{}
 			channel.Receive(ctx, &tx)
+			log.Info("BatchIssueWF received tx: ", tx)
 			welToken := tx.WelTokenAddr
 			_, ok := allTxQueues[welToken]
 			if !ok {
@@ -168,7 +170,7 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 				if err := res.Get(ctx, &txhash); err != nil {
 					log.Error("Failed to call issue on import contract")
 				} else {
-					log.Info("Contract call succeeded")
+					log.Info("Contract call succeeded, txhash: ", txhash)
 				}
 				// update e2wcashin txs with wel issue txhash
 				for _, tran := range allTxQueues[welToken].queue {
@@ -218,7 +220,7 @@ func (ctr *ImportContractService) BatchIssueWF(ctx workflow.Context) error {
 					if err := res.Get(ctx, &txhash); err != nil {
 						log.Error("Failed to call issue on import contract")
 					} else {
-						log.Info("Contract call succeeded")
+						log.Info("Contract call succeeded, txhash: ", txhash)
 					}
 					// update e2wcashin txs with wel issue txhash
 					for _, tran := range allTxQueues[welToken].queue {
