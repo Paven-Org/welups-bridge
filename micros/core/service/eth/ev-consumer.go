@@ -70,17 +70,19 @@ func (ge *GovEvConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
 	}, nil
 }
 
-func (ge *GovEvConsumer) GetFilterQuery() ethereum.FilterQuery {
-	return ethereum.FilterQuery{
-		Addresses: []common.Address{common.HexToAddress(ge.ContractAddr)},
-		Topics: [][]common.Hash{{
-			crypto.Keccak256Hash(
-				[]byte(ge.abi.Events["RoleGranted"].Sig),
-			),
-			crypto.Keccak256Hash(
-				[]byte(ge.abi.Events["RoleRevoked"].Sig),
-			),
-		}},
+func (ge *GovEvConsumer) GetFilterQuery() []ethereum.FilterQuery {
+	return []ethereum.FilterQuery{
+		ethereum.FilterQuery{
+			Addresses: []common.Address{common.HexToAddress(ge.ContractAddr)},
+			Topics: [][]common.Hash{{
+				crypto.Keccak256Hash(
+					[]byte(ge.abi.Events["RoleGranted"].Sig),
+				),
+				crypto.Keccak256Hash(
+					[]byte(ge.abi.Events["RoleRevoked"].Sig),
+				),
+			}},
+		},
 	}
 
 }
