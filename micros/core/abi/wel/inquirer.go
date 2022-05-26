@@ -39,7 +39,6 @@ func (inq *WelInquirer) WRC20balanceOf(contractAddr string, account string) (*bi
 		return big.NewInt(0), err
 	}
 
-	fmt.Printf("%x\n", tx.Txid)
 	if len(tx.GetConstantResult()) < 1 {
 		return big.NewInt(0), fmt.Errorf("No result for read transaction BalanceOf")
 	}
