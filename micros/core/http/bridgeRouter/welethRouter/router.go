@@ -28,7 +28,7 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.POST("/request/eth/cashin-to/wel/:txid", eth2welCashinByTxId)
 	//gr.POST("/claim/wel/cashout-to/eth", wel2ethCashout)
 
-	//	gr.GET("/transaction/cashin/from/eth/:txid")
+	gr.GET("/transaction/eth/cashin/wel/:eth_txid", getE2WCashinTxByEthTxId)
 	//	gr.GET("/transaction/cashout/to/eth/:txid")
 	//	gr.GET("/transaction/cashin/from/wel/:txid")
 	//	gr.GET("/transaction/cashout/to/wel/:txid")
@@ -199,6 +199,26 @@ func eth2welCashinByTxId(c *gin.Context) {
 
 	// response
 	c.JSON(http.StatusOK, fmt.Sprintf("BE is confirming transaction to treasury with transaction id %s", txhash))
+}
+
+func getE2WCashinTxByEthTxId(c *gin.Context) {
+	//request
+	txhash := c.Param("eth_txid")
+	if len(txhash) <= 0 {
+		err := fmt.Errorf("Invalid request payload")
+		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	tx, err := ethLogic.GetE2WCashinTransByEthTxHash(txhash)
+	if err != nil {
+		logger.Err(err).Msgf("[E2W cashin] Failed to get E2W cashin transaction with eth side transaction id " + txhash)
+		c.JSON(http.StatusBadRequest, "Failed to get E2W cashin transaction with eth side transaction id "+txhash)
+	}
+
+	// response
+	c.JSON(http.StatusOK, tx)
 }
 
 func wel2ethCashout(c *gin.Context) {

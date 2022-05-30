@@ -460,6 +460,27 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 	return nil
 }
 
+func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var tx welethModel.EthCashinWelTrans
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashinByTxHash, txhash)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashin tx workflow with eth txhash %s", txhash)
+		return nil, err
+	}
+	if err = we.Get(ctx, &tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashin tx with eth txhash %s", txhash)
+		return &tx, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved E2W cashin tx with txhash %s", txhash)
+	return &tx, nil
+}
+
 func WatchTx2TreasuryRequest(from, to, treasury, netid, token, amount string) error {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: welService.ImportContractQueue,
