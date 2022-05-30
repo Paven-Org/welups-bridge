@@ -11,6 +11,7 @@ import (
 type IEthCashinWelTransDAO interface {
 	CreateEthCashinWelTrans(t *model.EthCashinWelTrans) (int64, error)
 	GetUnconfirmedTx2Treasury(from, treasury, token, amount string) (*model.TxToTreasury, error)
+	GetUnconfirmedTx2TreasuryByTxHash(txhash string) (*model.TxToTreasury, error)
 
 	CreateTx2Treasury(t *model.TxToTreasury) error
 
@@ -62,6 +63,30 @@ func (w *ethCashinWelTransDAO) GetUnconfirmedTx2Treasury(from, treasury, token, 
 			ORDER BY created_at DESC`)
 
 	err := db.Get(&res, q, from, treasury, token, amount)
+	if err == sql.ErrNoRows {
+		log.Info().Msg("[GetUnconfirmedTx2Treasury] no tx found")
+		return nil, nil
+	}
+	if err != nil {
+		log.Err(err).Msg("[GetUnconfirmedTx2Treasury] error while querying DB")
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (w *ethCashinWelTransDAO) GetUnconfirmedTx2TreasuryByTxHash(txhash string) (*model.TxToTreasury, error) {
+	db := w.db
+	log := logger.Get()
+
+	var res model.TxToTreasury
+	q := db.Rebind(
+		`SELECT * FROM tx_to_treasury
+			WHERE tx_id = ? AND
+						status = 'unconfirmed'
+			ORDER BY created_at DESC`)
+
+	err := db.Get(&res, q, txhash)
 	if err == sql.ErrNoRows {
 		log.Info().Msg("[GetUnconfirmedTx2Treasury] no tx found")
 		return nil, nil
