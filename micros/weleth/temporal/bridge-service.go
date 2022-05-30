@@ -42,6 +42,7 @@ const (
 
 	//--------------------------------------------------------------------//
 	GetTx2Treasury          = "GetUnconfirmedTx2Treasury"
+	GetTx2TreasuryByTxHash  = "GetUnconfirmedTx2TreasuryByTxHash"
 	CreateEthCashinWelTrans = "CreateEthCashinWelTrans"
 	UpdateEthCashinWelTrans = "UpdateEthCashinWelTrans"
 
@@ -242,9 +243,15 @@ func (s *WelethBridgeService) UpdateClaimEthCashoutWel(ctx context.Context, id i
 	return nil
 }
 
-func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
-	// NOT IMPLEMENTED
-	return
+func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (model.EthCashinWelTrans, error) {
+	log := logger.Get()
+	log.Info().Msgf("[E2W get cashin tx] getting cashin transaction with eth tx hash %s", txhash)
+	tx, err := s.Eth2WelCashinTransDAO.SelectTransByDepositTxHash(txhash)
+	if err != nil {
+		log.Err(err).Msgf("[E2W get cashin tx] failed to get cashin transaction with eth txhash %s", txhash)
+		return model.EthCashinWelTrans{}, err
+	}
+	return *tx, nil
 }
 
 func (s *WelethBridgeService) GetWelToEthCashoutByTxHash(ctx context.Context, txhash string) (tx BridgeTx, err error) {
@@ -263,6 +270,20 @@ func (s *WelethBridgeService) GetUnconfirmedTx2Treasury(ctx context.Context, fro
 	t, err := s.Eth2WelCashinTransDAO.GetUnconfirmedTx2Treasury(from, treasury, token, amount)
 	if err != nil {
 		log.Err(err).Msg("[E2W tx2treasury get] failed to get tx2treasury transaction")
+		return model.TxToTreasury{}, err
+	}
+	if t == nil {
+		return model.TxToTreasury{}, model.ErrTx2TreasuryNotFound
+	}
+	return *t, nil
+}
+
+func (s *WelethBridgeService) GetUnconfirmedTx2TreasuryByTxHash(ctx context.Context, txhash string) (model.TxToTreasury, error) {
+	log := logger.Get()
+	log.Info().Msgf("[E2W tx2treasury get] getting tx2treasury transaction with txhash " + txhash)
+	t, err := s.Eth2WelCashinTransDAO.GetUnconfirmedTx2TreasuryByTxHash(txhash)
+	if err != nil {
+		log.Err(err).Msg("[E2W tx2treasury get] failed to get tx2treasury transaction with txhash " + txhash)
 		return model.TxToTreasury{}, err
 	}
 	if t == nil {
@@ -329,6 +350,7 @@ func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.UpdateClaimEthCashoutWel, activity.RegisterOptions{Name: UpdateClaimEthCashoutWel})
 
 	w.RegisterActivityWithOptions(s.GetUnconfirmedTx2Treasury, activity.RegisterOptions{Name: GetTx2Treasury})
+	w.RegisterActivityWithOptions(s.GetUnconfirmedTx2TreasuryByTxHash, activity.RegisterOptions{Name: GetTx2TreasuryByTxHash})
 	w.RegisterActivityWithOptions(s.CreateEthCashinWelTrans, activity.RegisterOptions{Name: CreateEthCashinWelTrans})
 	w.RegisterActivityWithOptions(s.UpdateEthCashinWelTrans, activity.RegisterOptions{Name: UpdateEthCashinWelTrans})
 
