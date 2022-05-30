@@ -474,6 +474,20 @@ func WatchTx2TreasuryRequest(from, to, treasury, netid, token, amount string) er
 	return nil
 }
 
+func WatchTx2TreasuryRequestByTxhash(txhash, to, netid, token string) error {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: welService.ImportContractQueue,
+	}
+
+	we, err := tempcli.ExecuteWorkflow(context.Background(), wo, welService.WatchForTx2TreasuryByTxHashWF, txhash, to, netid, token)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to request BE to watch for transaction to treasury with txhash %s", txhash)
+		return err
+	}
+	log.Info().Msgf("[Eth logic internal] Request BE to watch for transaction to treasury, WF ID: %s, run ID: %s", we.GetID(), we.GetRunID())
+	return nil
+}
+
 //GetEthPrikeyIfExists(address string)
 
 //SetPriKey(address string, key string)

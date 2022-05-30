@@ -25,6 +25,7 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.POST("/claim/eth/cashout-to/wel", eth2welCashout)
 
 	gr.POST("/request/eth/cashin-to/wel", eth2welCashin)
+	gr.POST("/request/eth/cashin-to/wel/:txid", eth2welCashinByTxId)
 	//gr.POST("/claim/wel/cashout-to/eth", wel2ethCashout)
 
 	//	gr.GET("/transaction/cashin/from/eth/:txid")
@@ -163,6 +164,41 @@ func eth2welCashin(c *gin.Context) {
 
 	// response
 	c.JSON(http.StatusOK, fmt.Sprintf("BE is watching for transaction to %s from %s", req.Treasury, req.From))
+}
+
+func eth2welCashinByTxId(c *gin.Context) {
+	//request
+	type request struct {
+		To    string `json:"to_wel"`
+		NetId string `json:"netid"`
+		Token string `json:"token"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	txhash := c.Param("txid")
+	if len(txhash) <= 0 {
+		err := fmt.Errorf("Invalid request payload")
+		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	if err := ethLogic.
+		WatchTx2TreasuryRequestByTxhash(
+			txhash,
+			req.To,
+			req.NetId,
+			req.Token); err != nil {
+		logger.Err(err).Msgf("[E2W cashin] Failed to request backend to watch for transaction to treasury")
+		c.JSON(http.StatusBadRequest, "Failed to request backend to watch for transaction to treasury")
+	}
+
+	// response
+	c.JSON(http.StatusOK, fmt.Sprintf("BE is confirming transaction to treasury with transaction id %s", txhash))
 }
 
 func wel2ethCashout(c *gin.Context) {
