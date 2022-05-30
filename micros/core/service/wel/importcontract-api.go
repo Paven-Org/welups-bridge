@@ -5,7 +5,8 @@ const (
 
 	Issue = "Issue"
 
-	WatchForTx2TreasuryWF = "WatchForTx2TreasuryWF"
+	WatchForTx2TreasuryWF         = "WatchForTx2TreasuryWF"
+	WatchForTx2TreasuryByTxHashWF = "WatchForTx2TreasuryByTxHashWF"
 	// signal
 	BatchIssueSignal = "BatchedIssueSignal"
 

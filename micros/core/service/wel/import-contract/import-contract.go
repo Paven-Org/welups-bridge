@@ -52,7 +52,8 @@ const (
 
 	Issue = welService.Issue
 
-	WatchForTx2TreasuryWF = welService.WatchForTx2TreasuryWF
+	WatchForTx2TreasuryWF         = welService.WatchForTx2TreasuryWF
+	WatchForTx2TreasuryByTxHashWF = welService.WatchForTx2TreasuryByTxHashWF
 	// signal
 	BatchIssueSignal = welService.BatchIssueSignal
 
@@ -377,12 +378,102 @@ func (ctr *ImportContractService) WatchForTx2Treasury(ctx workflow.Context, from
 	return nil
 }
 
+func (ctr *ImportContractService) WatchForTx2TreasuryByTxHash(ctx workflow.Context, txhash, to, netid, token string) error {
+	log := workflow.GetLogger(ctx)
+
+	ao := workflow.ActivityOptions{
+		TaskQueue:              welethService.WelethServiceQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 30,
+		},
+	}
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	getTx2Treasury := func() error {
+		var tx welethModel.TxToTreasury
+		res := workflow.ExecuteActivity(ctx, welethService.GetTx2TreasuryByTxHash, txhash)
+		err := res.Get(ctx, &tx)
+
+		if err != nil {
+			log.Error("[WatchForTx2Treasury] error while getting tx2treasury", err)
+			return err
+		}
+
+		var welToken string
+		res = workflow.ExecuteActivity(ctx, welethService.MapEthTokenToWel, token)
+		err = res.Get(ctx, &welToken)
+
+		if err != nil {
+			log.Error("[WatchForTx2Treasury] error while getting corresponding wel token", err)
+			return err
+		}
+
+		cashinTx := welethModel.EthCashinWelTrans{
+			EthTxHash: tx.TxID,
+
+			EthTokenAddr: token,
+			WelTokenAddr: welToken,
+
+			EthWalletAddr: tx.FromAddress,
+			WelWalletAddr: to,
+
+			NetworkID: netid,
+			Total:     tx.Amount,
+
+			//CommissionFee:
+			Status: welethModel.EthCashinWelUnconfirmed,
+		}
+		res = workflow.ExecuteActivity(ctx, welethService.CreateEthCashinWelTrans, cashinTx)
+		err = res.Get(ctx, &(cashinTx.ID))
+		if err != nil {
+			log.Error("[WatchForTx2Treasury] error while createing W2ECashin trans", err)
+			return err
+		}
+
+		se := workflow.SignalExternalWorkflow(ctx, ctr.batchIssueID, "", BatchIssueSignal, cashinTx)
+		err = se.Get(ctx, nil)
+		if err != nil {
+			log.Error("[WatchForTx2Treasury] error while sending tx to BatchIssue", err)
+			return err
+		}
+		return nil
+	}
+
+	// txQueue := ...
+	timer := workflow.NewTimer(ctx, 2*time.Minute) // check pending queue every 2 min
+	selector := workflow.NewSelector(ctx)
+
+	selector.AddReceive(ctx.Done(), func(channel workflow.ReceiveChannel, more bool) {})
+	selector.AddFuture(timer, func(f workflow.Future) {
+		if err := getTx2Treasury(); err == welethModel.ErrTx2TreasuryNotFound {
+			log.Error("[WatchForTx2Treasury] tx2treasury not found")
+			return
+		}
+		log.Info("[WatchForTx2Treasury] tx enqueued for BatchIssueWF")
+	})
+
+	// main
+	if err := getTx2Treasury(); err == welethModel.ErrTx2TreasuryNotFound {
+		selector.Select(ctx)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Worker
 func (ctr *ImportContractService) registerService(w worker.Worker) {
 	//w.RegisterActivity(ctr.Withdraw)
 	w.RegisterActivity(ctr.Issue)
 
 	w.RegisterWorkflowWithOptions(ctr.WatchForTx2Treasury, workflow.RegisterOptions{Name: WatchForTx2TreasuryWF})
+	w.RegisterWorkflowWithOptions(ctr.WatchForTx2TreasuryByTxHash, workflow.RegisterOptions{Name: WatchForTx2TreasuryByTxHashWF})
 	w.RegisterWorkflow(ctr.BatchIssueWF)
 }
 
