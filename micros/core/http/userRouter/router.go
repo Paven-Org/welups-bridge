@@ -59,6 +59,7 @@ func loginHandler(c *gin.Context) {
 	logger.Debug().Msgf("[login handler] token %s, sessionID %s, sessionSecret %s, age: %d", token, sessionID, sessionSecret, dur)
 
 	// response
+	c.SetSameSite(http.SameSiteNoneMode)
 	c.SetCookie(sessionID, sessionSecret, int(dur), "/", "", true, true)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 	return
