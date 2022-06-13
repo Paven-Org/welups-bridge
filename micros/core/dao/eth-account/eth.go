@@ -14,6 +14,8 @@ type IEthDAO interface {
 	GetAllEthAccounts(offset uint, size uint) ([]model.EthAccount, error)
 	GetAllRoles() ([]string, error)
 	GetEthAccount(address string) (*model.EthAccount, error)
+	SetCurrentTreasury(address string) error
+	GetCurrentTreasury() (*model.EthAccount, error)
 	GetEthAccountRoles(address string) ([]string, error)
 	GetEthAccountsWithRole(role string, offset uint, size uint) ([]model.EthAccount, error)
 	GetEthPrikeyIfExists(address string) (string, error)
@@ -341,4 +343,63 @@ func (dao *ethDAO) GetAllRoles() ([]string, error) {
 	}
 
 	return roles, nil
+}
+
+func (dao *ethDAO) GetCurrentTreasury() (*model.EthAccount, error) {
+	var treas model.EthAccount
+	db := dao.db
+	log := logger.Get()
+
+	q := db.Rebind("SELECT address FROM current_eth_treasury")
+	err := db.Select(&treas, q)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Err(err).Msg("Error while querying for current_eth_treasury")
+			return nil, err
+		}
+		return nil, model.ErrEthAccountNotFound
+	}
+
+	return &treas, nil
+}
+
+func (dao *ethDAO) SetCurrentTreasury(address string) error {
+	log := logger.Get()
+	tx, err := dao.db.Beginx()
+	if err != nil {
+		log.Err(err).Msg("Error while beginning transaction for current_eth_treasury")
+		return err
+	}
+	// insert into eth_sys_accounts address on conflict do nothing
+	qEA := tx.Rebind("INSERT INTO eth_sys_accounts(address) VALUES (?) ON CONFLICT DO NOTHING")
+	_, err = tx.Exec(qEA, address)
+	if err != nil {
+		log.Err(err).Msg("Error while updating current_eth_treasury")
+		tx.Rollback()
+		return err
+	}
+	// insert into eth_sys_account_roles address, 'treasury' on conflict do nothing
+	qEAR := tx.Rebind("INSERT INTO eth_sys_account_roles(address,role) VALUES (?, 'treasury') ON CONFLICT DO NOTHING")
+	_, err = tx.Exec(qEAR, address)
+	if err != nil {
+		log.Err(err).Msg("Error while updating current_eth_treasury")
+		tx.Rollback()
+		return err
+	}
+
+	qM := tx.Rebind("INSERT INTO current_eth_treasury(singleton,address,role) VALUES (TRUE, ?, 'treasury') ON CONFLICT (singleton) DO UPDATE SET address = ?")
+	_, err = tx.Exec(qM, address, address)
+	if err != nil {
+		log.Err(err).Msg("Error while updating current_eth_treasury")
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Err(err).Msg("Error while committing tx for current_eth_treasury")
+		return err
+	}
+
+	return nil
 }

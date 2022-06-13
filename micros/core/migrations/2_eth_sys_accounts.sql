@@ -21,7 +21,8 @@ INSERT INTO eth_sys_roles(role) VALUES
   ('super_admin'),
   ('MANAGER_ROLE'),
   ('AUTHENTICATOR'),
-  ('operator');
+  ('operator')
+  ('treasury');
 
 CREATE TABLE IF NOT EXISTS eth_sys_prikeys ( -- for those accounts we can afford to store keys
   address varchar(256) NOT NULL,
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS eth_sys_account_roles (
   FOREIGN KEY (address) REFERENCES eth_sys_accounts(address),
   FOREIGN KEY (role) REFERENCES eth_sys_roles(role),
   PRIMARY KEY (address, role),
-  CHECK (role IN ('unauthorized','super_admin','MANAGER_ROLE','AUTHENTICATOR', 'operator'))
+  CHECK (role IN ('unauthorized','super_admin','MANAGER_ROLE','AUTHENTICATOR', 'operator', 'treasury'))
 );
 
 -- +goose StatementEnd
