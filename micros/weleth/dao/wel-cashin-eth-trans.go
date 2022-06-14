@@ -2,6 +2,8 @@ package dao
 
 import (
 	"bridge/micros/weleth/model"
+	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -15,6 +17,7 @@ type IWelCashinEthTransDAO interface {
 
 	SelectTransByDepositTxHash(txHash string) (*model.WelCashinEthTrans, error)
 	SelectTransById(id string) (*model.WelCashinEthTrans, error)
+	SelectTrans(sender, receiver, status string) ([]model.WelCashinEthTrans, error)
 
 	CreateClaimRequest(requestID string, txID int64, status string) error
 	SelectTransByRqId(rid string) (*model.WelCashinEthTrans, error)
@@ -131,6 +134,35 @@ func (w *welCashinEthTransDAO) SelectTransByRqId(rid string) (*model.WelCashinEt
 					ON t.id = r.tx_id 
 					WHERE r.request_id = $1`, rid)
 	return t, err
+}
+
+func (w *welCashinEthTransDAO) SelectTrans(sender, receiver, status string) ([]model.WelCashinEthTrans, error) {
+	// building query
+	mapper := make(map[string]string)
+	if len(sender) > 0 {
+		mapper["wel_wallet_addr"] = sender
+	}
+	if len(receiver) > 0 {
+		mapper["eth_wallet_addr"] = receiver
+	}
+	if len(status) > 0 {
+		mapper["deposit_status"] = status
+	}
+
+	whereClauses := []string{}
+	params := []interface{}{}
+	for k, v := range mapper {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", k))
+		params = append(params, v)
+	}
+
+	q := w.db.Rebind("SELECT * FROM wel_cashin_eth_trans WHERE " + strings.Join(whereClauses, " AND "))
+
+	// querying...
+	txs := []model.WelCashinEthTrans{}
+	err := w.db.Select(txs, q, params...)
+
+	return txs, err
 }
 
 func (w *welCashinEthTransDAO) GetClaimRequest(reqID string) (*model.ClaimRequest, error) {

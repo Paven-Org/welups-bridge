@@ -30,9 +30,13 @@ const (
 	// calling `claim` method on ChainA's Export contract.
 	GetWelToEthCashinByTxHash  = "WEL2ETH_CASHIN"  // original Wel values -> wrapped Eth tokens
 	GetEthToWelCashoutByTxHash = "ETH2WEL_CASHOUT" // wrapped Eth tokens -> original Wel values
+	GetWelToEthCashin          = "W2E_CASHIN_GENERAL_GET"
+	GetEthToWelCashout         = "E2W_CASHOUT_GENERAL_GET"
 
 	GetEthToWelCashinByTxHash  = "ETH2WEL_CASHIN"  // original Eth values -> wrapped Wel tokens
 	GetWelToEthCashoutByTxHash = "WEL2ETH_CASHOUT" // wrapped Wel tokens -> original Eth values
+	GetEthToWelCashin          = "E2W_CASHIN_GENERAL_GET"
+	GetWelToEthCashout         = "W2E_CASHOUT_GENERAL_GET"
 
 	CreateW2ECashinClaimRequest = "CreateW2ECashinClaimRequest"
 	UpdateClaimWelCashinEth     = "UpdateClaimWelCashinEth"
@@ -97,6 +101,17 @@ func (s *WelethBridgeService) MapEthTokenToWel(ctx context.Context, ethTk string
 		return "", fmt.Errorf("corresponding token not found")
 	}
 	return welTk, nil
+}
+
+func (s *WelethBridgeService) GetWelToEthCashin(ctx context.Context, sender, receiver, status string) (txs []model.WelCashinEthTrans, err error) {
+	log := logger.Get()
+	log.Info().Msgf("[W2E transaction get] getting cashin transaction")
+	txs, err = s.Wel2EthCashinTransDAO.SelectTrans(sender, receiver, status)
+	if err != nil {
+		log.Err(err).Msg("[W2E transaction get] failed to get cashin transactions")
+		return
+	}
+	return txs, nil
 }
 
 func (s *WelethBridgeService) GetWelToEthCashinByTxHash(ctx context.Context, txhash string) (tx model.WelCashinEthTrans, err error) {
@@ -339,6 +354,7 @@ func (s *WelethBridgeService) UpdateWelCashoutEthTrans(ctx context.Context, tx m
 func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetWelToEthCashinByTxHash, activity.RegisterOptions{Name: GetWelToEthCashinByTxHash})
 	w.RegisterActivityWithOptions(s.GetEthToWelCashoutByTxHash, activity.RegisterOptions{Name: GetEthToWelCashoutByTxHash})
+	w.RegisterActivityWithOptions(s.GetWelToEthCashin, activity.RegisterOptions{Name: GetWelToEthCashin})
 
 	w.RegisterActivityWithOptions(s.GetEthToWelCashinByTxHash, activity.RegisterOptions{Name: GetEthToWelCashinByTxHash})
 	w.RegisterActivityWithOptions(s.GetWelToEthCashoutByTxHash, activity.RegisterOptions{Name: GetWelToEthCashoutByTxHash})
