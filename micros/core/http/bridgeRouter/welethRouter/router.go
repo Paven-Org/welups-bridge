@@ -8,6 +8,7 @@ import (
 
 	ethLogic "bridge/micros/core/blogic/eth"
 	welLogic "bridge/micros/core/blogic/wel"
+	"bridge/micros/weleth/model"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -29,6 +30,10 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	//gr.POST("/claim/wel/cashout-to/eth", wel2ethCashout)
 
 	gr.GET("/transaction/eth/cashin/wel/:eth_txid", getE2WCashinTxByEthTxId)
+	gr.GET("/transactions/eth/cashin/wel", getE2WCashinTx)
+	gr.GET("/transactions/wel/cashout/eth", getW2ECashoutTx)
+	gr.GET("/transactions/wel/cashin/eth", getW2ECashinTx)
+	gr.GET("/transactions/eth/cashout/wel", getE2WCashoutTx)
 	//	gr.GET("/transaction/cashout/to/eth/:txid")
 	//	gr.GET("/transaction/cashin/from/wel/:txid")
 	//	gr.GET("/transaction/cashout/to/wel/:txid")
@@ -219,6 +224,118 @@ func getE2WCashinTxByEthTxId(c *gin.Context) {
 
 	// response
 	c.JSON(http.StatusOK, tx)
+}
+
+func getW2ECashinTx(c *gin.Context) {
+	// request
+	type request struct {
+		Sender   string `json:"from_wel"`
+		Receiver string `json:"to_eth"`
+		Status   string `json:"withdraw_status"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[Get W2E cashin] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	txs, err := welLogic.GetW2ECashinTrans(req.Sender, req.Receiver, req.Status)
+	if err != nil {
+		logger.Err(err).Msgf("[Get W2E cashin] Unable to get W2E cashin transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashin transactions")
+	}
+
+	// response
+
+	logger.Info().Msg("[Get W2E cashin] successfully get W2E cashin transactions")
+	c.JSON(http.StatusOK, txs)
+}
+
+func getE2WCashoutTx(c *gin.Context) {
+	// request
+	type request struct {
+		Sender   string `json:"from_eth"`
+		Receiver string `json:"to_wel"`
+		Status   string `json:"withdraw_status"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[Get E2W cashout] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	txs, err := ethLogic.GetE2WCashoutTrans(req.Sender, req.Receiver, req.Status)
+	if err != nil {
+		logger.Err(err).Msgf("[Get E2W cashout] Unable to get E2W cashout transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashout transactions")
+	}
+
+	// response
+
+	logger.Info().Msg("[Get E2W cashout] successfully get E2W cashout transactions")
+	c.JSON(http.StatusOK, txs)
+}
+
+func getE2WCashinTx(c *gin.Context) {
+	// request
+	type request struct {
+		Sender   string `json:"from_eth"`
+		Receiver string `json:"to_wel"`
+		Status   string `json:"cashin_tx_status"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[Get E2W cashin] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	txs, tx2tr, err := ethLogic.GetE2WCashinTrans(req.Sender, req.Receiver, req.Status)
+	if err != nil {
+		logger.Err(err).Msgf("[Get E2W cashin] Unable to get E2W cashin transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashin transactions")
+	}
+
+	// response
+	type response struct {
+		CashinTx     []model.EthCashinWelTrans `json:"cashin_tx"`
+		TxToTreasury []model.TxToTreasury      `json:"to_treasury_tx"`
+	}
+	resp := response{
+		CashinTx:     txs,
+		TxToTreasury: tx2tr,
+	}
+
+	logger.Info().Msg("[Get E2W cashin] successfully get E2W cashin transactions")
+	c.JSON(http.StatusOK, resp)
+}
+
+func getW2ECashoutTx(c *gin.Context) {
+	// request
+	type request struct {
+		Sender   string `json:"from_wel"`
+		Receiver string `json:"to_eth"`
+		Status   string `json:"status"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Err(err).Msgf("[Get W2E cashout] Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+	}
+
+	// process
+	txs, err := welLogic.GetW2ECashoutTrans(req.Sender, req.Receiver, req.Status)
+	if err != nil {
+		logger.Err(err).Msgf("[Get W2E cashout] Unable to get W2E cashout transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashout transactions")
+	}
+
+	// response
+
+	logger.Info().Msg("[Get W2E cashout] successfully get W2E cashout transactions")
+	c.JSON(http.StatusOK, txs)
 }
 
 func wel2ethCashout(c *gin.Context) {
