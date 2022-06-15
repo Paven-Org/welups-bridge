@@ -496,7 +496,6 @@ func (cli *Weleth) registerService(w worker.Worker) {
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashoutWF, workflow.RegisterOptions{Name: GetEthToWelCashout})
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashinWF, workflow.RegisterOptions{Name: GetEthToWelCashin})
 	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashoutWF, workflow.RegisterOptions{Name: GetWelToEthCashout})
-	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashoutWF, workflow.RegisterOptions{Name: GetWelToEthCashout})
 
 	w.RegisterWorkflowWithOptions(cli.GetTx2TreasuryBySenderWF, workflow.RegisterOptions{Name: GetTx2TreasuryBySender})
 
