@@ -3,6 +3,8 @@ package dao
 import (
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/logger"
+	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -17,6 +19,7 @@ type IWelCashoutEthTransDAO interface {
 	SelectTransById(id string) (*model.WelCashoutEthTrans, error)
 
 	SelectTransByDisperseTxHashEthAddrAmount(txHash, ethWalletAddr, amount string) ([]*model.WelCashoutEthTrans, error)
+	SelectTrans(sender, receiver, status string) ([]model.WelCashoutEthTrans, error)
 }
 
 // sort of a locator for DAOs
@@ -145,6 +148,35 @@ func (w *welCashoutEthTransDAO) SelectTransById(id string) (*model.WelCashoutEth
 	var t = &model.WelCashoutEthTrans{}
 	err := w.db.Get(t, "SELECT * FROM wel_cashout_eth_trans WHERE id = $1", id)
 	return t, err
+}
+
+func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string) ([]model.WelCashoutEthTrans, error) {
+	// building query
+	mapper := make(map[string]string)
+	if len(sender) > 0 {
+		mapper["eth_wallet_addr"] = sender
+	}
+	if len(receiver) > 0 {
+		mapper["wel_wallet_addr"] = receiver
+	}
+	if len(status) > 0 {
+		mapper["status"] = status
+	}
+
+	whereClauses := []string{}
+	params := []interface{}{}
+	for k, v := range mapper {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", k))
+		params = append(params, v)
+	}
+
+	q := w.db.Rebind("SELECT * FROM wel_cashout_eth_trans WHERE " + strings.Join(whereClauses, " AND "))
+
+	// querying...
+	txs := []model.WelCashoutEthTrans{}
+	err := w.db.Select(txs, q, params...)
+
+	return txs, err
 }
 
 func MkWelCashoutEthTransDao(db *sqlx.DB) *welCashoutEthTransDAO {

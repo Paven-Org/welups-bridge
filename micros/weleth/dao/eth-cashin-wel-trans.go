@@ -4,6 +4,8 @@ import (
 	"bridge/micros/weleth/model"
 	"bridge/service-managers/logger"
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -12,6 +14,7 @@ type IEthCashinWelTransDAO interface {
 	CreateEthCashinWelTrans(t *model.EthCashinWelTrans) (int64, error)
 	GetUnconfirmedTx2Treasury(from, treasury, token, amount string) (*model.TxToTreasury, error)
 	GetUnconfirmedTx2TreasuryByTxHash(txhash string) (*model.TxToTreasury, error)
+	GetTx2TreasuryFromSender(sender string) ([]model.TxToTreasury, error)
 
 	CreateTx2Treasury(t *model.TxToTreasury) error
 
@@ -20,6 +23,7 @@ type IEthCashinWelTransDAO interface {
 	SelectTransByDepositTxHash(txHash string) (*model.EthCashinWelTrans, error)
 	SelectTransByIssueTxHash(txHash string) ([]*model.EthCashinWelTrans, error)
 	SelectTransById(id string) (*model.EthCashinWelTrans, error)
+	SelectTrans(sender, receiver, status string) ([]model.EthCashinWelTrans, error)
 }
 
 // sort of a locator for DAOs
@@ -46,6 +50,29 @@ func (w *ethCashinWelTransDAO) CreateTx2Treasury(t *model.TxToTreasury) error {
 		return err
 	}
 	return nil
+}
+
+func (w *ethCashinWelTransDAO) GetTx2TreasuryFromSender(sender string) ([]model.TxToTreasury, error) {
+	db := w.db
+	log := logger.Get()
+
+	var res []model.TxToTreasury
+	q := db.Rebind(
+		`SELECT * FROM tx_to_treasury
+			WHERE from_address = ?
+			ORDER BY created_at DESC`)
+
+	err := db.Get(res, q, sender)
+	if err == sql.ErrNoRows {
+		log.Info().Msg("[GetTx2Treasury] no tx found")
+		return nil, nil
+	}
+	if err != nil {
+		log.Err(err).Msg("[GetTx2Treasury] error while querying DB")
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (w *ethCashinWelTransDAO) GetUnconfirmedTx2Treasury(from, treasury, token, amount string) (*model.TxToTreasury, error) {
@@ -208,6 +235,35 @@ func (w *ethCashinWelTransDAO) SelectTransById(id string) (*model.EthCashinWelTr
 	var t = &model.EthCashinWelTrans{}
 	err := w.db.Get(t, "SELECT * FROM eth_cashin_wel_trans WHERE id = $1", id)
 	return t, err
+}
+
+func (w *ethCashinWelTransDAO) SelectTrans(sender, receiver, status string) ([]model.EthCashinWelTrans, error) {
+	// building query
+	mapper := make(map[string]string)
+	if len(sender) > 0 {
+		mapper["eth_wallet_addr"] = sender
+	}
+	if len(receiver) > 0 {
+		mapper["wel_wallet_addr"] = receiver
+	}
+	if len(status) > 0 {
+		mapper["status"] = status
+	}
+
+	whereClauses := []string{}
+	params := []interface{}{}
+	for k, v := range mapper {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", k))
+		params = append(params, v)
+	}
+
+	q := w.db.Rebind("SELECT * FROM eth_cashin_wel_trans WHERE " + strings.Join(whereClauses, " AND "))
+
+	// querying...
+	txs := []model.EthCashinWelTrans{}
+	err := w.db.Select(txs, q, params...)
+
+	return txs, err
 }
 
 func MkEthCashinWelTransDao(db *sqlx.DB) *ethCashinWelTransDAO {
