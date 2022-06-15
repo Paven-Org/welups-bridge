@@ -472,3 +472,45 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 
 	return nil
 }
+
+func GetW2ECashinTrans(sender, receiver, withdrawStatus string) ([]welethModel.WelCashinEthTrans, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var tx []welethModel.WelCashinEthTrans
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashin, sender, receiver, withdrawStatus)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get W2E cashin tx workflow")
+		return nil, err
+	}
+	if err = we.Get(ctx, tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get W2E cashin tx")
+		return tx, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved W2E cashin tx")
+	return tx, nil
+}
+
+func GetW2ECashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.WelCashoutEthTrans, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var tx []welethModel.WelCashoutEthTrans
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashout, sender, receiver, withdrawStatus)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get W2E cashout tx workflow")
+		return nil, err
+	}
+	if err = we.Get(ctx, tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get W2E cashout tx")
+		return tx, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved W2E cashout tx")
+	return tx, nil
+}

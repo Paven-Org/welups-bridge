@@ -481,6 +481,63 @@ func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans
 	return &tx, nil
 }
 
+func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashinWelTrans, []welethModel.TxToTreasury, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var tx []welethModel.EthCashinWelTrans
+	var tx2tr []welethModel.TxToTreasury
+	ctx := context.Background()
+
+	// Tx2Treasury
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetTx2TreasuryBySender, sender)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get Tx to Treasury workflow")
+		return nil, nil, err
+	}
+	if err = we.Get(ctx, tx2tr); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get Tx to Treasury")
+		return nil, nil, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved Tx to Treasury")
+
+	// actual cashin txs
+	we, err = tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashin, sender, receiver, status)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashin tx workflow")
+		return nil, tx2tr, err
+	}
+	if err = we.Get(ctx, tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashin tx")
+		return nil, tx2tr, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved E2W cashin tx")
+
+	return tx, tx2tr, nil
+}
+
+func GetE2WCashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.EthCashoutWelTrans, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var tx []welethModel.EthCashoutWelTrans
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashout, sender, receiver, withdrawStatus)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashout tx workflow")
+		return nil, err
+	}
+	if err = we.Get(ctx, tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashout tx")
+		return tx, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved E2W cashout tx")
+	return tx, nil
+}
+
 func WatchTx2TreasuryRequest(from, to, treasury, netid, token, amount string) error {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: welService.ImportContractQueue,

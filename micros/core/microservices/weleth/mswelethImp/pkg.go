@@ -453,7 +453,7 @@ func (cli *Weleth) GetWelToEthCashoutWF(ctx workflow.Context, sender, receiver, 
 	return tx, nil
 }
 
-func (cli *Weleth) GetTx2TreasuryBySender(ctx workflow.Context, sender string) ([]welethService.TxToTreasury, error) {
+func (cli *Weleth) GetTx2TreasuryBySenderWF(ctx workflow.Context, sender string) ([]welethService.TxToTreasury, error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting transaction from sender " + sender + " to treasury")
 
@@ -496,6 +496,9 @@ func (cli *Weleth) registerService(w worker.Worker) {
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashoutWF, workflow.RegisterOptions{Name: GetEthToWelCashout})
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashinWF, workflow.RegisterOptions{Name: GetEthToWelCashin})
 	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashoutWF, workflow.RegisterOptions{Name: GetWelToEthCashout})
+	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashoutWF, workflow.RegisterOptions{Name: GetWelToEthCashout})
+
+	w.RegisterWorkflowWithOptions(cli.GetTx2TreasuryBySenderWF, workflow.RegisterOptions{Name: GetTx2TreasuryBySender})
 
 	w.RegisterWorkflowWithOptions(cli.CreateW2ECashinClaimRequestWF, workflow.RegisterOptions{Name: CreateW2ECashinClaimRequestWF})
 	w.RegisterWorkflowWithOptions(cli.CreateE2WCashoutClaimRequestWF, workflow.RegisterOptions{Name: CreateE2WCashoutClaimRequestWF})
