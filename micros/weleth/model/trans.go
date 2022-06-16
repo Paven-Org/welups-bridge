@@ -15,10 +15,12 @@ var (
 )
 
 const (
+	// withdraw status
 	StatusSuccess = "confirmed"
 	StatusUnknown = "unconfirmed"
 	StatusPending = "pending"
 
+	// claim status
 	RequestDoubleClaimed = "doubleclaimed"
 	RequestExpired       = "expired"
 	RequestSuccess       = "success"
@@ -56,10 +58,10 @@ type WelCashinEthTrans struct {
 
 	Fee string `json:"fee" db:"fee"`
 
-	DepositStatus string `json:"deposit_status" db:"deposit_status"`
+	DepositStatus string `json:"withdraw_status" db:"deposit_status"` // it's "withdraw" following the convention of the contract, but my junior decided "deposit" was more intuitive, thus the inconsistency
 	ClaimStatus   string `json:"claim_status" db:"claim_status"`
 
-	DepositAt time.Time    `json:"deposit_at" db:"deposit_at"`
+	DepositAt time.Time    `json:"withdraw_at" db:"deposit_at"` // same as above
 	ClaimAt   sql.NullTime `json:"claim_at" db:"claim_at"`
 }
 
@@ -83,23 +85,30 @@ type EthCashoutWelTrans struct {
 
 	Fee string `json:"fee" db:"fee"`
 
-	DepositStatus string `json:"deposit_status" db:"deposit_status"`
+	DepositStatus string `json:"withdraw_status" db:"deposit_status"` // ^ see the above comment for WelCashinEthTrans
 	ClaimStatus   string `json:"claim_status" db:"claim_status"`
 
-	DepositAt time.Time    `json:"deposit_at" db:"deposit_at"`
+	DepositAt time.Time    `json:"withdraw_at" db:"deposit_at"` // same as above
 	ClaimAt   sql.NullTime `json:"claim_at" db:"claim_at"`
 }
 
 //----------------------------------------------------------------//
 const (
+	// Tx to treasury's status
+	// unconfirmed = not yet sure if the transfer was a cashin transaction, or just a normal
+	// transfer
+	// isCashin = was requested by frontend to be a cashin transaction
+	// expired = expired
 	Tx2TrUnconfirmed = "unconfirmed"
 	Tx2TrIsCashin    = "isCashin"
 	Tx2TrExpired     = "expired"
 
+	// eth to wel cashin status
 	EthCashinWelUnconfirmed = "unconfirmed"
 	EthCashinWelConfirmed   = "confirmed"
 	EthCashinWelFailed      = "failed"
 
+	// wel to eth cashout status
 	WelCashoutEthUnconfirmed = "unconfirmed"
 	WelCashoutEthConfirmed   = "confirmed"
 	WelCashoutEthRetry       = "retry"
