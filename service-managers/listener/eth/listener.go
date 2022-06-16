@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 
 	"bridge/common/consts"
@@ -13,10 +12,8 @@ import (
 	"bridge/service-managers/logger"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/rs/zerolog"
 )
@@ -139,41 +136,46 @@ func (s *EthListener) Scan(parentContext context.Context) (daemon consts.Daemon,
 					continue
 				}
 				var isContractCall = false
-				receipt, err := s.EthClient.TransactionReceipt(context.Background(), t.Hash())
-				if err != nil {
-					s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx receipt retrieval err")
-					continue
-				}
-				if receipt.Status != 1 {
-					//s.Logger.Debug().Msgf("[eth_listener]] Skipping failed Ethereum tx %s...", t.Hash().Hex())
-					continue
-				}
-				// check if this is an ERC20 transfer
+				// temporary cutoff the ERC20 checking path because go-eth's performance is horrible
 				if len(t.Data()) > 0 {
-					isContractCall = true
-					abiJson := strings.NewReader(`[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`)
-					abi, _ := abi.JSON(abiJson)
-					topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
-					for _, log := range receipt.Logs {
-						if len(log.Topics) < 3 {
-							//s.Logger.Debug().Msgf("[eth listener] topics length too short in log: %+v\n", log)
-							continue
-						}
-						if log.Topics[0] == topic {
-							//s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
-							_to := common.HexToAddress(log.Topics[2].Hex())
-							if monitor, ok := s.TxMonitors[_to]; ok {
-								data := make(map[string]interface{})
-								abi.UnpackIntoMap(data, "Transfer", log.Data)
-								from := common.HexToAddress(log.Topics[1].Hex()).Hex()
-								to := _to.Hex()
-								contract := t.To().Hex()
-								amount := data["amount"].(*big.Int).String()
-								monitor.TxParse(t, from, to, contract, amount)
-							}
-						}
-					}
+					//isContractCall = true
+					continue
 				}
+				//receipt, err := s.EthClient.TransactionReceipt(context.Background(), t.Hash())
+				//if err != nil {
+				//	s.Logger.Err(err).Msg("[eth_listener]] Ethereum tx receipt retrieval err")
+				//	continue
+				//}
+				//if receipt.Status != 1 {
+				//	//s.Logger.Debug().Msgf("[eth_listener]] Skipping failed Ethereum tx %s...", t.Hash().Hex())
+				//	continue
+				//}
+				// check if this is an ERC20 transfer
+				//if len(t.Data()) > 0 {
+				//	isContractCall = true
+				//	abiJson := strings.NewReader(`[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`)
+				//	abi, _ := abi.JSON(abiJson)
+				//	topic := crypto.Keccak256Hash([]byte(abi.Events["Transfer"].Sig))
+				//	for _, log := range receipt.Logs {
+				//		if len(log.Topics) < 3 {
+				//			//s.Logger.Debug().Msgf("[eth listener] topics length too short in log: %+v\n", log)
+				//			continue
+				//		}
+				//		if log.Topics[0] == topic {
+				//			//s.Logger.Info().Msgf("[eth listener] ERC20 transfer tx detected: %+v\n", t)
+				//			_to := common.HexToAddress(log.Topics[2].Hex())
+				//			if monitor, ok := s.TxMonitors[_to]; ok {
+				//				data := make(map[string]interface{})
+				//				abi.UnpackIntoMap(data, "Transfer", log.Data)
+				//				from := common.HexToAddress(log.Topics[1].Hex()).Hex()
+				//				to := _to.Hex()
+				//				contract := t.To().Hex()
+				//				amount := data["amount"].(*big.Int).String()
+				//				monitor.TxParse(t, from, to, contract, amount)
+				//			}
+				//		}
+				//	}
+				//}
 
 				if monitor, ok := s.TxMonitors[*t.To()]; ok && !isContractCall {
 					logger.Get().Debug().Msgf("tran to: %+v", *t.To())
