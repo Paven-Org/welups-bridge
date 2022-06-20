@@ -55,6 +55,7 @@ func wel2ethCashin(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Claim W2E cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -62,6 +63,7 @@ func wel2ethCashin(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Claim W2E cashin] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
+		return
 	}
 
 	reqIDu256 := &big.Int{}
@@ -102,6 +104,7 @@ func eth2welCashout(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Claim E2W cashout] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -109,6 +112,7 @@ func eth2welCashout(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Claim E2W cashout] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
+		return
 	}
 
 	reqIDu256 := &big.Int{}
@@ -152,6 +156,7 @@ func eth2welCashin(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -165,6 +170,7 @@ func eth2welCashin(c *gin.Context) {
 			req.Amount); err != nil {
 		logger.Err(err).Msgf("[E2W cashin] Failed to request backend to watch for transaction to treasury")
 		c.JSON(http.StatusBadRequest, "Failed to request backend to watch for transaction to treasury")
+		return
 	}
 
 	// response
@@ -182,6 +188,7 @@ func eth2welCashinByTxId(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	txhash := c.Param("txid")
@@ -189,6 +196,7 @@ func eth2welCashinByTxId(c *gin.Context) {
 		err := fmt.Errorf("Invalid request payload")
 		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -200,6 +208,7 @@ func eth2welCashinByTxId(c *gin.Context) {
 			req.Token); err != nil {
 		logger.Err(err).Msgf("[E2W cashin] Failed to request backend to watch for transaction to treasury")
 		c.JSON(http.StatusBadRequest, "Failed to request backend to watch for transaction to treasury")
+		return
 	}
 
 	// response
@@ -213,6 +222,7 @@ func getE2WCashinTxByEthTxId(c *gin.Context) {
 		err := fmt.Errorf("Invalid request payload")
 		logger.Err(err).Msgf("[E2W cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -220,6 +230,7 @@ func getE2WCashinTxByEthTxId(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[E2W cashin] Failed to get E2W cashin transaction with eth side transaction id " + txhash)
 		c.JSON(http.StatusBadRequest, "Failed to get E2W cashin transaction with eth side transaction id "+txhash)
+		return
 	}
 
 	// response
@@ -237,6 +248,7 @@ func getW2ECashinTx(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Get W2E cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -244,6 +256,7 @@ func getW2ECashinTx(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Get W2E cashin] Unable to get W2E cashin transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashin transactions")
+		return
 	}
 
 	// response
@@ -263,6 +276,7 @@ func getE2WCashoutTx(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Get E2W cashout] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -270,6 +284,7 @@ func getE2WCashoutTx(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Get E2W cashout] Unable to get E2W cashout transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashout transactions")
+		return
 	}
 
 	// response
@@ -289,6 +304,7 @@ func getE2WCashinTx(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Get E2W cashin] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -296,6 +312,7 @@ func getE2WCashinTx(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Get E2W cashin] Unable to get E2W cashin transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashin transactions")
+		return
 	}
 
 	// response
@@ -323,6 +340,7 @@ func getW2ECashoutTx(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Err(err).Msgf("[Get W2E cashout] Invalid request payload")
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
 	}
 
 	// process
@@ -330,6 +348,7 @@ func getW2ECashoutTx(c *gin.Context) {
 	if err != nil {
 		logger.Err(err).Msgf("[Get W2E cashout] Unable to get W2E cashout transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashout transactions")
+		return
 	}
 
 	// response
