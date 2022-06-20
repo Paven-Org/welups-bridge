@@ -508,7 +508,7 @@ func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashin
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashin tx workflow")
 		return nil, tx2tr, err
 	}
-	if err = we.Get(ctx, tx); err != nil {
+	if err = we.Get(ctx, &tx); err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashin tx")
 		return nil, tx2tr, err
 	}
@@ -530,7 +530,7 @@ func GetE2WCashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashout tx workflow")
 		return nil, err
 	}
-	if err = we.Get(ctx, tx); err != nil {
+	if err = we.Get(ctx, &tx); err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashout tx")
 		return tx, err
 	}
