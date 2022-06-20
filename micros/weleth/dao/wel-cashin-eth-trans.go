@@ -156,11 +156,14 @@ func (w *welCashinEthTransDAO) SelectTrans(sender, receiver, status string) ([]m
 		params = append(params, v)
 	}
 
-	q := w.db.Rebind("SELECT * FROM wel_cashin_eth_trans WHERE " + strings.Join(whereClauses, " AND "))
+	q := "SELECT * FROM wel_cashin_eth_trans"
+	if len(whereClauses) > 0 {
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+	}
 
 	// querying...
 	txs := []model.WelCashinEthTrans{}
-	err := w.db.Select(txs, q, params...)
+	err := w.db.Select(&txs, q, params...)
 
 	return txs, err
 }

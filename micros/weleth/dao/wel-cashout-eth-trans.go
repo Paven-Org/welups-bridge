@@ -134,13 +134,13 @@ func (w *welCashoutEthTransDAO) SelectTransByWithdrawTxHash(txHash string) (*mod
 
 func (w *welCashoutEthTransDAO) SelectTransByDisperseTxHash(txHash string) ([]*model.WelCashoutEthTrans, error) {
 	var txs = []*model.WelCashoutEthTrans{}
-	err := w.db.Select(txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1", txHash)
+	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1", txHash)
 	return txs, err
 }
 
 func (w *welCashoutEthTransDAO) SelectTransByDisperseTxHashEthAddrAmount(txHash, ethWalletAddr, amount string) ([]*model.WelCashoutEthTrans, error) {
 	var txs = []*model.WelCashoutEthTrans{}
-	err := w.db.Select(txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1 AND eth_wallet_addr = $2 AND amount = $3", txHash, ethWalletAddr, amount)
+	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1 AND eth_wallet_addr = $2 AND amount = $3", txHash, ethWalletAddr, amount)
 	return txs, err
 }
 
@@ -169,12 +169,14 @@ func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string) ([]
 		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", k))
 		params = append(params, v)
 	}
-
-	q := w.db.Rebind("SELECT * FROM wel_cashout_eth_trans WHERE " + strings.Join(whereClauses, " AND "))
+	q := "SELECT * FROM wel_cashout_eth_trans"
+	if len(whereClauses) > 0 {
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+	}
 
 	// querying...
 	txs := []model.WelCashoutEthTrans{}
-	err := w.db.Select(txs, q, params...)
+	err := w.db.Select(&txs, q, params...)
 
 	return txs, err
 }

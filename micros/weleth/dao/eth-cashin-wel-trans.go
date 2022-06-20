@@ -62,7 +62,7 @@ func (w *ethCashinWelTransDAO) GetTx2TreasuryFromSender(sender string) ([]model.
 			WHERE from_address = ?
 			ORDER BY created_at DESC`)
 
-	err := db.Get(res, q, sender)
+	err := db.Get(&res, q, sender)
 	if err == sql.ErrNoRows {
 		log.Info().Msg("[GetTx2Treasury] no tx found")
 		return nil, nil
@@ -257,11 +257,14 @@ func (w *ethCashinWelTransDAO) SelectTrans(sender, receiver, status string) ([]m
 		params = append(params, v)
 	}
 
-	q := w.db.Rebind("SELECT * FROM eth_cashin_wel_trans WHERE " + strings.Join(whereClauses, " AND "))
+	q := "SELECT * FROM eth_cashin_wel_trans"
+	if len(whereClauses) > 0 {
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+	}
 
 	// querying...
 	txs := []model.EthCashinWelTrans{}
-	err := w.db.Select(txs, q, params...)
+	err := w.db.Select(&txs, q, params...)
 
 	return txs, err
 }
