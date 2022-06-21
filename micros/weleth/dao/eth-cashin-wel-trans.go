@@ -62,7 +62,7 @@ func (w *ethCashinWelTransDAO) GetTx2TreasuryFromSender(sender string) ([]model.
 			WHERE from_address = ?
 			ORDER BY created_at DESC`)
 
-	err := db.Get(&res, q, sender)
+	err := db.Select(&res, q, sender)
 	if err == sql.ErrNoRows {
 		log.Info().Msg("[GetTx2Treasury] no tx found")
 		return nil, nil
