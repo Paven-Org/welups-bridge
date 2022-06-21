@@ -496,7 +496,7 @@ func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashin
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get Tx to Treasury workflow")
 		return nil, nil, err
 	}
-	if err = we.Get(ctx, tx2tr); err != nil {
+	if err = we.Get(ctx, &tx2tr); err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to get Tx to Treasury")
 		return nil, nil, err
 	}
