@@ -476,7 +476,7 @@ func (cli *Weleth) GetTx2TreasuryBySenderWF(ctx workflow.Context, sender string)
 	log.Info("[Core MSWeleth] Call weleth...")
 	var txs []welethService.TxToTreasury
 	res := workflow.ExecuteActivity(ctx, welethService.GetTx2TreasuryBySender, sender)
-	if err := res.Get(ctx, txs); err != nil {
+	if err := res.Get(ctx, &txs); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity GetTx2TreasuryBySender in weleth microservice", err.Error())
 		return nil, err
 	}
