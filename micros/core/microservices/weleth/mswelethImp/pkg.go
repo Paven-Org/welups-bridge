@@ -236,7 +236,7 @@ func (cli *Weleth) GetWelToEthCashinByTxHashWF(ctx workflow.Context, txhash stri
 	return tx, nil
 }
 
-func (cli *Weleth) GetWelToEthCashinWF(ctx workflow.Context, sender, receiver, status string) (tx []welethService.WelCashinEthTrans, err error) {
+func (cli *Weleth) GetWelToEthCashinWF(ctx workflow.Context, sender, receiver, status string, offset, size uint64) (tx []welethService.WelCashinEthTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashin transaction from wel to eth")
 
@@ -257,7 +257,7 @@ func (cli *Weleth) GetWelToEthCashinWF(ctx workflow.Context, sender, receiver, s
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.GetWelToEthCashin, sender, receiver, status)
+	res := workflow.ExecuteActivity(ctx, welethService.GetWelToEthCashin, sender, receiver, status, offset, size)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity GetWelToEthCashin in weleth microservice", err.Error())
 		return
@@ -298,7 +298,7 @@ func (cli *Weleth) GetEthToWelCashoutByTxHashWF(ctx workflow.Context, txhash str
 	return tx, nil
 }
 
-func (cli *Weleth) GetEthToWelCashoutWF(ctx workflow.Context, sender, receiver, status string) (tx []welethService.EthCashoutWelTrans, err error) {
+func (cli *Weleth) GetEthToWelCashoutWF(ctx workflow.Context, sender, receiver, status string, offset, size uint64) (tx []welethService.EthCashoutWelTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashout transaction from eth to wel")
 
@@ -319,7 +319,7 @@ func (cli *Weleth) GetEthToWelCashoutWF(ctx workflow.Context, sender, receiver, 
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashout, sender, receiver, status)
+	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashout, sender, receiver, status, offset, size)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity GetEthToWelCashout in weleth microservice", err.Error())
 		return
@@ -360,7 +360,7 @@ func (cli *Weleth) GetEthToWelCashinByTxHashWF(ctx workflow.Context, txhash stri
 	return tx, nil
 }
 
-func (cli *Weleth) GetEthToWelCashinWF(ctx workflow.Context, sender, receiver, status string) (tx []welethService.EthCashinWelTrans, err error) {
+func (cli *Weleth) GetEthToWelCashinWF(ctx workflow.Context, sender, receiver, status string, offset, size uint64) (tx []welethService.EthCashinWelTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashin transaction from eth to wel")
 
@@ -381,7 +381,7 @@ func (cli *Weleth) GetEthToWelCashinWF(ctx workflow.Context, sender, receiver, s
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashin, sender, receiver, status)
+	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashin, sender, receiver, status, offset, size)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity GetEthToWelCashin in weleth microservice", err.Error())
 		return
@@ -422,7 +422,7 @@ func (cli *Weleth) GetWelToEthCashoutByTxHashWF(ctx workflow.Context, txhash str
 	return tx, nil
 }
 
-func (cli *Weleth) GetWelToEthCashoutWF(ctx workflow.Context, sender, receiver, status string) (tx []welethService.WelCashoutEthTrans, err error) {
+func (cli *Weleth) GetWelToEthCashoutWF(ctx workflow.Context, sender, receiver, status string, offset, size uint64) (tx []welethService.WelCashoutEthTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashout transaction from wel to eth")
 
@@ -443,7 +443,7 @@ func (cli *Weleth) GetWelToEthCashoutWF(ctx workflow.Context, sender, receiver, 
 
 	// call weleth
 	log.Info("[Core MSWeleth] Call weleth...")
-	res := workflow.ExecuteActivity(ctx, welethService.GetWelToEthCashout, sender, receiver, status)
+	res := workflow.ExecuteActivity(ctx, welethService.GetWelToEthCashout, sender, receiver, status, offset, size)
 	if err = res.Get(ctx, &tx); err != nil {
 		log.Error("[Core MSWeleth] Error while executing activity GetWelToEthCashout in weleth microservice", err.Error())
 		return

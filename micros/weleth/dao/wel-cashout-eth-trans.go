@@ -19,7 +19,7 @@ type IWelCashoutEthTransDAO interface {
 	SelectTransById(id string) (*model.WelCashoutEthTrans, error)
 
 	SelectTransByDisperseTxHashEthAddrAmount(txHash, ethWalletAddr, amount string) ([]*model.WelCashoutEthTrans, error)
-	SelectTrans(sender, receiver, status string) ([]model.WelCashoutEthTrans, error)
+	SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.WelCashoutEthTrans, error)
 }
 
 // sort of a locator for DAOs
@@ -150,7 +150,7 @@ func (w *welCashoutEthTransDAO) SelectTransById(id string) (*model.WelCashoutEth
 	return t, err
 }
 
-func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string) ([]model.WelCashoutEthTrans, error) {
+func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.WelCashoutEthTrans, error) {
 	// building query
 	mapper := make(map[string]string)
 	if len(sender) > 0 {
@@ -169,9 +169,15 @@ func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string) ([]
 		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", k))
 		params = append(params, v)
 	}
+
+	limitClause := ""
+	if size > 0 {
+		limitClause = fmt.Sprintf(" OFFSET %d LIMIT %d", offset, size)
+	}
+
 	q := "SELECT * FROM wel_cashout_eth_trans"
 	if len(whereClauses) > 0 {
-		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND ") + limitClause)
 	}
 
 	// querying...

@@ -17,7 +17,7 @@ type IWelCashinEthTransDAO interface {
 
 	SelectTransByDepositTxHash(txHash string) (*model.WelCashinEthTrans, error)
 	SelectTransById(id string) (*model.WelCashinEthTrans, error)
-	SelectTrans(sender, receiver, status string) ([]model.WelCashinEthTrans, error)
+	SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.WelCashinEthTrans, error)
 
 	CreateClaimRequest(requestID string, txID int64, status string) error
 	SelectTransByRqId(rid string) (*model.WelCashinEthTrans, error)
@@ -136,7 +136,7 @@ func (w *welCashinEthTransDAO) SelectTransByRqId(rid string) (*model.WelCashinEt
 	return t, err
 }
 
-func (w *welCashinEthTransDAO) SelectTrans(sender, receiver, status string) ([]model.WelCashinEthTrans, error) {
+func (w *welCashinEthTransDAO) SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.WelCashinEthTrans, error) {
 	// building query
 	mapper := make(map[string]string)
 	if len(sender) > 0 {
@@ -156,9 +156,14 @@ func (w *welCashinEthTransDAO) SelectTrans(sender, receiver, status string) ([]m
 		params = append(params, v)
 	}
 
+	limitClause := ""
+	if size > 0 {
+		limitClause = fmt.Sprintf(" OFFSET %d LIMIT %d", offset, size)
+	}
+
 	q := "SELECT * FROM wel_cashin_eth_trans"
 	if len(whereClauses) > 0 {
-		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND ") + limitClause)
 	}
 
 	// querying...

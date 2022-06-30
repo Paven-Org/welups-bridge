@@ -32,6 +32,8 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.GET("/accounts/:page", getAccs)
 	gr.GET("/info/:account", getAcc)
 	gr.GET("/roles", getRoles)
+	gr.GET("/trans/cashin/to/eth", getW2ECashinTx)
+	gr.GET("/trans/cashout/from/eth", getW2ECashoutTx)
 
 }
 
@@ -39,6 +41,89 @@ func initialize() {
 	logger = log.Get()
 	logger.Info().Msg("manage users handlers initialized")
 }
+
+func getW2ECashinTx(c *gin.Context) {
+	// request
+	sender    := c.Query("sender")
+	receiver  := c.Query("receiver")
+	status    := c.Query("status") 
+	sPage     := c.Query("page") 
+	sPageSize := c.Query("page_size") 
+	
+	var page uint64 = 1
+	var pageSize uint64 = 0
+	if sPage != "" {
+		var err error
+		page, err = strconv.ParseUint(sPage, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get W2E cashin] Invalid page number")
+			page = 1
+		}
+	}
+	if sPageSize != "" {
+		var err error
+		pageSize, err = strconv.ParseUint(sPageSize, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get W2E cashin] Invalid page_size number")
+			pageSize = 0
+		}
+	}
+
+	// process
+	txs, err := welLogic.GetW2ECashinTrans(sender, receiver, status, (page-1)*pageSize, pageSize)
+	if err != nil {
+		logger.Err(err).Msgf("[Get W2E cashin] Unable to get W2E cashin transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashin transactions")
+		return
+	}
+
+	// response
+
+	logger.Info().Msg("[Get W2E cashin] successfully get W2E cashin transactions")
+	c.JSON(http.StatusOK, txs)
+}
+
+func getW2ECashoutTx(c *gin.Context) {
+	// request
+	sender    := c.Query("sender")
+	receiver  := c.Query("receiver")
+	status    := c.Query("status") 
+	sPage     := c.Query("page") 
+	sPageSize := c.Query("page_size") 
+	
+	var page uint64 = 1
+	var pageSize uint64 = 0
+	if sPage != "" {
+		var err error
+		page, err = strconv.ParseUint(sPage, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get W2E cashout] Invalid page number")
+			page = 1
+		}
+	}
+	if sPageSize != "" {
+		var err error
+		pageSize, err = strconv.ParseUint(sPageSize, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get W2E cashout] Invalid page_size number")
+			pageSize = 0
+		}
+	}
+
+	// process
+	txs, err := welLogic.GetW2ECashoutTrans(sender, receiver, status, (page-1)*pageSize, pageSize)
+	if err != nil {
+		logger.Err(err).Msgf("[Get W2E cashout] Unable to get W2E cashout transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashout transactions")
+		return
+	}
+
+	// response
+
+	logger.Info().Msg("[Get W2E cashout] successfully get W2E cashout transactions")
+	c.JSON(http.StatusOK, txs)
+}
+
 
 func getAccsWithRole(c *gin.Context) {
 	// request

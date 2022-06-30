@@ -8,6 +8,7 @@ import (
 
 	ethLogic "bridge/micros/core/blogic/eth"
 	"bridge/micros/core/model"
+	welethModel "bridge/micros/weleth/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -32,12 +33,104 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	gr.GET("/accounts/:page", getAccs)
 	gr.GET("/info/:account", getAcc)
 	gr.GET("/roles", getRoles)
+	gr.GET("/trans/cashin/to/wel", getE2WCashinTx)
+	gr.GET("/trans/cashout/from/wel", getE2WCashoutTx)
 
 }
 
 func initialize() {
 	logger = log.Get()
 	logger.Info().Msg("manage users handlers initialized")
+}
+
+func getE2WCashoutTx(c *gin.Context) {
+	// request
+	sender    := c.Query("sender")
+	receiver  := c.Query("receiver")
+	status    := c.Query("status") 
+	sPage     := c.Query("page") 
+	sPageSize := c.Query("page_size") 
+	
+	var page uint64 = 1
+	var pageSize uint64 = 0
+	if sPage != "" {
+		var err error
+		page, err = strconv.ParseUint(sPage, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get E2W cashout] Invalid page number")
+			page = 1
+		}
+	}
+	if sPageSize != "" {
+		var err error
+		pageSize, err = strconv.ParseUint(sPageSize, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get E2W cashout] Invalid page_size number")
+			pageSize = 0
+		}
+	}
+
+	// process
+	txs, err := ethLogic.GetE2WCashoutTrans(sender, receiver, status, (page-1)*pageSize, pageSize)
+	if err != nil {
+		logger.Err(err).Msgf("[Get E2W cashout] Unable to get E2W cashout transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashout transactions")
+		return
+	}
+
+	// response
+
+	logger.Info().Msg("[Get E2W cashout] successfully get E2W cashout transactions")
+	c.JSON(http.StatusOK, txs)
+}
+
+func getE2WCashinTx(c *gin.Context) {
+	// request
+	sender    := c.Query("sender")
+	receiver  := c.Query("receiver")
+	status    := c.Query("status") 
+	sPage     := c.Query("page") 
+	sPageSize := c.Query("page_size") 
+	
+	var page uint64 = 1
+	var pageSize uint64 = 0
+	if sPage != "" {
+		var err error
+		page, err = strconv.ParseUint(sPage, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get E2W cashin] Invalid page number")
+			page = 1
+		}
+	}
+	if sPageSize != "" {
+		var err error
+		pageSize, err = strconv.ParseUint(sPageSize, 10, 32)
+		if err != nil {
+			logger.Err(err).Msgf("[Get E2W cashin] Invalid page_size number")
+			pageSize = 0
+		}
+	}
+
+	// process
+	txs, tx2tr, err := ethLogic.GetE2WCashinTrans(sender, receiver, status, (page-1)*pageSize, pageSize)
+	if err != nil {
+		logger.Err(err).Msgf("[Get E2W cashin] Unable to get E2W cashin transactions")
+		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashin transactions")
+		return
+	}
+
+	// response
+	type response struct {
+		CashinTx     []welethModel.EthCashinWelTrans `json:"cashin_tx"`
+		TxToTreasury []welethModel.TxToTreasury      `json:"to_treasury_tx"`
+	}
+	resp := response{
+		CashinTx:     txs,
+		TxToTreasury: tx2tr,
+	}
+
+	logger.Info().Msg("[Get E2W cashin] successfully get E2W cashin transactions")
+	c.JSON(http.StatusOK, resp)
 }
 
 func getAccsWithRole(c *gin.Context) {

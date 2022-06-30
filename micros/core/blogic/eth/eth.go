@@ -481,7 +481,7 @@ func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans
 	return &tx, nil
 }
 
-func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashinWelTrans, []welethModel.TxToTreasury, error) {
+func GetE2WCashinTrans(sender, receiver, status string, offset, size uint64) ([]welethModel.EthCashinWelTrans, []welethModel.TxToTreasury, error) {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
@@ -503,7 +503,7 @@ func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashin
 	log.Info().Msgf("[Eth logic internal] Retrieved Tx to Treasury")
 
 	// actual cashin txs
-	we, err = tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashin, sender, receiver, status)
+	we, err = tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashin, sender, receiver, status, offset, size)
 	if err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashin tx workflow")
 		return nil, tx2tr, err
@@ -517,7 +517,7 @@ func GetE2WCashinTrans(sender, receiver, status string) ([]welethModel.EthCashin
 	return tx, tx2tr, nil
 }
 
-func GetE2WCashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.EthCashoutWelTrans, error) {
+func GetE2WCashoutTrans(sender, receiver, withdrawStatus string, offset, size uint64) ([]welethModel.EthCashoutWelTrans, error) {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
@@ -525,7 +525,7 @@ func GetE2WCashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.
 	var tx []welethModel.EthCashoutWelTrans
 	ctx := context.Background()
 
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashout, sender, receiver, withdrawStatus)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashout, sender, receiver, withdrawStatus, offset, size)
 	if err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashout tx workflow")
 		return nil, err

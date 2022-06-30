@@ -110,10 +110,10 @@ func (s *WelethBridgeService) MapEthTokenToWel(ctx context.Context, ethTk string
 	return welTk, nil
 }
 
-func (s *WelethBridgeService) GetWelToEthCashin(ctx context.Context, sender, receiver, status string) (txs []model.WelCashinEthTrans, err error) {
+func (s *WelethBridgeService) GetWelToEthCashin(ctx context.Context, sender, receiver, status string, offset, size uint64) (txs []model.WelCashinEthTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[W2E transaction get] getting cashin transaction")
-	txs, err = s.Wel2EthCashinTransDAO.SelectTrans(sender, receiver, status)
+	txs, err = s.Wel2EthCashinTransDAO.SelectTrans(sender, receiver, status, offset, size)
 	if err != nil {
 		log.Err(err).Msg("[W2E transaction get] failed to get cashin transactions")
 		return
@@ -193,10 +193,10 @@ func (s *WelethBridgeService) UpdateClaimWelCashinEth(ctx context.Context, id in
 	return nil
 }
 
-func (s *WelethBridgeService) GetEthToWelCashout(ctx context.Context, sender, receiver, status string) (txs []model.EthCashoutWelTrans, err error) {
+func (s *WelethBridgeService) GetEthToWelCashout(ctx context.Context, sender, receiver, status string, offset, size uint64) (txs []model.EthCashoutWelTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[W2E transaction get] getting cashin transaction")
-	txs, err = s.Eth2WelCashoutTransDAO.SelectTrans(sender, receiver, status)
+	txs, err = s.Eth2WelCashoutTransDAO.SelectTrans(sender, receiver, status, offset, size)
 	if err != nil {
 		log.Err(err).Msg("[W2E transaction get] failed to get cashin transactions")
 		return
@@ -276,10 +276,10 @@ func (s *WelethBridgeService) UpdateClaimEthCashoutWel(ctx context.Context, id i
 	return nil
 }
 
-func (s *WelethBridgeService) GetEthToWelCashin(ctx context.Context, sender, receiver, status string) (txs []model.EthCashinWelTrans, err error) {
+func (s *WelethBridgeService) GetEthToWelCashin(ctx context.Context, sender, receiver, status string, offset, size uint64) (txs []model.EthCashinWelTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[E2W transaction get] getting cashin transaction")
-	txs, err = s.Eth2WelCashinTransDAO.SelectTrans(sender, receiver, status)
+	txs, err = s.Eth2WelCashinTransDAO.SelectTrans(sender, receiver, status, offset, size)
 	if err != nil {
 		log.Err(err).Msg("[E2W transaction get] failed to get cashin transactions")
 		return
@@ -298,10 +298,10 @@ func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txh
 	return *tx, nil
 }
 
-func (s *WelethBridgeService) GetWelToEthCashout(ctx context.Context, sender, receiver, status string) (txs []model.EthCashoutWelTrans, err error) {
+func (s *WelethBridgeService) GetWelToEthCashout(ctx context.Context, sender, receiver, status string, offset, size uint64) (txs []model.WelCashoutEthTrans, err error) {
 	log := logger.Get()
 	log.Info().Msgf("[W2E transaction get] getting cashout transaction")
-	txs, err = s.Eth2WelCashoutTransDAO.SelectTrans(sender, receiver, status)
+	txs, err = s.Wel2EthCashoutTransDAO.SelectTrans(sender, receiver, status, offset, size)
 	if err != nil {
 		log.Err(err).Msg("[W2E transaction get] failed to get cashout transactions")
 		return

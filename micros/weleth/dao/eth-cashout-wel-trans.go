@@ -18,7 +18,7 @@ type IEthCashoutWelTransDAO interface {
 
 	SelectTransByDepositTxHash(txHash string) (*model.EthCashoutWelTrans, error)
 	SelectTransById(id string) (*model.EthCashoutWelTrans, error)
-	SelectTrans(sender, receiver, status string) ([]model.EthCashoutWelTrans, error)
+	SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.EthCashoutWelTrans, error)
 
 	CreateClaimRequest(requestID string, txID int64, status string) error
 	SelectTransByRqId(rid string) (*model.EthCashoutWelTrans, error)
@@ -137,7 +137,7 @@ func (w *ethCashoutWelTransDAO) SelectTransByRqId(rid string) (*model.EthCashout
 	return t, err
 }
 
-func (w *ethCashoutWelTransDAO) SelectTrans(sender, receiver, status string) ([]model.EthCashoutWelTrans, error) {
+func (w *ethCashoutWelTransDAO) SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.EthCashoutWelTrans, error) {
 	// building query
 	mapper := make(map[string]string)
 	if len(sender) > 0 {
@@ -157,9 +157,14 @@ func (w *ethCashoutWelTransDAO) SelectTrans(sender, receiver, status string) ([]
 		params = append(params, v)
 	}
 
+	limitClause := ""
+	if size > 0 {
+		limitClause = fmt.Sprintf(" OFFSET %d LIMIT %d", offset, size)
+	}
+
 	q := "SELECT * FROM eth_cashout_wel_trans"
 	if len(whereClauses) > 0 {
-		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND ") + limitClause)
 	}
 
 	// querying...

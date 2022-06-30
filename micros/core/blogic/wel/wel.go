@@ -473,7 +473,7 @@ func InvalidateRequestClaim(outTokenAddr, amount, reqID, contractVersion string)
 	return nil
 }
 
-func GetW2ECashinTrans(sender, receiver, withdrawStatus string) ([]welethModel.WelCashinEthTrans, error) {
+func GetW2ECashinTrans(sender, receiver, withdrawStatus string, offset, size uint64) ([]welethModel.WelCashinEthTrans, error) {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
@@ -481,7 +481,7 @@ func GetW2ECashinTrans(sender, receiver, withdrawStatus string) ([]welethModel.W
 	var tx []welethModel.WelCashinEthTrans
 	ctx := context.Background()
 
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashin, sender, receiver, withdrawStatus)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashin, sender, receiver, withdrawStatus, offset, size)
 	if err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get W2E cashin tx workflow")
 		return nil, err
@@ -494,7 +494,7 @@ func GetW2ECashinTrans(sender, receiver, withdrawStatus string) ([]welethModel.W
 	return tx, nil
 }
 
-func GetW2ECashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.WelCashoutEthTrans, error) {
+func GetW2ECashoutTrans(sender, receiver, withdrawStatus string, offset, size uint64) ([]welethModel.WelCashoutEthTrans, error) {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.TaskQueue,
 	}
@@ -502,7 +502,7 @@ func GetW2ECashoutTrans(sender, receiver, withdrawStatus string) ([]welethModel.
 	var tx []welethModel.WelCashoutEthTrans
 	ctx := context.Background()
 
-	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashout, sender, receiver, withdrawStatus)
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetWelToEthCashout, sender, receiver, withdrawStatus, offset, size)
 	if err != nil {
 		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get W2E cashout tx workflow")
 		return nil, err

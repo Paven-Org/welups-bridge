@@ -252,7 +252,7 @@ func getW2ECashinTx(c *gin.Context) {
 	}
 
 	// process
-	txs, err := welLogic.GetW2ECashinTrans(req.Sender, req.Receiver, req.Status)
+	txs, err := welLogic.GetW2ECashinTrans(req.Sender, req.Receiver, req.Status, 0, 0)
 	if err != nil {
 		logger.Err(err).Msgf("[Get W2E cashin] Unable to get W2E cashin transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashin transactions")
@@ -280,7 +280,7 @@ func getE2WCashoutTx(c *gin.Context) {
 	}
 
 	// process
-	txs, err := ethLogic.GetE2WCashoutTrans(req.Sender, req.Receiver, req.Status)
+	txs, err := ethLogic.GetE2WCashoutTrans(req.Sender, req.Receiver, req.Status, 0, 0)
 	if err != nil {
 		logger.Err(err).Msgf("[Get E2W cashout] Unable to get E2W cashout transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashout transactions")
@@ -308,7 +308,7 @@ func getE2WCashinTx(c *gin.Context) {
 	}
 
 	// process
-	txs, tx2tr, err := ethLogic.GetE2WCashinTrans(req.Sender, req.Receiver, req.Status)
+	txs, tx2tr, err := ethLogic.GetE2WCashinTrans(req.Sender, req.Receiver, req.Status, 0, 0)
 	if err != nil {
 		logger.Err(err).Msgf("[Get E2W cashin] Unable to get E2W cashin transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashin transactions")
@@ -344,7 +344,7 @@ func getW2ECashoutTx(c *gin.Context) {
 	}
 
 	// process
-	txs, err := welLogic.GetW2ECashoutTrans(req.Sender, req.Receiver, req.Status)
+	txs, err := welLogic.GetW2ECashoutTrans(req.Sender, req.Receiver, req.Status, 0, 0)
 	if err != nil {
 		logger.Err(err).Msgf("[Get W2E cashout] Unable to get W2E cashout transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashout transactions")
