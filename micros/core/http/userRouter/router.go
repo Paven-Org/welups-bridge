@@ -149,6 +149,7 @@ func userUpdateHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+	req.NewEmail = strings.TrimSpace(req.NewEmail)
 
 	// process
 	username := c.GetString("username")

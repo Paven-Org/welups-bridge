@@ -7,6 +7,7 @@ import (
 	"bridge/micros/core/model"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
@@ -86,11 +87,33 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 	// updating fields
 	if new_username != "" {
 		log.Info().Msgf("[user logic internal] change username from %s to %s", username, new_username)
+
+		user, err := userDAO.GetUserByName(new_username) //
+		if err != nil && err != sql.ErrNoRows {
+			log.Err(err).Msgf("[user logic internal] Failed to check new_username %s", new_username)
+			return fmt.Errorf("Failed to check new_username %s", new_username)
+		}
+		if err == nil {
+			log.Err(err).Msgf("[user logic internal] new_username %s exists", new_username)
+			return fmt.Errorf("new_username %s exists", new_username)
+		}
+
 		user.Username = new_username
 	}
 
 	if email != "" {
 		log.Info().Msgf("[user logic internal] change email from %s to %s", user.Email, email)
+
+		user, err := userDAO.GetUserByEmail(email) //
+		if err != nil && err != sql.ErrNoRows {
+			log.Err(err).Msgf("[user logic internal] Failed to check new email %s", email)
+			return fmt.Errorf("Failed to check new email %s", email)
+		}
+		if err == nil {
+			log.Err(err).Msgf("[user logic internal] new email %s exists", email)
+			return fmt.Errorf("new email %s exists", email)
+		}
+
 		user.Email = email
 	}
 

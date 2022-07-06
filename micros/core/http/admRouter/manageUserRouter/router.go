@@ -4,6 +4,7 @@ import (
 	log "bridge/service-managers/logger"
 	"net/http"
 	"strconv"
+	"strings"
 
 	userLogic "bridge/micros/core/blogic/user"
 	"bridge/micros/core/model"
@@ -161,6 +162,9 @@ func addUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+	req.Username = strings.TrimSpace(req.Username)
+	req.Email = strings.TrimSpace(req.Email)
+	req.Password = strings.TrimSpace(req.Password)
 
 	if err := userLogic.AddUser(req.Username, req.Email, req.Password); err != nil {
 		logger.Err(err).Msgf("[add user handler] Unable to add user")
@@ -188,6 +192,12 @@ func updateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+
+	req.NewUsername = strings.TrimSpace(req.NewUsername)
+	req.Email = strings.TrimSpace(req.Email)
+	req.Password = strings.TrimSpace(req.Password)
+	req.Status = strings.TrimSpace(req.Status)
+
 	// process
 	if err := userLogic.AdminUpdateUserInfo(username, req.NewUsername, req.Email, req.Password, req.Status); err != nil {
 		logger.Err(err).Msgf("[update handler] Unable to update user")
