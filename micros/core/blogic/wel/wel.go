@@ -12,6 +12,7 @@ import (
 	"context"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.temporal.io/sdk/client"
@@ -308,7 +309,7 @@ func UnsetCurrentAuthenticator() error {
 }
 
 // Claim cashout = get original tokens back from another chain's equivalent wrapped tokens
-func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion string) (outTokenAddr string, amount string, requestID []byte, signature []byte, err error) {
+func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion string) (outTokenAddr string, amount string, requestID []byte, signature []byte, claimExpireTime int64, err error) {
 	// Check receiving account and activate if needed
 	activators, err := GetWelAccountsWithRole("operator", 0, 1000)
 	if err != nil {
@@ -347,6 +348,8 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 		return
 	}
 	tempcli.ExecuteWorkflow(ctx, wo, msweleth.WaitForPendingE2WCashoutClaimRequestWF, cashoutTxId)
+	claimExpireTime = time.Now().Add(3*time.Minute).Unix()
+
 	// process
 
 	log.Info().Msg("[Wel logic internal] Everything a-ok, proceeding to create signature and requestID")
@@ -364,15 +367,15 @@ func ClaimEth2WelCashout(cashoutTxId string, userAddr string, contractVersion st
 		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
-			return "", "", nil, nil, err
+			return "", "", nil, nil, 0, err
 		}
 		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 		if err := we.Get(ctx, nil); err != nil {
 			log.Err(err).Msg("[Wel logic internal] Failed to notify admins of problem: " + problem.Error())
-			return "", "", nil, nil, err
+			return "", "", nil, nil, 0, err
 		}
 		err = problem
-		return "", "", nil, nil, err
+		return "", "", nil, nil, 0, err
 	}
 
 	outTokenAddr = tx.WelTokenAddr

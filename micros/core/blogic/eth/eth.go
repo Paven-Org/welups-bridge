@@ -11,6 +11,7 @@ import (
 	"bridge/service-managers/logger"
 	"context"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -299,7 +300,7 @@ func UnsetCurrentAuthenticator() error {
 }
 
 // Claim cashin = get wrapped tokens equivalent to another chain's original tokens
-func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion string) (inTokenAddr string, amount string, requestID []byte, signature []byte, err error) {
+func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion string) (inTokenAddr string, amount string, requestID []byte, signature []byte, claimExpireTime int64, err error) {
 	// Get tx info from weleth microservice
 	// tmpCli.ExecuteWorkflow
 	ctx := context.Background()
@@ -321,6 +322,8 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		return
 	}
 	tempcli.ExecuteWorkflow(ctx, wo, msweleth.WaitForPendingW2ECashinClaimRequestWF, cashinTxId)
+	claimExpireTime = time.Now().Add(3*time.Minute).Unix()
+
 	// process
 
 	log.Info().Msg("[Eth logic internal] Everything a-ok, proceeding to create signature and requestID")
@@ -338,15 +341,15 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		we, err := tempcli.ExecuteWorkflow(ctx, wo, notifier.NotifyProblemWF, problem.Error(), "admin")
 		if err != nil {
 			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
-			return "", "", nil, nil, err
+			return "", "", nil, nil, 0, err
 		}
 		log.Info().Str("Workflow", we.GetID()).Str("runID=", we.GetRunID()).Msg("dispatched")
 		if err := we.Get(ctx, nil); err != nil {
 			log.Err(err).Msg("[Eth logic internal] Failed to notify admins of problem: " + problem.Error())
-			return "", "", nil, nil, err
+			return "", "", nil, nil, 0, err
 		}
 		err = problem
-		return "", "", nil, nil, err
+		return "", "", nil, nil, 0, err
 	}
 
 	inTokenAddr = tx.EthTokenAddr

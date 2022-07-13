@@ -59,7 +59,7 @@ func wel2ethCashin(c *gin.Context) {
 	}
 
 	// process
-	tkAddr, amount, reqIDraw, signature, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToAccountAddress, contractVersion)
+	tkAddr, amount, reqIDraw, signature, claimExpireTime, err := ethLogic.ClaimWel2EthCashin(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim W2E cashin] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
@@ -71,22 +71,24 @@ func wel2ethCashin(c *gin.Context) {
 
 	// response
 	type response struct {
-		TokenAddress string `json:"token_address"`
-		Amount       string `json:"amount"`
-		ReqID        string `json:"request_id"`
-		ReqIDHex     string `json:"request_id_hex"`
-		ReqIDRaw     []byte `json:"request_id_raw"`
-		Signature    []byte `json:"signature"`
-		SignatureHex string `json:"signature_hex"`
+		TokenAddress    string `json:"token_address"`
+		Amount          string `json:"amount"`
+		ReqID           string `json:"request_id"`
+		ReqIDHex        string `json:"request_id_hex"`
+		ReqIDRaw        []byte `json:"request_id_raw"`
+		Signature       []byte `json:"signature"`
+		SignatureHex    string `json:"signature_hex"`
+		ClaimExpireTime int64 `json:"claim_expire_time"`
 	}
 	resp := response{
-		TokenAddress: tkAddr,
-		Amount:       amount,
-		ReqID:        reqIDu256.String(),
-		ReqIDHex:     "0x" + fmt.Sprintf("%x", reqIDraw),
-		ReqIDRaw:     reqIDraw,
-		Signature:    signature,
-		SignatureHex: "0x" + common.Bytes2Hex(signature),
+		TokenAddress:    tkAddr,
+		Amount:          amount,
+		ReqID:           reqIDu256.String(),
+		ReqIDHex:        "0x" + fmt.Sprintf("%x", reqIDraw),
+		ReqIDRaw:        reqIDraw,
+		Signature:       signature,
+		SignatureHex:    "0x" + common.Bytes2Hex(signature),
+		ClaimExpireTime: claimExpireTime, 
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
@@ -108,7 +110,7 @@ func eth2welCashout(c *gin.Context) {
 	}
 
 	// process
-	tkAddr, amount, reqIDraw, signature, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToAccountAddress, contractVersion)
+	tkAddr, amount, reqIDraw, signature, claimExpireTime, err := welLogic.ClaimEth2WelCashout(req.TxHash, req.ToAccountAddress, contractVersion)
 	if err != nil {
 		logger.Err(err).Msgf("[Claim E2W cashout] Unable to generate request ID and signature")
 		c.JSON(http.StatusInternalServerError, "Unable to generate request ID and signature")
@@ -120,22 +122,24 @@ func eth2welCashout(c *gin.Context) {
 
 	// response
 	type response struct {
-		TokenAddress string `json:"token_address"`
-		Amount       string `json:"amount"`
-		ReqID        string `json:"request_id"`
-		ReqIDHex     string `json:"request_id_hex"`
-		ReqIDRaw     []byte `json:"request_id_raw"`
-		Signature    []byte `json:"signature"`
-		SignatureHex string `json:"signature_hex"`
+		TokenAddress    string `json:"token_address"`
+		Amount          string `json:"amount"`
+		ReqID           string `json:"request_id"`
+		ReqIDHex        string `json:"request_id_hex"`
+		ReqIDRaw        []byte `json:"request_id_raw"`
+		Signature       []byte `json:"signature"`
+		SignatureHex    string `json:"signature_hex"`
+		ClaimExpireTime int64  `json:"claim_expire_time"`
 	}
 	resp := response{
-		TokenAddress: tkAddr,
-		Amount:       amount,
-		ReqID:        reqIDu256.String(),
-		ReqIDHex:     "0x" + fmt.Sprintf("%x", reqIDraw),
-		ReqIDRaw:     reqIDraw,
-		Signature:    signature,
-		SignatureHex: "0x" + common.Bytes2Hex(signature),
+		TokenAddress:    tkAddr,
+		Amount:          amount,
+		ReqID:           reqIDu256.String(),
+		ReqIDHex:        "0x" + fmt.Sprintf("%x", reqIDraw),
+		ReqIDRaw:        reqIDraw,
+		Signature:       signature,
+		SignatureHex:    "0x" + common.Bytes2Hex(signature),
+		ClaimExpireTime: claimExpireTime,
 	}
 
 	logger.Info().Msg("[Claim E2W cashout] successfully generated claim request")
