@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS wel_cashout_eth_trans (
   eth_wallet_addr varchar(100),
   wel_wallet_addr varchar(100),
 
-  total varchar(40),
-  amount varchar(40),
-  commission_fee varchar(40),
+  total varchar(40) DEFAULT '',
+  amount varchar(40) DEFAULT '',
+  commission_fee varchar(40) DEFAULT '',
   cashout_status varchar(20),
   disperse_status varchar(20),
 
