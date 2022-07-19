@@ -232,7 +232,7 @@ func (dao *userDAO) GetUsers(offset uint, size uint) ([]model.User, error) {
 	log := logger.Get()
 
 	q := db.Rebind(`SELECT * FROM users 
-									ORDER BY users.id 
+									ORDER BY updated_at DESC
 									OFFSET ? LIMIT ?`)
 	err := db.Select(&users, q, offset, size)
 
@@ -255,7 +255,7 @@ func (dao *userDAO) GetUsersWithRole(role string, offset uint, size uint) ([]mod
 	q := db.Rebind(`SELECT users.* FROM users INNER JOIN user_roles 
 									ON user_roles.user_id = users.id 
 									WHERE user_roles.role  = ? 
-									ORDER BY users.id 
+									ORDER BY updated_at DESC
 									OFFSET ? LIMIT ?`)
 	err := db.Select(&users, q, role, offset, size)
 	if err != nil {

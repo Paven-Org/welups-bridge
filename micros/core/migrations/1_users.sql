@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   id integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
   username varchar(100) UNIQUE NOT NULL,
   password varchar(100) NOT NULL,
-  email varchar(100) NOT NULL,
+  email varchar(100) UNIQUE NOT NULL,
   status varchar(10) NOT NULL DEFAULT 'ok',
 
   created_at timestamp NOT NULL DEFAULT NOW(),
