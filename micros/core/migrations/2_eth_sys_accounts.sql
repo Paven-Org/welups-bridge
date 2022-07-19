@@ -21,7 +21,7 @@ INSERT INTO eth_sys_roles(role) VALUES
   ('super_admin'),
   ('MANAGER_ROLE'),
   ('AUTHENTICATOR'),
-  ('operator')
+  ('operator'),
   ('treasury');
 
 CREATE TABLE IF NOT EXISTS eth_sys_prikeys ( -- for those accounts we can afford to store keys

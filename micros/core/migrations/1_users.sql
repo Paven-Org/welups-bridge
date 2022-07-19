@@ -29,19 +29,19 @@ CREATE TABLE user_roles (
 
 INSERT INTO roles (role) VALUES 
   ('root'),
-  ('service'),
+  --('service'),
   ('admin');
 
 -- default password: root
 -- must be changed immediately upon operation of course
 INSERT INTO users (username, password, email) VALUES
-  ('root', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'welbridgeroot@gmail.com'),
-  ('weleth_bridge', '$2a$10$TP.3Z1/JJyGJwtDaX0xSs.FrO76FEz17DNwujGO0FKpBxr9gKCZpm', 'welbridgeroot@gmail.com');
+  ('root', '$2a$10$ubmld8cryzM0bULIwFHmwOHkRzylFwzhI4q9sGGtAhRDYBzwrMESC', 'welbridgeroot@gmail.com');
+--  ('weleth_bridge', '$2a$10$TP.3Z1/JJyGJwtDaX0xSs.FrO76FEz17DNwujGO0FKpBxr9gKCZpm', 'welbridgeroot@gmail.com');
 
 INSERT INTO user_roles(user_id, role)
-  SELECT id, 'root' FROM users WHERE username = 'root'
-  UNION
-  SELECT id, 'service' FROM users WHERE username = 'weleth_bridge';
+  SELECT id, 'root' FROM users WHERE username = 'root';
+  --UNION
+  --SELECT id, 'service' FROM users WHERE username = 'weleth_bridge';
 -- +goose StatementEnd
 
 -- +goose Down
