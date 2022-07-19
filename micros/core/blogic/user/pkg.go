@@ -86,7 +86,7 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 		return err
 	}
 	// updating fields
-	if new_username != "" {
+	if new_username != "" && new_username != user.Username {
 		log.Info().Msgf("[user logic internal] change username from %s to %s", username, new_username)
 
 		user, err := userDAO.GetUserByName(new_username) //
@@ -102,7 +102,7 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 		user.Username = new_username
 	}
 
-	if email != "" {
+	if email != "" && email != user.Email {
 		log.Info().Msgf("[user logic internal] change email from %s to %s", user.Email, email)
 
 		user, err := userDAO.GetUserByEmail(email) //
