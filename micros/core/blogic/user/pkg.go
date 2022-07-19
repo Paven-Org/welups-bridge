@@ -13,16 +13,18 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/rs/zerolog"
 )
 
 var (
 	userDAO userdao.IUserDAO
 	rm      *manager.RedisManager
 	ts      libs.ITokenService
-	log     = logger.Get()
+	log     *zerolog.Logger
 )
 
 func Init(d *dao.DAOs, r *manager.RedisManager, t libs.ITokenService) {
+	log = logger.Get()
 	userDAO = d.User
 	rm = r
 	ts = t
