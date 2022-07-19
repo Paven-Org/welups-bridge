@@ -89,7 +89,7 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 	if new_username != "" && new_username != user.Username {
 		log.Info().Msgf("[user logic internal] change username from %s to %s", username, new_username)
 
-		user, err := userDAO.GetUserByName(new_username) //
+		_, err := userDAO.GetUserByName(new_username) //
 		if err != nil && err != model.ErrUserNotFound {
 			log.Err(err).Msgf("[user logic internal] Failed to check new_username %s", new_username)
 			return fmt.Errorf("Failed to check new_username %s", new_username)
@@ -105,7 +105,7 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 	if email != "" && email != user.Email {
 		log.Info().Msgf("[user logic internal] change email from %s to %s", user.Email, email)
 
-		user, err := userDAO.GetUserByEmail(email) //
+		_, err := userDAO.GetUserByEmail(email) //
 		if err != nil && err != model.ErrUserNotFound {
 			log.Err(err).Msgf("[user logic internal] Failed to check new email %s", email)
 			return fmt.Errorf("Failed to check new email %s", email)
