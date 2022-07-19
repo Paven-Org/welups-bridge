@@ -173,7 +173,19 @@ func addUser(c *gin.Context) {
 	}
 
 	logger.Info().Msgf("[add user handler] User successfully added")
-	c.JSON(http.StatusOK, "User successfully added")
+
+	// Grant default role
+	// This was added much later into the project's life, could be a misfeature
+	// The BE dev actually thought it would be better to not granting any role to the new
+	// user initially
+	logger.Info().Msgf("[add user handler] Granting default role to the user...")
+	if err := userLogic.GrantRole(req.Username, model.UserRoleDefault); err != nil {
+		logger.Err(err).Msgf("[add user handler] Unable to grant default role to user")
+		c.JSON(http.StatusInternalServerError, "User successfully added but unable to grant default role to user")
+		return
+	}
+
+	c.JSON(http.StatusOK, "User successfully added and default role granted")
 	return
 }
 

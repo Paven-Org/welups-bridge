@@ -36,6 +36,8 @@ const (
 	UserRoleRoot    = "root"
 	UserRoleAdmin   = "admin"
 	UserRoleService = "service"
+
+	UserRoleDefault = UserRoleAdmin
 )
 
 var (
