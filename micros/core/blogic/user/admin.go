@@ -3,6 +3,7 @@ package userLogic
 import (
 	"bridge/libs"
 	"bridge/micros/core/model"
+	"fmt"
 )
 
 func AdminUpdateUserInfo(username, new_username, email, password, status string) error {
@@ -12,6 +13,36 @@ func AdminUpdateUserInfo(username, new_username, email, password, status string)
 func AddUser(username, email, password string) error {
 	log.Info().Msgf("[user logic internal] Creating user %s...", username)
 	log.Info().Msgf("[user logic internal] Hashing new password for %s", username)
+
+	// check existing username and email
+	log.Info().Msgf("[user logic internal] Checking username %s", username)
+
+	{
+		_, err := userDAO.GetUserByName(username) //
+		if err != nil && err != model.ErrUserNotFound {
+			log.Err(err).Msgf("[user logic internal] Failed to check username %s", username)
+			return fmt.Errorf("Failed to check username %s", username)
+		}
+		if err == nil || err == model.ErrUserBanned || err == model.ErrUserNotActivated || err == model.ErrUserPermaBanned {
+			log.Err(err).Msgf("[user logic internal] username %s exists", username)
+			return fmt.Errorf("username %s exists", username)
+		}
+	}
+
+	log.Info().Msgf("[user logic internal] Checking email %s", email)
+
+	{
+		_, err := userDAO.GetUserByEmail(email) //
+		if err != nil && err != model.ErrUserNotFound {
+			log.Err(err).Msgf("[user logic internal] Failed to check email %s", email)
+			return fmt.Errorf("Failed to check email %s", email)
+		}
+		if err == nil || err == model.ErrUserBanned || err == model.ErrUserNotActivated || err == model.ErrUserPermaBanned {
+			log.Err(err).Msgf("[user logic internal] email %s exists", email)
+			return fmt.Errorf("email %s exists", email)
+		}
+	}
+
 	password, err := libs.HashPasswd(password)
 	if err != nil {
 		log.Err(err).Msgf("[user logic internal] Unable to hash password")

@@ -7,7 +7,6 @@ import (
 	"bridge/micros/core/model"
 	manager "bridge/service-managers"
 	"bridge/service-managers/logger"
-	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
@@ -91,11 +90,11 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 		log.Info().Msgf("[user logic internal] change username from %s to %s", username, new_username)
 
 		user, err := userDAO.GetUserByName(new_username) //
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && err != model.ErrUserNotFound {
 			log.Err(err).Msgf("[user logic internal] Failed to check new_username %s", new_username)
 			return fmt.Errorf("Failed to check new_username %s", new_username)
 		}
-		if err == nil {
+		if err == nil || err == model.ErrUserBanned || err == model.ErrUserNotActivated || err == model.ErrUserPermaBanned {
 			log.Err(err).Msgf("[user logic internal] new_username %s exists", new_username)
 			return fmt.Errorf("new_username %s exists", new_username)
 		}
@@ -107,11 +106,11 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 		log.Info().Msgf("[user logic internal] change email from %s to %s", user.Email, email)
 
 		user, err := userDAO.GetUserByEmail(email) //
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && err != model.ErrUserNotFound {
 			log.Err(err).Msgf("[user logic internal] Failed to check new email %s", email)
 			return fmt.Errorf("Failed to check new email %s", email)
 		}
-		if err == nil {
+		if err == nil || err == model.ErrUserBanned || err == model.ErrUserNotActivated || err == model.ErrUserPermaBanned {
 			log.Err(err).Msgf("[user logic internal] new email %s exists", email)
 			return fmt.Errorf("new email %s exists", email)
 		}
