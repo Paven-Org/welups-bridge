@@ -6,6 +6,7 @@ import (
 	manager "bridge/service-managers"
 	log "bridge/service-managers/logger"
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -21,6 +22,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		logger.Err(err).Msgf("[AuthMW] Failed to get redis connection")
 		return func(c *gin.Context) {
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")
+			c.Abort()
 			return
 		}
 	}
@@ -57,6 +59,17 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 				fmt.Sprintf("session:user_%s:%s", username, sessionID)).
 			Result()
 
+		if err != nil && err.Error() == "redis: nil" {
+			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
+
+			debugCookie, _ := c.Request.Cookie(sessionID)
+			logger.Debug().Msgf("[AuthMW] Cookie: %+v", debugCookie)
+			logger.Debug().Msgf("[AuthMW] JWT: %+v", claims)
+			c.JSON(http.StatusBadRequest, "Invalid cookie: Session not found")
+			c.Abort()
+			return
+		}
+
 		if err != nil {
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")
@@ -75,7 +88,7 @@ func MkAuthMW(enforcer *casbin.Enforcer, rm *manager.RedisManager) gin.HandlerFu
 		c.Set("username", claims.Username)
 		c.Set("uid", claims.Uid)
 		roles, err := userLogic.GetUserRoles(claims.Username)
-		if err != nil {
+		if err != nil && err != sql.ErrNoRows {
 			logger.Err(err).Msgf("[AuthMW] Error while authorizing user %s", username)
 			c.JSON(http.StatusServiceUnavailable, "Unable to authorize user due to internal service error")
 			c.Abort()
