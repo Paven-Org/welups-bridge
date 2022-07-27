@@ -13,6 +13,7 @@ import (
 	welethService "bridge/micros/weleth/temporal"
 	"bridge/service-managers/logger"
 	"context"
+	"fmt"
 	"math/big"
 	"sort"
 	"time"
@@ -163,6 +164,7 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 		selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
 			var tx = welethModel.WelCashoutEthTrans{}
 			channel.Receive(ctx, &tx)
+			log.Info(fmt.Sprintf("BatchDisperse received tx: %+v", tx))
 			welToken := tx.WelTokenAddr
 			_, ok := allTxQueues[welToken]
 			if !ok {
@@ -173,18 +175,21 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 			}
 			//txQueue = append(txQueue, tx)
 			allTxQueues[welToken].queue = append(allTxQueues[welToken].queue, tx)
+			log.Info(fmt.Sprintf("Current BatchDisperse TxQueues after append: %+v", allTxQueues))
 
 			if len(allTxQueues[welToken].queue) >= 16 {
 				receivers := libs.Map(
 					func(tx welethModel.WelCashoutEthTrans) string {
 						return tx.WelWalletAddr
 					}, allTxQueues[welToken].queue)
+				log.Info(fmt.Sprintf("BatchDisperse receivers: %+v", receivers))
 				values := libs.Map(
 					func(tx welethModel.WelCashoutEthTrans) *big.Int {
 						ret := &big.Int{}
 						ret.SetString(tx.Total, 10)
 						return ret
 					}, allTxQueues[welToken].queue)
+				log.Info(fmt.Sprintf("BatchDisperse values: %+v", values))
 				// issue
 				log.Info("Contract call...")
 				var txhash string

@@ -144,6 +144,7 @@ func (e *WelConsumer) DoneIWithdrawParser(t *welListener.Transaction, logpos int
 	tx.DisperseStatus = model.WelCashoutEthUnconfirmed
 
 	tx.WelWithdrawTxHash = t.Hash
+	logger.Get().Info().Msgf("IWithdraw transaction to be created: %+v", tx)
 
 	// save tx
 	id, err := e.WelCashoutEthTransDAO.CreateWelCashoutEthTrans(&tx)
@@ -154,6 +155,7 @@ func (e *WelConsumer) DoneIWithdrawParser(t *welListener.Transaction, logpos int
 	tx.ID = id
 
 	// send signal to batch tx
+	logger.Get().Info().Msgf("IWithdraw transaction to be sent to BatchDisperse: %+v", tx)
 	err = e.tempCli.SignalWorkflow(context.Background(), coreEthService.BatchDisperseID, "", coreEthService.BatchDisperseSignal, tx)
 	if err != nil {
 		logger.Get().Err(err).Msgf("[DoneIWithdraw] Error sending BatchDisperseWF tx %+v", tx)
