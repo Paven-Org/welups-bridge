@@ -196,7 +196,8 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 		    wel_wallet_addr = ?,
 				total = ?,
 		    commission_fee = ?,
-		    status = ? 
+		    status = ?,
+				issued_at = ?
 		    WHERE id = ?`)
 	_, err := db.
 		Exec(q,
@@ -210,6 +211,7 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 			t.Total,
 			t.CommissionFee,
 			t.Status,
+			t.IssuedAt,
 			t.ID)
 
 	if err != nil {

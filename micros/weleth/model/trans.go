@@ -174,8 +174,8 @@ type WelCashoutEthTrans struct {
 	Amount        string `json:"amount" db:"amount,omitempty"`
 	CommissionFee string `json:"commission_fee" db:"commission_fee,omitempty"`
 
-	CashoutStatus  string `json:"cashout_status" db:"disperse_status"`
-	DisperseStatus string `json:"disperse_status" db:"cashout_status"`
+	CashoutStatus  string `json:"cashout_status" db:"cashout_status"`
+	DisperseStatus string `json:"disperse_status" db:"disperse_status"`
 
 	CreatedAt   time.Time    `json:"created_at" db:"created_at"`
 	DispersedAt sql.NullTime `json:"issued_at" db:"dispersed_at,omitempty"`

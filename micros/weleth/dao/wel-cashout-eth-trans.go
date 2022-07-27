@@ -49,7 +49,7 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 				amount,
 				commission_fee,
 				cashout_status,
-				disperser_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
+				disperse_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) RETURNING id`)
 	var id int64
 	err = tx.
 		Get(&id,
@@ -102,7 +102,8 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 		    amount = ?,
 		    commission_fee = ?,
 		    cashout_status = ?, 
-		    disperse_status = ? 
+		    disperse_status = ?,
+				dispersed_at = ?
 		    WHERE id = ?`)
 	_, err := db.
 		Exec(q,
@@ -117,6 +118,7 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 			t.CommissionFee,
 			t.CashoutStatus,
 			t.DisperseStatus,
+			t.DispersedAt,
 			t.ID)
 
 	if err != nil {
