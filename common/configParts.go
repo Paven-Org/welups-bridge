@@ -6,6 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	LocalEnv      = "local"
+	DevEnv        = "dev"
+	StagingEnv    = "staging"
+	ProductionEnv = "production"
+)
+
 type HttpConf struct {
 	Host             string
 	Port             int

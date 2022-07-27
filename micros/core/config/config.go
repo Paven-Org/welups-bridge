@@ -2,6 +2,7 @@ package config
 
 import (
 	"bridge/common"
+	"bridge/libs"
 	"flag"
 	"fmt"
 	"strings"
@@ -11,6 +12,7 @@ import (
 )
 
 type Env struct {
+	Environment        string
 	HttpConfig         common.HttpConf
 	DBconfig           common.DBconf
 	RedisConfig        common.Redisconf
@@ -41,7 +43,13 @@ func parseEnv() Env {
 	CORS := strings.Split(CORSstring, " ")
 	fmt.Println(CORS)
 
+	env := common.WithDefault("APP_ENV", common.LocalEnv)
+	if !libs.Member(env, []string{common.LocalEnv, common.DevEnv, common.StagingEnv, common.ProductionEnv}) {
+		env = common.LocalEnv
+	}
+
 	return Env{
+		Environment: env,
 
 		HttpConfig: common.HttpConf{
 			Host:             common.WithDefault("APP_HOST", ""),
