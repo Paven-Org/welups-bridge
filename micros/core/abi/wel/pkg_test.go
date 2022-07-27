@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 
 	inq = MkWelInquirer(welCli)
 	exp = MkWelExport(welCli, "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E")
-	imp = MkWelImport(patchedWelCli, "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j")
+	imp = MkWelImport(patchedWelCli, "WKHhHJY7wszCjfdz5jKTytt2F3ULu1PyAS")
 
 	m.Run()
 

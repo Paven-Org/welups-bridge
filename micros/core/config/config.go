@@ -115,7 +115,7 @@ func parseEnv() Env {
 		},
 		WelGovContract:    common.WithDefault("WEL_GOV_CONTRACT_ADDRESS", "WE8RFVk1GA5NhK8yLxHWkpuP1E5UVqX9tQ"),
 		WelExportContract: common.WithDefault("WEL_EXPORT_CONTRACT_ADDRESS", "WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"),
-		WelImportContract: common.WithDefault("WEL_IMPORT_CONTRACT_ADDRESS", "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j"),
+		WelImportContract: common.WithDefault("WEL_IMPORT_CONTRACT_ADDRESS", "WKHhHJY7wszCjfdz5jKTytt2F3ULu1PyAS"),
 	}
 }
 

@@ -98,7 +98,7 @@ func parseEnv() Env {
 			BlockOffSet:   common.WithDefault("WEL_BLOCK_OFFSET", int64(20)),
 		},
 		WelContractAddress: common.WithDefault("WEL_CONTRACT_ADDRESS", []string{"WUbnXM9M4QYEkksG3ADmSan2kY5xiHTr1E"}),
-		WelImportAddress:   common.WithDefault("WEL_IMPORT_ADDRESS", "WPS7Rg2MW2tRRZkcyZ3eZLZ3Wr85wwXp9j"),
+		WelImportAddress:   common.WithDefault("WEL_IMPORT_ADDRESS", "WKHhHJY7wszCjfdz5jKTytt2F3ULu1PyAS"),
 
 		Mailerconf: common.Mailerconf{
 			SmtpHost: common.WithDefault("APP_MAILER_SMTP_HOST", "smtp.gmail.com"),
