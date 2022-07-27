@@ -165,42 +165,42 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 			var tx = welethModel.WelCashoutEthTrans{}
 			channel.Receive(ctx, &tx)
 			log.Info(fmt.Sprintf("BatchDisperse received tx: %+v", tx))
-			welToken := tx.WelTokenAddr
-			_, ok := allTxQueues[welToken]
+			ethToken := tx.EthTokenAddr
+			_, ok := allTxQueues[ethToken]
 			if !ok {
-				allTxQueues[welToken] = &txQueue{
+				allTxQueues[ethToken] = &txQueue{
 					lastIssuance: workflow.Now(ctx), // zeroth lastIssuance set to the time the first tx of this token arrived
 					queue:        make([]welethModel.WelCashoutEthTrans, 0),
 				}
 			}
 			//txQueue = append(txQueue, tx)
-			allTxQueues[welToken].queue = append(allTxQueues[welToken].queue, tx)
+			allTxQueues[ethToken].queue = append(allTxQueues[ethToken].queue, tx)
 			log.Info(fmt.Sprintf("Current BatchDisperse TxQueues after append: %+v", allTxQueues))
 
-			if len(allTxQueues[welToken].queue) >= 16 {
+			if len(allTxQueues[ethToken].queue) >= 16 {
 				receivers := libs.Map(
 					func(tx welethModel.WelCashoutEthTrans) string {
-						return tx.WelWalletAddr
-					}, allTxQueues[welToken].queue)
+						return tx.EthWalletAddr
+					}, allTxQueues[ethToken].queue)
 				log.Info(fmt.Sprintf("BatchDisperse receivers: %+v", receivers))
 				values := libs.Map(
 					func(tx welethModel.WelCashoutEthTrans) *big.Int {
 						ret := &big.Int{}
 						ret.SetString(tx.Total, 10)
 						return ret
-					}, allTxQueues[welToken].queue)
+					}, allTxQueues[ethToken].queue)
 				log.Info(fmt.Sprintf("BatchDisperse values: %+v", values))
 				// issue
 				log.Info("Contract call...")
 				var txhash string
-				res := workflow.ExecuteActivity(ctx, ctr.Disperse, welToken, receivers, values)
+				res := workflow.ExecuteActivity(ctx, ctr.Disperse, ethToken, receivers, values)
 				if err := res.Get(ctx, &txhash); err != nil {
 					log.Error("Failed to call issue on mulsend contract")
 				} else {
 					log.Info("Contract call succeeded")
 				}
 				// update e2wcashin txs with wel issue txhash
-				for _, tran := range allTxQueues[welToken].queue {
+				for _, tran := range allTxQueues[ethToken].queue {
 					tran.EthDisperseTxHash = txhash
 					res = workflow.ExecuteActivity(ctx, welethService.UpdateWelCashoutEthTrans, tran)
 					if err := res.Get(ctx, nil); err != nil {
@@ -211,10 +211,10 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 				}
 
 				// update lastIssuance
-				allTxQueues[welToken].lastIssuance = workflow.Now(ctx)
-				//lastIssuance = allTxQueues[welToken].lastIssuance
+				allTxQueues[ethToken].lastIssuance = workflow.Now(ctx)
+				//lastIssuance = allTxQueues[ethToken].lastIssuance
 				//reset txqueue
-				allTxQueues[welToken].queue = make([]welethModel.WelCashoutEthTrans, 0)
+				allTxQueues[ethToken].queue = make([]welethModel.WelCashoutEthTrans, 0)
 			}
 		})
 
@@ -222,38 +222,38 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 		//selector.AddFuture(workflow.NewTimer(ctx, lastIssuance.Add(2*time.Minute).Sub(workflow.Now(ctx))), func(f workflow.Future) {
 		selector.AddFuture(workflow.NewTimer(ctx, 1*time.Minute), func(f workflow.Future) {
 			// deterministism
-			welTokens := []string{}
+			ethTokens := []string{}
 			for k, _ := range allTxQueues {
-				welTokens = append(welTokens, k)
+				ethTokens = append(ethTokens, k)
 			}
-			sort.Strings(welTokens)
+			sort.Strings(ethTokens)
 
-			for _, welToken := range welTokens {
-				if workflow.Now(ctx).Sub(allTxQueues[welToken].lastIssuance).Seconds() > 120.0 {
-					if len(allTxQueues[welToken].queue) < 1 {
+			for _, ethToken := range ethTokens {
+				if workflow.Now(ctx).Sub(allTxQueues[ethToken].lastIssuance).Seconds() > 120.0 {
+					if len(allTxQueues[ethToken].queue) < 1 {
 						continue
 					}
 					receivers := libs.Map(
 						func(tx welethModel.WelCashoutEthTrans) string {
-							return tx.WelWalletAddr
-						}, allTxQueues[welToken].queue)
+							return tx.EthWalletAddr
+						}, allTxQueues[ethToken].queue)
 					values := libs.Map(
 						func(tx welethModel.WelCashoutEthTrans) *big.Int {
 							ret := &big.Int{}
 							ret.SetString(tx.Total, 10)
 							return ret
-						}, allTxQueues[welToken].queue)
+						}, allTxQueues[ethToken].queue)
 					// issue
 					log.Info("Contract call...")
 					var txhash string
-					res := workflow.ExecuteActivity(ctx, ctr.Disperse, welToken, receivers, values)
+					res := workflow.ExecuteActivity(ctx, ctr.Disperse, ethToken, receivers, values)
 					if err := res.Get(ctx, &txhash); err != nil {
 						log.Error("Failed to call issue on mulsend contract")
 					} else {
 						log.Info("Contract call succeeded")
 					}
 					// update e2wcashin txs with wel issue txhash
-					for _, tran := range allTxQueues[welToken].queue {
+					for _, tran := range allTxQueues[ethToken].queue {
 						tran.EthDisperseTxHash = txhash
 						res = workflow.ExecuteActivity(ctx, welethService.UpdateWelCashoutEthTrans, tran)
 						if err := res.Get(ctx, nil); err != nil {
@@ -264,10 +264,10 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 					}
 
 					// update lastIssuance
-					allTxQueues[welToken].lastIssuance = workflow.Now(ctx)
-					//lastIssuance = allTxQueues[welToken].lastIssuance
+					allTxQueues[ethToken].lastIssuance = workflow.Now(ctx)
+					//lastIssuance = allTxQueues[ethToken].lastIssuance
 					//reset txqueue
-					allTxQueues[welToken].queue = make([]welethModel.WelCashoutEthTrans, 0)
+					allTxQueues[ethToken].queue = make([]welethModel.WelCashoutEthTrans, 0)
 				}
 			}
 		})
