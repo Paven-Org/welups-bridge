@@ -68,7 +68,7 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 			t.DisperseStatus)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while inserting WelCashoutEth tx with eth tx hash %s", t.EthDisperseTxHash)
+		log.Err(err).Msgf("Error while inserting WelCashoutEth tx with wel tx hash %s", t.WelWithdrawTxHash)
 		tx.Rollback()
 		return id, err
 	}
@@ -76,7 +76,7 @@ func (w *welCashoutEthTransDAO) CreateWelCashoutEthTrans(t *model.WelCashoutEthT
 	qUpdateTx2Treasury := tx.Rebind(`UPDATE tx_to_treasury SET status='isCashin' WHERE tx_id = ?`)
 	_, err = tx.Exec(qUpdateTx2Treasury, t.EthDisperseTxHash)
 	if err != nil {
-		log.Err(err).Msgf("Error while inserting WelCashoutEth tx with eth tx hash %s", t.EthDisperseTxHash)
+		log.Err(err).Msgf("Error while inserting WelCashoutEth tx with wel tx hash %s", t.WelWithdrawTxHash)
 		tx.Rollback()
 		return id, err
 	}
@@ -92,8 +92,8 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 	q := db.
 		Rebind(
 			`UPDATE wel_cashout_eth_trans SET
-		    eth_tx_hash = ?,
-		    wel_issue_tx_hash = ?,
+		    eth_disperse_tx_hash = ?,
+		    wel_withdraw_tx_hash = ?,
 		    eth_token_addr = ?,
 		    wel_token_addr = ?,
 		    network_id = ?,
@@ -122,7 +122,7 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 			t.ID)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while inserting WelCashoutEth tx with eth tx hash %s", t.EthDisperseTxHash)
+		log.Err(err).Msgf("Error while updating WelCashoutEth tx with wel tx hash %s", t.WelWithdrawTxHash)
 		return err
 	}
 	return nil
@@ -130,19 +130,19 @@ func (w *welCashoutEthTransDAO) UpdateWelCashoutEthTx(t *model.WelCashoutEthTran
 
 func (w *welCashoutEthTransDAO) SelectTransByWithdrawTxHash(txHash string) (*model.WelCashoutEthTrans, error) {
 	var t = &model.WelCashoutEthTrans{}
-	err := w.db.Get(t, "SELECT * FROM wel_cashout_eth_trans WHERE eth_tx_hash = $1", txHash)
+	err := w.db.Get(t, "SELECT * FROM wel_cashout_eth_trans WHERE wel_withdraw_tx_hash = $1", txHash)
 	return t, err
 }
 
 func (w *welCashoutEthTransDAO) SelectTransByDisperseTxHash(txHash string) ([]*model.WelCashoutEthTrans, error) {
 	var txs = []*model.WelCashoutEthTrans{}
-	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1", txHash)
+	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE eth_disperse_tx_hash = $1", txHash)
 	return txs, err
 }
 
 func (w *welCashoutEthTransDAO) SelectTransByDisperseTxHashEthAddrAmount(txHash, ethWalletAddr, amount string) ([]*model.WelCashoutEthTrans, error) {
 	var txs = []*model.WelCashoutEthTrans{}
-	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_issue_tx_hash = $1 AND eth_wallet_addr = $2 AND amount = $3", txHash, ethWalletAddr, amount)
+	err := w.db.Select(&txs, "SELECT * FROM wel_cashout_eth_trans WHERE wel_withdraw_tx_hash = $1 AND eth_wallet_addr = $2 AND amount = $3", txHash, ethWalletAddr, amount)
 	return txs, err
 }
 

@@ -215,7 +215,7 @@ func (w *ethCashinWelTransDAO) UpdateEthCashinWelTx(t *model.EthCashinWelTrans) 
 			t.ID)
 
 	if err != nil {
-		log.Err(err).Msgf("Error while inserting EthCashinWel tx with eth tx hash %s", t.EthTxHash)
+		log.Err(err).Msgf("Error while updating EthCashinWel tx with eth tx hash %s", t.EthTxHash)
 		return err
 	}
 	return nil
