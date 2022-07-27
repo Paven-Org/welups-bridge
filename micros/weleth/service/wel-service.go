@@ -113,6 +113,7 @@ func (e *WelConsumer) GetConsumer() ([]*welListener.EventConsumer, error) {
 }
 
 func (e *WelConsumer) DoneIWithdrawParser(t *welListener.Transaction, logpos int) error {
+	logger.Get().Info().Msgf("[DoneIWithdrawEV] IWithdraw event caught at block %d", t.BlockNumber)
 	if t.Status != "confirmed" {
 		logger.Get().Info().Msg("[DoneIWithdraw] unconfirmed transaction, skipped")
 		return nil
@@ -163,6 +164,7 @@ func (e *WelConsumer) DoneIWithdrawParser(t *welListener.Transaction, logpos int
 }
 
 func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int) error {
+	logger.Get().Info().Msgf("[ImportedEV] Imported event caught at block %d", t.BlockNumber)
 	confirmStatus := model.EthCashinWelConfirmed
 	if t.Status != model.EthCashinWelConfirmed {
 		logger.Get().Info().Msg("[ImportedEV] Imported event unconfirmed")
@@ -187,7 +189,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 			return ret
 		},
 		_receivers)
-	fmt.Println("Receivers: ", receivers)
+	logger.Get().Info().Msgf("Receivers: %+v", receivers)
 
 	_amounts := data["amounts"].([]*big.Int)
 	amounts := libs.Map(
@@ -195,10 +197,10 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 			return amount.String()
 		},
 		_amounts)
-	fmt.Println("Amounts: ", amounts)
+	logger.Get().Info().Msgf("Amounts: %+v", amounts)
 
 	fee := data["fee"].(*big.Int).String()
-	fmt.Println("total fee: ", fee)
+	logger.Get().Info().Msgf("total fee: %s", fee)
 
 	amountOfReceiver := make(map[string]string)
 	for i, receiver := range receivers {
@@ -212,7 +214,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 		logger.Get().Err(err).Msgf("[ImportedEV] error while retrieving transactions with issue txhash %s", t.Hash)
 		return err
 	}
-	fmt.Println("trans: ", trans)
+	logger.Get().Info().Msgf("trans: %v", trans)
 
 	for _, tran := range trans {
 		if welTokenAddr != tran.WelTokenAddr {
@@ -232,9 +234,9 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 		tran.Status = confirmStatus
 		tran.IssuedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
-		fmt.Println("[ImportedEV] tran to be saved: ", tran)
+		logger.Get().Info().Msgf("[ImportedEV] tran to be saved: %+v", tran)
 		if err := e.EthCashinWelTransDAO.UpdateEthCashinWelTx(tran); err != nil {
-			logger.Get().Err(err).Msgf("[ImportedEV] error while saving transaction", tran)
+			logger.Get().Err(err).Msgf("[ImportedEV] error while saving transaction %+v", tran)
 		}
 
 	}
@@ -243,6 +245,7 @@ func (e *WelConsumer) DoneImportedParser(t *welListener.Transaction, logpos int)
 }
 
 func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) error {
+	logger.Get().Info().Msgf("[ReturnedEV] Returned event caught at block %d", t.BlockNumber)
 	data := make(map[string]interface{})
 	e.exportAbi.UnpackIntoMap(
 		data,
@@ -303,6 +306,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 }
 
 func (e *WelConsumer) DoneDepositParser(t *welListener.Transaction, logpos int) error {
+	logger.Get().Info().Msgf("[EWithdrawEV] EWithdraw event caught at block %d", t.BlockNumber)
 	data := make(map[string]interface{})
 	e.exportAbi.UnpackIntoMap(
 		data,

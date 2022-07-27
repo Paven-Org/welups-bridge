@@ -78,8 +78,8 @@ func NewEthConsumer(iaddr, msaddr string, tempCli client.Client, daos *dao.DAOs)
 }
 
 func (e *EthConsumer) GetConsumer() ([]*ethListener.EventConsumer, error) {
-	fmt.Println("Mulsend's disperse address ", e.MulsendContractAddr)
-	fmt.Println("Mulsend's disperse signature ", crypto.Keccak256Hash([]byte(e.mulsendAbi.Events["Disperse"].Sig)))
+	logger.Get().Info().Msgf("Mulsend's disperse address %s", e.MulsendContractAddr)
+	logger.Get().Info().Msgf("Mulsend's disperse signature %s", crypto.Keccak256Hash([]byte(e.mulsendAbi.Events["Disperse"].Sig)))
 	return []*ethListener.EventConsumer{
 		{
 			Address: common.HexToAddress(e.ImportContractAddr),
@@ -141,19 +141,19 @@ func (e *EthConsumer) GetFilterQuery() []ethereum.FilterQuery {
 }
 
 func (e *EthConsumer) DisperseParser(l types.Log) error {
-	fmt.Println("[DisperseEV] Disperse event caught")
+	logger.Get().Info().Msgf("[DisperseEV] Disperse event caught at block %d", l.BlockNumber)
 	data := make(map[string]interface{})
 	e.mulsendAbi.UnpackIntoMap(
 		data,
 		"Disperse",
 		l.Data,
 	)
-	fmt.Printf("data: %+v\b", data)
+	logger.Get().Info().Msgf("data: %+v", data)
 	ethTx := l.TxHash.Hex()
-	fmt.Println("eth tx: ", ethTx)
+	logger.Get().Info().Msgf("eth tx: %s", ethTx)
 
 	ethToken := common.HexToAddress(l.Topics[1].Hex()).Hex()
-	fmt.Println("eth token: ", ethToken)
+	logger.Get().Info().Msgf("eth token: %s", ethToken)
 
 	_receivers := data["receivers"].([]common.Address)
 	receivers := libs.Map(
@@ -164,7 +164,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 			return ret
 		},
 		_receivers)
-	fmt.Println("Receivers: ", receivers)
+	logger.Get().Info().Msgf("Receivers: %+v", receivers)
 
 	_remains := data["remains"].([]*big.Int)
 	remains := libs.Map(
@@ -172,7 +172,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 			return remain.String()
 		},
 		_remains)
-	fmt.Println("Remains: ", remains)
+	logger.Get().Info().Msgf("Remains: %+v", remains)
 
 	remainOfReceiver := make(map[string]string)
 	for i, receiver := range receivers {
@@ -186,7 +186,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 		logger.Get().Err(err).Msgf("[DisperseEV] error while retrieving transactions with disperse txhash %s", ethTx)
 		return err
 	}
-	fmt.Println("trans: ", trans)
+	logger.Get().Info().Msgf("trans: %+v", trans)
 	for _, tran := range trans {
 		if ethToken != tran.EthTokenAddr {
 			tran.EthTokenAddr = ethToken
@@ -210,9 +210,9 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 		tran.DisperseStatus = model.WelCashoutEthConfirmed
 		tran.DispersedAt = sql.NullTime{Time: time.Now(), Valid: true}
 
-		fmt.Println("[DisperseEV] tran to be updated: ", tran)
+		logger.Get().Info().Msgf("[DisperseEV] tran to be updated: %+v", tran)
 		if err := e.WelCashoutEthTransDAO.UpdateWelCashoutEthTx(tran); err != nil {
-			logger.Get().Err(err).Msgf("[DisperseEV] error while updating transaction", tran)
+			logger.Get().Err(err).Msgf("[DisperseEV] error while updating transaction %+v", tran)
 		}
 
 	}
@@ -220,6 +220,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 }
 
 func (e *EthConsumer) DeclineParser(l types.Log) error {
+	logger.Get().Info().Msgf("[DeclineEV] Decline event caught at block %d", l.BlockNumber)
 	data := make(map[string]interface{})
 	e.mulsendAbi.UnpackIntoMap(
 		data,
@@ -227,13 +228,13 @@ func (e *EthConsumer) DeclineParser(l types.Log) error {
 		l.Data,
 	)
 	ethTx := l.TxHash.Hex()
-	fmt.Println("eth tx: ", ethTx)
+	logger.Get().Info().Msgf("eth tx: %s", ethTx)
 
 	ethWalletAddr := common.HexToAddress(l.Topics[1].Hex()).Hex()
-	fmt.Println("ethWalletAddr: ", ethWalletAddr)
+	logger.Get().Info().Msgf("ethWalletAddr: %s", ethWalletAddr)
 
 	amount := data["amount"].(*big.Int).String()
-	fmt.Println("amount: ", amount)
+	logger.Get().Info().Msgf("amount: %s", amount)
 
 	// set corresponding record in DB: disperse_status = retry
 	trans, err := e.WelCashoutEthTransDAO.SelectTransByDisperseTxHashEthAddrAmount(ethTx, ethWalletAddr, amount)
@@ -241,16 +242,16 @@ func (e *EthConsumer) DeclineParser(l types.Log) error {
 		logger.Get().Err(err).Msgf("[DeclineEV] error while retrieving transactions with disperse txhash %s", ethTx)
 		return err
 	}
-	fmt.Println("trans: ", trans)
+	logger.Get().Info().Msgf("trans: %+v", trans)
 	for _, tran := range trans {
 		if tran.DisperseStatus == model.WelCashoutEthConfirmed {
 			continue
 		}
 		tran.DisperseStatus = model.WelCashoutEthRetry
 
-		fmt.Println("[DeclineEV] tran to be updated: ", tran)
+		logger.Get().Info().Msgf("[DeclineEV] tran to be updated: %+v", tran)
 		if err := e.WelCashoutEthTransDAO.UpdateWelCashoutEthTx(tran); err != nil {
-			logger.Get().Err(err).Msgf("[DeclineEV] error while updating transaction", tran)
+			logger.Get().Err(err).Msgf("[DeclineEV] error while updating transaction %+v", tran)
 			return err
 		}
 		// signal WF to re-batch tx
@@ -265,6 +266,7 @@ func (e *EthConsumer) DeclineParser(l types.Log) error {
 }
 
 func (e *EthConsumer) DoneDepositParser(l types.Log) error {
+	logger.Get().Info().Msgf("[DepositEV] Deposit event caught at block %d", l.BlockNumber)
 	data := make(map[string]interface{})
 	e.importAbi.UnpackIntoMap(
 		data,
@@ -317,6 +319,7 @@ func (e *EthConsumer) DoneDepositParser(l types.Log) error {
 }
 
 func (e *EthConsumer) DoneClaimParser(l types.Log) error {
+	logger.Get().Info().Msgf("[ClaimEV] Claim event caught at block %d", l.BlockNumber)
 	data := make(map[string]interface{})
 	e.importAbi.UnpackIntoMap(
 		data,
@@ -379,7 +382,7 @@ func (tm *TreasuryMonitor) MonitoredAddress() common.Address {
 }
 
 func (tm *TreasuryMonitor) TxParse(t *types.Transaction, from, to, tokenAddr, amount string) error {
-	fmt.Printf("transaction: %x\n", t.Hash())
+	logger.Get().Info().Msgf("transaction to treasury: %x", t.Hash())
 	tx2treasury := &model.TxToTreasury{}
 
 	tx2treasury.TxID = t.Hash().Hex()
@@ -393,7 +396,7 @@ func (tm *TreasuryMonitor) TxParse(t *types.Transaction, from, to, tokenAddr, am
 	tx2treasury.TxFee = tx_fee.String()
 	tx2treasury.Status = "unconfirmed"
 	tx2treasury.CreatedAt = time.Now()
-	fmt.Printf("record tx to treasury: %+v\n", tx2treasury)
+	logger.Get().Info().Msgf("record tx to treasury: %+v\n", tx2treasury)
 	if err := tm.EthCashinWelDAO.CreateTx2Treasury(tx2treasury); err != nil {
 		logger.Get().Err(err).Msg("Unable to record transaction to treasury")
 		return err
