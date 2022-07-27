@@ -1,9 +1,11 @@
 package mulsend
 
 import (
+	"bridge/common/consts"
 	"bridge/libs"
 	ethMulsend "bridge/micros/core/abi/eth"
 	ethLogic "bridge/micros/core/blogic/eth"
+	"bridge/micros/core/config"
 	"bridge/micros/core/dao"
 	ethDAO "bridge/micros/core/dao/eth-account"
 	ethService "bridge/micros/core/service/eth"
@@ -95,7 +97,12 @@ func (ctr *MulsendContractService) Disperse(ctx context.Context, tokenAddr strin
 		return "", err
 	}
 
-	opts := bind.NewKeyedTransactor(pkey)
+	env := config.Get().Environment
+	opts, err := bind.NewKeyedTransactorWithChainID(pkey, consts.EthChainFromEnv[env])
+	if err != nil {
+		logger.Get().Err(err).Msg("Unale to create call opts for Disperse method")
+		return "", err
+	}
 	opts.GasLimit = 0
 	opts.Value = big.NewInt(0)
 	opts.GasPrice = gasPrice

@@ -1,7 +1,9 @@
 package ethLogic
 
 import (
+	"bridge/common/consts"
 	"bridge/libs"
+	"bridge/micros/core/config"
 	msweleth "bridge/micros/core/microservices/weleth"
 	"bridge/micros/core/model"
 	ethService "bridge/micros/core/service/eth"
@@ -322,7 +324,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 		return
 	}
 	tempcli.ExecuteWorkflow(ctx, wo, msweleth.WaitForPendingW2ECashinClaimRequestWF, cashinTxId)
-	claimExpireTime = time.Now().Add(3*time.Minute).Unix()
+	claimExpireTime = time.Now().Add(3 * time.Minute).Unix()
 
 	// process
 
@@ -447,7 +449,12 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 	}
 	importC.lastGasPrice = gasPrice
 
-	opts := bind.NewKeyedTransactor(pkey)
+	env := config.Get().Environment
+	opts, err := bind.NewKeyedTransactorWithChainID(pkey, consts.EthChainFromEnv[env])
+	if err != nil {
+		logger.Get().Err(err).Msg("Unale to create call opts for Disperse method")
+		return err
+	}
 	opts.GasLimit = uint64(300000)
 	opts.Value = big.NewInt(0)
 	opts.GasPrice = gasPrice
