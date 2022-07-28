@@ -212,6 +212,19 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 				}
 				// update e2wcashin txs with wel issue txhash
 				for _, tran := range allTxQueues[ethToken].queue {
+					ao := workflow.ActivityOptions{
+						TaskQueue:              welethService.WelethServiceQueue,
+						ScheduleToCloseTimeout: time.Second * 60,
+						ScheduleToStartTimeout: time.Second * 60,
+						StartToCloseTimeout:    time.Second * 60,
+						HeartbeatTimeout:       time.Second * 10,
+						WaitForCancellation:    false,
+						RetryPolicy: &temporal.RetryPolicy{
+							MaximumInterval: time.Second * 100,
+							MaximumAttempts: 10,
+						},
+					}
+					ctx := workflow.WithActivityOptions(ctx, ao)
 					tran.EthDisperseTxHash = txhash
 					res = workflow.ExecuteActivity(ctx, welethService.UpdateWelCashoutEthTrans, tran)
 					if err := res.Get(ctx, nil); err != nil {
@@ -265,6 +278,19 @@ func (ctr *MulsendContractService) BatchDisperseWF(ctx workflow.Context) error {
 					}
 					// update e2wcashin txs with wel issue txhash
 					for _, tran := range allTxQueues[ethToken].queue {
+						ao := workflow.ActivityOptions{
+							TaskQueue:              welethService.WelethServiceQueue,
+							ScheduleToCloseTimeout: time.Second * 60,
+							ScheduleToStartTimeout: time.Second * 60,
+							StartToCloseTimeout:    time.Second * 60,
+							HeartbeatTimeout:       time.Second * 10,
+							WaitForCancellation:    false,
+							RetryPolicy: &temporal.RetryPolicy{
+								MaximumInterval: time.Second * 100,
+								MaximumAttempts: 10,
+							},
+						}
+						ctx := workflow.WithActivityOptions(ctx, ao)
 						tran.EthDisperseTxHash = txhash
 						res = workflow.ExecuteActivity(ctx, welethService.UpdateWelCashoutEthTrans, tran)
 						if err := res.Get(ctx, nil); err != nil {
