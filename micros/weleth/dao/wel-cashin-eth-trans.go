@@ -4,6 +4,7 @@ import (
 	"bridge/micros/weleth/model"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -19,7 +20,7 @@ type IWelCashinEthTransDAO interface {
 	SelectTransById(id string) (*model.WelCashinEthTrans, error)
 	SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.WelCashinEthTrans, error)
 
-	CreateClaimRequest(requestID string, txID int64, status string) error
+	CreateClaimRequest(requestID string, txID int64, status string, expiredAt time.Time) error
 	SelectTransByRqId(rid string) (*model.WelCashinEthTrans, error)
 	UpdateClaimRequest(reqID, status string) error
 	GetClaimRequest(reqID string) (*model.ClaimRequest, error)
@@ -102,12 +103,12 @@ func (w *welCashinEthTransDAO) SelectTransById(id string) (*model.WelCashinEthTr
 	return t, err
 }
 
-func (w *welCashinEthTransDAO) CreateClaimRequest(requestID string, txID int64, status string) error {
+func (w *welCashinEthTransDAO) CreateClaimRequest(requestID string, txID int64, status string, expiredAt time.Time) error {
 	tx, err := w.db.Beginx()
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(`INSERT INTO wel_cashin_eth_req(request_id, tx_id, status) VALUES ($1, $2, $3)`, requestID, txID, status)
+	_, err = tx.Exec(`INSERT INTO wel_cashin_eth_req(request_id, tx_id, status, expired_at) VALUES ($1, $2, $3, $4)`, requestID, txID, status, expiredAt)
 	if err != nil {
 		tx.Rollback()
 		return err

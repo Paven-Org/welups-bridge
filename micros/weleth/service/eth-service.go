@@ -342,7 +342,7 @@ func (e *EthConsumer) DoneClaimParser(l types.Log) error {
 	}
 	_, err = e.WelCashinEthTransDAO.GetClaimRequest(rqId)
 	if err == sql.ErrNoRows {
-		err := e.WelCashinEthTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending)
+		err := e.WelCashinEthTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending, time.Now())
 		if err != nil {
 			return err
 		}

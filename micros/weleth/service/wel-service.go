@@ -275,7 +275,7 @@ func (e *WelConsumer) DoneReturnParser(t *welListener.Transaction, logpos int) e
 	}
 	_, err = e.EthCashoutWelTransDAO.GetClaimRequest(rqId)
 	if err == sql.ErrNoRows {
-		err := e.EthCashoutWelTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending)
+		err := e.EthCashoutWelTransDAO.CreateClaimRequest(rqId, tran.ID, model.StatusPending, time.Now())
 		if err != nil {
 			return err
 		}

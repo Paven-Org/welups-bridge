@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS wel_cashin_eth_req (
   request_id varchar(100) PRIMARY KEY,
   tx_id integer REFERENCES wel_cashin_eth_trans(id),
   status varchar(20) DEFAULT 'pending',
+  expired_at timestamp with time zone,
   CHECK (status IN ('success','pending','expired','doubleclaimed'))
 );
 
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS eth_cashout_wel_req (
   request_id varchar(100) PRIMARY KEY,
   tx_id integer REFERENCES eth_cashout_wel_trans(id),
   status varchar(20) DEFAULT 'pending',
+  expired_at timestamp with time zone,
   CHECK (status IN ('success','pending','expired','doubleclaimed'))
 );
 

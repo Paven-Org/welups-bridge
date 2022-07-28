@@ -33,9 +33,10 @@ var (
 )
 
 type ClaimRequest struct {
-	Txid   int64  `db:"tx_id"`
-	ReqID  string `db:"request_id"`
-	Status string `db:"status"`
+	Txid      int64     `db:"tx_id"`
+	ReqID     string    `db:"request_id"`
+	Status    string    `db:"status"`
+	ExpiredAt time.Time `db:"expired_at"`
 }
 
 type WelEthEvent = WelCashinEthTrans

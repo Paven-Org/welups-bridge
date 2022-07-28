@@ -7,6 +7,7 @@ import (
 	"bridge/service-managers/logger"
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"gitlab.com/rwxrob/uniq"
@@ -170,7 +171,7 @@ func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, c
 		//}
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
-		if err := s.Wel2EthCashinTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
+		if err := s.Wel2EthCashinTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending, time.Now().Add(3*time.Minute)); err != nil {
 			log.Err(err).Msgf("[W2E claim request] couldn't create claim request for %s", cashinTxHash)
 			return model.WelCashinEthTrans{}, err
 		}
@@ -253,7 +254,7 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 		//}
 
 		tx.ReqID = crypto.Keccak256Hash(uniq.Bytes(32)).Big().String()
-		if err := s.Eth2WelCashoutTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending); err != nil {
+		if err := s.Eth2WelCashoutTransDAO.CreateClaimRequest(tx.ReqID, tx.ID, model.StatusPending, time.Now().Add(3*time.Minute)); err != nil {
 			log.Err(err).Msgf("[E2W claim request] couldn't create claim request for %s", cashoutTxHash)
 			return model.EthCashoutWelTrans{}, err
 		}

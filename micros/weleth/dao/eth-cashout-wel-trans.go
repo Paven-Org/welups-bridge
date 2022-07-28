@@ -20,7 +20,7 @@ type IEthCashoutWelTransDAO interface {
 	SelectTransById(id string) (*model.EthCashoutWelTrans, error)
 	SelectTrans(sender, receiver, status string, offset, size uint64) ([]model.EthCashoutWelTrans, error)
 
-	CreateClaimRequest(requestID string, txID int64, status string) error
+	CreateClaimRequest(requestID string, txID int64, status string, expiredAt time.Time) error
 	SelectTransByRqId(rid string) (*model.EthCashoutWelTrans, error)
 	UpdateClaimRequest(reqID, status string) error
 	GetClaimRequest(reqID string) (*model.ClaimRequest, error)
@@ -103,12 +103,12 @@ func (w *ethCashoutWelTransDAO) SelectTransById(id string) (*model.EthCashoutWel
 	return t, err
 }
 
-func (w *ethCashoutWelTransDAO) CreateClaimRequest(requestID string, txID int64, status string) error {
+func (w *ethCashoutWelTransDAO) CreateClaimRequest(requestID string, txID int64, status string, expiredAt time.Time) error {
 	tx, err := w.db.Beginx()
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(`INSERT INTO eth_cashout_wel_req(request_id, tx_id, status) VALUES ($1, $2, $3)`, requestID, txID, status)
+	_, err = tx.Exec(`INSERT INTO eth_cashout_wel_req(request_id, tx_id, status, expired_at) VALUES ($1, $2, $3, $4)`, requestID, txID, status, expiredAt)
 	if err != nil {
 		tx.Rollback()
 		return err
