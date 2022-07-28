@@ -50,13 +50,18 @@ func TestDisperse(t *testing.T) {
 		gasPrice = big.NewInt(3000000000)
 	}
 
-	opts := bind.NewKeyedTransactor(pkey)
+	opts, err := bind.NewKeyedTransactorWithChainID(pkey, big.NewInt(5))
+	if err != nil {
+		logger.Get().Err(err).Msgf("Unable to bind transactor")
+		t.Fatal("Error: ", err.Error())
+	}
 	opts.GasLimit = uint64(300000)
-	opts.Value = big.NewInt(100)
+	opts.Value = _amount
 	opts.GasPrice = gasPrice
 	opts.Nonce = big.NewInt(int64(nonce))
 
-	receivers := []common.Address{common.HexToAddress(address)}
+	toAddress := address
+	receivers := []common.Address{common.HexToAddress(toAddress)}
 	values := []*big.Int{_amount}
 	tokenAddr := common.HexToAddress(tokenaddr)
 	fmt.Printf("Opts: %+v\n", opts)

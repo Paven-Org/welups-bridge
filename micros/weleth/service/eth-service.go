@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strings"
 	"time"
 
 	GotronCommon "github.com/Paven-Org/gotron-sdk/pkg/common"
@@ -159,9 +158,7 @@ func (e *EthConsumer) DisperseParser(l types.Log) error {
 	receivers := libs.Map(
 		func(rawAddr common.Address) string {
 			hexAddr := rawAddr.Hex()
-			_, hexAddr, _ = strings.Cut(hexAddr, "0x")
-			ret, _ := libs.HexToB58("0x41" + hexAddr)
-			return ret
+			return hexAddr
 		},
 		_receivers)
 	logger.Get().Info().Msgf("Receivers: %+v", receivers)

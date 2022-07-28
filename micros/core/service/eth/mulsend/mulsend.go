@@ -106,6 +106,17 @@ func (ctr *MulsendContractService) Disperse(ctx context.Context, tokenAddr strin
 	}
 	opts.GasLimit = 0
 	opts.Value = big.NewInt(0)
+	if tokenAddr == consts.EthereumTk {
+		sumValues := libs.Reduce(
+			func(accum *big.Int, this *big.Int) *big.Int {
+				accum = accum.Add(accum, this)
+				return accum
+			},
+			big.NewInt(0),
+			values)
+		opts.Value = sumValues
+	}
+	logger.Get().Info().Msgf("Total values: %s", opts.Value.String())
 	opts.GasPrice = gasPrice
 	opts.Nonce = big.NewInt(int64(nonce))
 
