@@ -19,10 +19,12 @@ import (
 const (
 	TaskQueue = welethService.WelethServiceQueue
 
-	GetWelToEthCashinByTxHash  = msweleth.GetWelToEthCashinByTxHash
-	GetEthToWelCashoutByTxHash = msweleth.GetEthToWelCashoutByTxHash
-	GetWelToEthCashin          = msweleth.GetWelToEthCashin
-	GetEthToWelCashout         = msweleth.GetEthToWelCashout
+	GetWelToEthCashinByTxHash      = msweleth.GetWelToEthCashinByTxHash
+	GetEthToWelCashoutByTxHash     = msweleth.GetEthToWelCashoutByTxHash
+	GetWelToEthCashin              = msweleth.GetWelToEthCashin
+	GetEthToWelCashout             = msweleth.GetEthToWelCashout
+	GetWelToEthCashinClaimRequest  = msweleth.GetWelToEthCashinClaimRequest
+	GetEthToWelCashoutClaimRequest = msweleth.GetEthToWelCashoutClaimRequest
 
 	GetEthToWelCashinByTxHash  = msweleth.GetEthToWelCashinByTxHash
 	GetWelToEthCashoutByTxHash = msweleth.GetWelToEthCashoutByTxHash
@@ -267,6 +269,37 @@ func (cli *Weleth) GetWelToEthCashinWF(ctx workflow.Context, sender, receiver, s
 	return tx, nil
 }
 
+func (cli *Weleth) GetWelToEthCashinClaimRequestWF(ctx workflow.Context, requestID string) (claimRequest welethService.ClaimRequest, err error) {
+	log := workflow.GetLogger(ctx)
+	log.Info("[Core MSWeleth] Getting cashin claim request from wel to eth")
+
+	ao := workflow.ActivityOptions{
+		TaskQueue:              welethService.WelethServiceQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 100,
+			MaximumAttempts: 10,
+		},
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	// call weleth
+	log.Info("[Core MSWeleth] Call weleth...")
+	res := workflow.ExecuteActivity(ctx, welethService.GetWelToEthCashinClaimRequest, requestID)
+	if err = res.Get(ctx, &claimRequest); err != nil {
+		log.Error("[Core MSWeleth] Error while executing activity GetWelToEthCashinClaimRequest in weleth microservice", err.Error())
+		return
+	}
+
+	log.Info("[Core MSWeleth] Call weleth successfully, result: ", claimRequest)
+	return claimRequest, nil
+}
+
 func (cli *Weleth) GetEthToWelCashoutByTxHashWF(ctx workflow.Context, txhash string) (tx welethService.EthCashoutWelTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashout transaction from eth to wel with eth's side txhash: " + txhash)
@@ -327,6 +360,37 @@ func (cli *Weleth) GetEthToWelCashoutWF(ctx workflow.Context, sender, receiver, 
 
 	log.Info("[Core MSWeleth] Call weleth successfully, result: ", tx)
 	return tx, nil
+}
+
+func (cli *Weleth) GetEthToWelCashoutClaimRequestWF(ctx workflow.Context, requestID string) (claimRequest welethService.ClaimRequest, err error) {
+	log := workflow.GetLogger(ctx)
+	log.Info("[Core MSWeleth] Getting cashout claim request from eth to wel")
+
+	ao := workflow.ActivityOptions{
+		TaskQueue:              welethService.WelethServiceQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 100,
+			MaximumAttempts: 10,
+		},
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	// call weleth
+	log.Info("[Core MSWeleth] Call weleth...")
+	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashoutClaimRequest, requestID)
+	if err = res.Get(ctx, &claimRequest); err != nil {
+		log.Error("[Core MSWeleth] Error while executing activity GetEthToWelCashoutClaimRequest in weleth microservice", err.Error())
+		return
+	}
+
+	log.Info("[Core MSWeleth] Call weleth successfully, result: ", claimRequest)
+	return claimRequest, nil
 }
 
 func (cli *Weleth) GetEthToWelCashinByTxHashWF(ctx workflow.Context, txhash string) (tx welethService.EthCashinWelTrans, err error) {
@@ -500,7 +564,10 @@ func (cli *Weleth) registerService(w worker.Worker) {
 	w.RegisterWorkflowWithOptions(cli.GetTx2TreasuryBySenderWF, workflow.RegisterOptions{Name: GetTx2TreasuryBySender})
 
 	w.RegisterWorkflowWithOptions(cli.CreateW2ECashinClaimRequestWF, workflow.RegisterOptions{Name: CreateW2ECashinClaimRequestWF})
+	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashinClaimRequestWF, workflow.RegisterOptions{Name: GetWelToEthCashinClaimRequest})
+
 	w.RegisterWorkflowWithOptions(cli.CreateE2WCashoutClaimRequestWF, workflow.RegisterOptions{Name: CreateE2WCashoutClaimRequestWF})
+	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashoutClaimRequestWF, workflow.RegisterOptions{Name: GetEthToWelCashoutClaimRequest})
 
 	w.RegisterActivity(cli.InvalidateE2WCashoutClaim)
 	w.RegisterWorkflowWithOptions(cli.WaitForPendingW2ECashinClaimRequestWF, workflow.RegisterOptions{Name: WaitForPendingW2ECashinClaimRequestWF})

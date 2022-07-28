@@ -12,6 +12,9 @@ const (
 	GetWelToEthCashin          = "GetWelToEthCashinWF"
 	GetEthToWelCashout         = "GetEthToWelCashoutWF"
 
+	GetWelToEthCashinClaimRequest  = "GetWelToEthCashinClaimRequestWF"
+	GetEthToWelCashoutClaimRequest = "GetEthToWelCashoutClaimRequestWF"
+
 	GetEthToWelCashinByTxHash  = "GetEthToWelCashinByTxHashWF"
 	GetWelToEthCashoutByTxHash = "GetWelToEthCashoutByTxHashWF"
 	GetEthToWelCashin          = "GetEthToWelCashinWF"

@@ -548,6 +548,27 @@ func GetE2WCashoutTrans(sender, receiver, withdrawStatus string, offset, size ui
 	return tx, nil
 }
 
+func GetE2WCashoutClaimRequest(requestID string) (welethModel.ClaimRequest, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.TaskQueue,
+	}
+
+	var claimRequest welethModel.ClaimRequest
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashoutClaimRequest, requestID)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashout claim request workflow")
+		return claimRequest, err
+	}
+	if err = we.Get(ctx, &claimRequest); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashout claim request")
+		return claimRequest, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved E2W cashout claim request")
+	return claimRequest, nil
+}
+
 func WatchTx2TreasuryRequest(from, to, treasury, netid, token, amount string) error {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: welService.ImportContractQueue,

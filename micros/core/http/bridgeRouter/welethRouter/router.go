@@ -37,6 +37,9 @@ func Config(router gin.IRouter, mw ...gin.HandlerFunc) {
 	//	gr.GET("/transaction/cashout/to/eth/:txid")
 	//	gr.GET("/transaction/cashin/from/wel/:txid")
 	//	gr.GET("/transaction/cashout/to/wel/:txid")
+	gr.GET("/claim/wel/cashin-to/eth/:request_id", getW2ECashinRequest)
+	gr.GET("/claim/eth/cashout-to/wel/:request_id", getE2WCashoutRequest)
+
 }
 
 func initialize() {
@@ -78,7 +81,7 @@ func wel2ethCashin(c *gin.Context) {
 		ReqIDRaw        []byte `json:"request_id_raw"`
 		Signature       []byte `json:"signature"`
 		SignatureHex    string `json:"signature_hex"`
-		ClaimExpireTime int64 `json:"claim_expire_time"`
+		ClaimExpireTime int64  `json:"claim_expire_time"`
 	}
 	resp := response{
 		TokenAddress:    tkAddr,
@@ -88,7 +91,7 @@ func wel2ethCashin(c *gin.Context) {
 		ReqIDRaw:        reqIDraw,
 		Signature:       signature,
 		SignatureHex:    "0x" + common.Bytes2Hex(signature),
-		ClaimExpireTime: claimExpireTime, 
+		ClaimExpireTime: claimExpireTime,
 	}
 
 	logger.Info().Msg("[Claim W2E cashin] successfully generated claim request")
@@ -363,4 +366,50 @@ func getW2ECashoutTx(c *gin.Context) {
 
 func wel2ethCashout(c *gin.Context) {
 
+}
+
+func getW2ECashinRequest(c *gin.Context) {
+	requestID := c.Param("request_id")
+	if len(requestID) <= 0 {
+		err := fmt.Errorf("Invalid request payload")
+		logger.Err(err).Msgf("Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// process
+	claimRequest, err := welLogic.GetW2ECashinClaimRequest(requestID)
+	if err != nil {
+		logger.Err(err).Msgf("[Get W2E cashin claim request Unable to get W2E cashin claim request")
+		c.JSON(http.StatusInternalServerError, "Unable to get W2E cashin claim request")
+		return
+	}
+
+	// response
+
+	logger.Info().Msg("[Get W2E cashin claim request successfully get W2E cashin claim request")
+	c.JSON(http.StatusOK, claimRequest)
+}
+
+func getE2WCashoutRequest(c *gin.Context) {
+	requestID := c.Param("request_id")
+	if len(requestID) <= 0 {
+		err := fmt.Errorf("Invalid request payload")
+		logger.Err(err).Msgf("Invalid request payload")
+		c.JSON(http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	// process
+	claimRequest, err := ethLogic.GetE2WCashoutClaimRequest(requestID)
+	if err != nil {
+		logger.Err(err).Msgf("[Get E2W cashout claim request Unable to get E2W cashout claim request")
+		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashout claim request")
+		return
+	}
+
+	// response
+
+	logger.Info().Msg("[Get E2W cashout claim request successfully get E2W cashout claim request")
+	c.JSON(http.StatusOK, claimRequest)
 }

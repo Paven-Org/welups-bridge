@@ -39,11 +39,13 @@ const (
 	GetEthToWelCashin          = "E2W_CASHIN_GENERAL_GET"
 	GetWelToEthCashout         = "W2E_CASHOUT_GENERAL_GET"
 
-	CreateW2ECashinClaimRequest = "CreateW2ECashinClaimRequest"
-	UpdateClaimWelCashinEth     = "UpdateClaimWelCashinEth"
+	CreateW2ECashinClaimRequest   = "CreateW2ECashinClaimRequest"
+	UpdateClaimWelCashinEth       = "UpdateClaimWelCashinEth"
+	GetWelToEthCashinClaimRequest = "W2E_CASHIN_GENERAL_GET_CLAIM_REQUEST"
 
-	CreateE2WCashoutClaimRequest = "CreateE2WCashoutClaimRequest"
-	UpdateClaimEthCashoutWel     = "UpdateClaimEthCashoutWel"
+	CreateE2WCashoutClaimRequest   = "CreateE2WCashoutClaimRequest"
+	UpdateClaimEthCashoutWel       = "UpdateClaimEthCashoutWel"
+	GetEthToWelCashoutClaimRequest = "E2W_CASHOUT_GENERAL_GET_CLAIM_REQUEST"
 
 	//--------------------------------------------------------------------//
 	GetTx2Treasury          = "GetUnconfirmedTx2Treasury"
@@ -71,6 +73,7 @@ type BridgeTx struct {
 
 type WelCashinEthTrans = model.WelCashinEthTrans
 type EthCashoutWelTrans = model.EthCashoutWelTrans
+type ClaimRequest = model.ClaimRequest
 type EthCashinWelTrans = model.EthCashinWelTrans
 type WelCashoutEthTrans = model.WelCashoutEthTrans
 type TxToTreasury = model.TxToTreasury
@@ -183,6 +186,17 @@ func (s *WelethBridgeService) CreateW2ECashinClaimRequest(ctx context.Context, c
 	return
 }
 
+func (s *WelethBridgeService) GetWelToEthCashinClaimRequest(ctx context.Context, requestID string) (claimRequest model.ClaimRequest, err error) {
+	log := logger.Get()
+	log.Info().Msgf("[W2E cashin claim request get] getting claim request...")
+	_claimRequest, err := s.Wel2EthCashinTransDAO.GetClaimRequest(requestID)
+	if err != nil {
+		log.Err(err).Msg("[W2E cashin claim request get] failed to get claim request")
+		return
+	}
+	return *_claimRequest, nil
+}
+
 func (s *WelethBridgeService) UpdateClaimWelCashinEth(ctx context.Context, id int64, reqID string, reqStatus string, claimTxHash string, status string) error {
 	log := logger.Get()
 	log.Info().Msgf("[W2E update claim request] updating cashin transaction")
@@ -264,6 +278,17 @@ func (s *WelethBridgeService) CreateE2WCashoutClaimRequest(ctx context.Context, 
 		return
 	}
 	return
+}
+
+func (s *WelethBridgeService) GetEthToWelCashoutClaimRequest(ctx context.Context, requestID string) (claimRequest model.ClaimRequest, err error) {
+	log := logger.Get()
+	log.Info().Msgf("[E2W cashout claim request get] getting claim request...")
+	_claimRequest, err := s.Eth2WelCashoutTransDAO.GetClaimRequest(requestID)
+	if err != nil {
+		log.Err(err).Msg("[E2W cashout claim request get] failed to get claim request")
+		return
+	}
+	return *_claimRequest, nil
 }
 
 func (s *WelethBridgeService) UpdateClaimEthCashoutWel(ctx context.Context, id int64, reqID string, reqStatus string, claimTxHash string, amount string, fee string, status string) error {
@@ -422,9 +447,11 @@ func (s *WelethBridgeService) registerService(w worker.Worker) {
 
 	w.RegisterActivityWithOptions(s.CreateW2ECashinClaimRequest, activity.RegisterOptions{Name: CreateW2ECashinClaimRequest})
 	w.RegisterActivityWithOptions(s.UpdateClaimWelCashinEth, activity.RegisterOptions{Name: UpdateClaimWelCashinEth})
+	w.RegisterActivityWithOptions(s.GetWelToEthCashinClaimRequest, activity.RegisterOptions{Name: GetWelToEthCashinClaimRequest})
 
 	w.RegisterActivityWithOptions(s.CreateE2WCashoutClaimRequest, activity.RegisterOptions{Name: CreateE2WCashoutClaimRequest})
 	w.RegisterActivityWithOptions(s.UpdateClaimEthCashoutWel, activity.RegisterOptions{Name: UpdateClaimEthCashoutWel})
+	w.RegisterActivityWithOptions(s.GetEthToWelCashoutClaimRequest, activity.RegisterOptions{Name: GetEthToWelCashoutClaimRequest})
 
 	w.RegisterActivityWithOptions(s.GetTx2TreasuryBySender, activity.RegisterOptions{Name: GetTx2TreasuryBySender})
 	w.RegisterActivityWithOptions(s.GetUnconfirmedTx2Treasury, activity.RegisterOptions{Name: GetTx2Treasury})
