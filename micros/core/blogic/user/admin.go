@@ -10,7 +10,7 @@ func AdminUpdateUserInfo(username, new_username, email, password, status string)
 	return generalUpdateUserInfo(username, new_username, email, password, status)
 }
 
-func AddUser(username, email, password string) error {
+func AddUser(username, email, plainPassword string) error {
 	log.Info().Msgf("[user logic internal] Creating user %s...", username)
 	log.Info().Msgf("[user logic internal] Hashing new password for %s", username)
 
@@ -43,7 +43,14 @@ func AddUser(username, email, password string) error {
 		}
 	}
 
-	password, err := libs.HashPasswd(password)
+	log.Info().Msgf("[user logic internal] Checking password's strength...")
+	if !libs.StrongPasswd(plainPassword) {
+		err := model.ErrWeakPasswd
+		log.Err(err).Msgf("[user logic internal] Weak password")
+		return err
+	}
+
+	password, err := libs.HashPasswd(plainPassword)
 	if err != nil {
 		log.Err(err).Msgf("[user logic internal] Unable to hash password")
 		return err

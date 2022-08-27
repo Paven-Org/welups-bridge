@@ -42,6 +42,7 @@ const (
 
 var (
 	ErrWrongPasswd             = fmt.Errorf("Wrong password")
+	ErrWeakPasswd              = fmt.Errorf("Password must be a mix of uppercase character, lowercase character, symbols and numbers, and at least 8 charaters long")
 	ErrUserNotActivated        = fmt.Errorf("User not activated")
 	ErrUserBanned              = fmt.Errorf("User not banned")
 	ErrUserNotFound            = fmt.Errorf("User not found")

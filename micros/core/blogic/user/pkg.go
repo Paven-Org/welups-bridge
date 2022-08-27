@@ -124,6 +124,13 @@ func generalUpdateUserInfo(username, new_username, email, password, status strin
 	}
 
 	if password != "" {
+		log.Info().Msgf("[user logic internal] Checking user %s's new password's strength...", username)
+		if !libs.StrongPasswd(password) {
+			err := model.ErrWeakPasswd
+			log.Err(err).Msgf("[user logic internal] Weak password")
+			return err
+		}
+
 		log.Info().Msgf("[user logic internal] Hashing new password for %s", username)
 		user.Password, err = libs.HashPasswd(password)
 		if err != nil {

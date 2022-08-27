@@ -158,6 +158,13 @@ func Passwd(username string, oldpasswd string, newpasswd string) error {
 		return err
 	}
 
+	log.Info().Msgf("[user logic internal] Checking user %s's new password's strength...", username)
+	if !libs.StrongPasswd(user.Password) {
+		err := model.ErrWeakPasswd
+		log.Err(err).Msgf("[user logic internal] Weak password")
+		return err
+	}
+
 	log.Info().Msgf("[user logic internal] Hashing new password for %s", username)
 	user.Password, err = libs.HashPasswd(newpasswd)
 	if err != nil {
