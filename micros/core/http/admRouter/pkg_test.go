@@ -84,7 +84,7 @@ func TestPing(t *testing.T) {
 // actual test
 func TestGetUsers(t *testing.T) {
 	login(t)
-	fmt.Printf("\n\n Test ping...\n")
+	fmt.Printf("\n\n Test GetUsers...\n")
 	resp, err := cli.Get("/v1/a/m/u/users/1?limit=20")
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
@@ -92,6 +92,21 @@ func TestGetUsers(t *testing.T) {
 	defer resp.Body.Close()
 	bod, _ := ioutil.ReadAll(resp.Body)
 	fmt.Printf("Response: %s\n", bod)
-	fmt.Printf("\n Test ping done\n\n")
+	fmt.Printf("\n Test GetUsers done\n\n")
+	logout(t)
+}
+
+// actual test
+func TestUnsetAuthenticator(t *testing.T) {
+	login(t)
+	fmt.Printf("\n\n Test GetUsers...\n")
+	resp, err := cli.PostJSON("/v1/a/m/wel/unset/authenticator-prikey", "")
+	if err != nil {
+		t.Fatalf("Error: %s", err.Error())
+	}
+	defer resp.Body.Close()
+	bod, _ := ioutil.ReadAll(resp.Body)
+	fmt.Printf("Response: %s\n", bod)
+	fmt.Printf("\n Test GetUsers done\n\n")
 	logout(t)
 }
