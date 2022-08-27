@@ -102,11 +102,28 @@ func getUsers(c *gin.Context) {
 	}
 
 	// process
+	type userWithRoles struct {
+		model.User
+		roles []string `json:"roles,omitempty"`
+	}
 	users, err := userLogic.GetUsers(uint((page-1)*limit), uint(limit))
 	if err != nil && err != model.ErrUserNotFound {
 		logger.Err(err).Msgf("[get users handler] Unable to get users")
 		c.JSON(http.StatusInternalServerError, "Unable to get users")
 		return
+	}
+	var usersWithRoles = make([]userWithRoles, len(users))
+	for i, u := range users {
+		roles, err := userLogic.GetUserRoles(u.Username)
+		if err != nil {
+			logger.Err(err).Msgf("[get users handler] Unable to get user %s's roles", u.Username)
+			c.JSON(http.StatusInternalServerError, "Unable to get user roles")
+			return
+		}
+		usersWithRoles[i] = userWithRoles{
+			User: u,
+			roles: roles,
+		}
 	}
 
 	total, err := userLogic.TotalUsers()
@@ -118,11 +135,11 @@ func getUsers(c *gin.Context) {
 
 	// response
 	type response struct {
-		Users []model.User `json:"users,omitempty"`
-		Total uint64       `json:"total,omitempty"`
+		Users []userWithRoles `json:"users,omitempty"`
+		Total uint64          `json:"total,omitempty"`
 	}
 	resp := response{
-		Users: users,
+		Users: usersWithRoles,
 		Total: total,
 	}
 
