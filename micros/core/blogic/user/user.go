@@ -159,7 +159,7 @@ func Passwd(username string, oldpasswd string, newpasswd string) error {
 	}
 
 	log.Info().Msgf("[user logic internal] Checking user %s's new password's strength...", username)
-	if !libs.StrongPasswd(user.Password) {
+	if !libs.StrongPasswd(newpasswd) {
 		err := model.ErrWeakPasswd
 		log.Err(err).Msgf("[user logic internal] Weak password")
 		return err

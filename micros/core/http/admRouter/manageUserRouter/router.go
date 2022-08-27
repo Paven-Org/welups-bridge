@@ -104,7 +104,7 @@ func getUsers(c *gin.Context) {
 	// process
 	type userWithRoles struct {
 		model.User
-		roles []string `json:"roles,omitempty"`
+		Roles []string `json:"roles,omitempty"`
 	}
 	users, err := userLogic.GetUsers(uint((page-1)*limit), uint(limit))
 	if err != nil && err != model.ErrUserNotFound {
@@ -121,8 +121,8 @@ func getUsers(c *gin.Context) {
 			return
 		}
 		usersWithRoles[i] = userWithRoles{
-			User: u,
-			roles: roles,
+			User:  u,
+			Roles: roles,
 		}
 	}
 

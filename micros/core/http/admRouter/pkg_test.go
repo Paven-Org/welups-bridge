@@ -15,7 +15,7 @@ func TestMain(m *testing.M) {
 	var err error
 	config.Load()
 	//log.Init(config.Get().Structured)
-	cli, err = manager.MkHttpClient("http://localhost:8001", "")
+	cli, err = manager.MkHttpClient("https://localhost:8001", "")
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
 		return
@@ -29,7 +29,7 @@ type loginResp struct {
 }
 
 func login(t *testing.T) {
-	resp, err := cli.PostJSON("/v1/p/login", `{"username": "root", "password": "root"}`)
+	resp, err := cli.PostJSON("/v1/u/login", `{"username": "root", "password": "root"}`)
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
 	}
@@ -57,7 +57,7 @@ func login(t *testing.T) {
 }
 
 func logout(t *testing.T) {
-	resp, err := cli.PostJSON("/v1/p/logout", "")
+	resp, err := cli.PostJSON("/v1/u/logout", "")
 	if err != nil {
 		t.Fatalf("Error: %s", err.Error())
 	}
@@ -77,6 +77,21 @@ func TestPing(t *testing.T) {
 	}
 	defer resp.Body.Close()
 	fmt.Println("Response: ", resp)
+	fmt.Printf("\n Test ping done\n\n")
+	logout(t)
+}
+
+// actual test
+func TestGetUsers(t *testing.T) {
+	login(t)
+	fmt.Printf("\n\n Test ping...\n")
+	resp, err := cli.Get("/v1/a/m/u/users/1?limit=20")
+	if err != nil {
+		t.Fatalf("Error: %s", err.Error())
+	}
+	defer resp.Body.Close()
+	bod, _ := ioutil.ReadAll(resp.Body)
+	fmt.Printf("Response: %s\n", bod)
 	fmt.Printf("\n Test ping done\n\n")
 	logout(t)
 }

@@ -46,9 +46,9 @@ func StrongPasswd(plainPasswd string) bool {
 			conditions["special"] = true
 		}
 	}
-	return conditions["length"] && 
-				 conditions["number"] && 
-				 conditions["lower"] && 
-				 conditions["upper"] && 
-				 conditions["special"]
+	return conditions["length"] &&
+		conditions["number"] &&
+		conditions["lower"] &&
+		conditions["upper"] &&
+		conditions["special"]
 }
