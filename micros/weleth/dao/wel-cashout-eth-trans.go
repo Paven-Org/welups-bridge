@@ -179,8 +179,9 @@ func (w *welCashoutEthTransDAO) SelectTrans(sender, receiver, status string, off
 
 	q := "SELECT * FROM wel_cashout_eth_trans"
 	if len(whereClauses) > 0 {
-		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND ") + limitClause)
+		q = w.db.Rebind(q + " WHERE " + strings.Join(whereClauses, " AND "))
 	}
+	q = q + limitClause
 
 	// querying...
 	txs := []model.WelCashoutEthTrans{}
