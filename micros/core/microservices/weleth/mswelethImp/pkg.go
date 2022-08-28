@@ -18,6 +18,7 @@ import (
 
 const (
 	TaskQueue = welethService.WelethServiceQueue
+	WFQueue   = msweleth.WFQueue
 
 	GetWelToEthCashinByTxHash      = msweleth.GetWelToEthCashinByTxHash
 	GetEthToWelCashoutByTxHash     = msweleth.GetEthToWelCashoutByTxHash
@@ -578,7 +579,7 @@ func (cli *Weleth) registerService(w worker.Worker) {
 }
 
 func (cli *Weleth) StartService() error {
-	w := worker.New(cli.tempCli, TaskQueue, worker.Options{})
+	w := worker.New(cli.tempCli, WFQueue, worker.Options{})
 	cli.registerService(w)
 
 	cli.worker = w

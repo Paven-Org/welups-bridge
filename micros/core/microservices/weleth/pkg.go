@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	TaskQueue = welethService.WelethServiceQueue
+	WFQueue = welethService.WelethServiceQueue
 
 	GetWelToEthCashinByTxHash  = "GetWelToEthCashinByTxHashWF"
 	GetEthToWelCashoutByTxHash = "GetEthToWelCashoutByTxHashWF"

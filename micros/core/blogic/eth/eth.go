@@ -309,7 +309,7 @@ func ClaimWel2EthCashin(cashinTxId string, userAddr string, contractVersion stri
 	// call workflow
 	log.Info().Msgf("[Eth logic internal] Calling MSWeleth workflow...")
 	wo := client.StartWorkflowOptions{
-		TaskQueue: msweleth.TaskQueue,
+		TaskQueue: msweleth.WFQueue,
 	}
 	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.CreateW2ECashinClaimRequestWF, cashinTxId, userAddr)
 	if err != nil {
@@ -472,7 +472,7 @@ func InvalidateRequestClaim(inTokenAddr, amount, reqID, contractVersion string) 
 
 func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans, error) {
 	wo := client.StartWorkflowOptions{
-		TaskQueue: msweleth.TaskQueue,
+		TaskQueue: msweleth.WFQueue,
 	}
 
 	var tx welethModel.EthCashinWelTrans
@@ -493,7 +493,7 @@ func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans
 
 func GetE2WCashinTrans(sender, receiver, status string, offset, size uint64) ([]welethModel.EthCashinWelTrans, []welethModel.TxToTreasury, error) {
 	wo := client.StartWorkflowOptions{
-		TaskQueue: msweleth.TaskQueue,
+		TaskQueue: msweleth.WFQueue,
 	}
 
 	var tx []welethModel.EthCashinWelTrans
@@ -529,7 +529,7 @@ func GetE2WCashinTrans(sender, receiver, status string, offset, size uint64) ([]
 
 func GetE2WCashoutTrans(sender, receiver, withdrawStatus string, offset, size uint64) ([]welethModel.EthCashoutWelTrans, error) {
 	wo := client.StartWorkflowOptions{
-		TaskQueue: msweleth.TaskQueue,
+		TaskQueue: msweleth.WFQueue,
 	}
 
 	var tx []welethModel.EthCashoutWelTrans
@@ -550,7 +550,7 @@ func GetE2WCashoutTrans(sender, receiver, withdrawStatus string, offset, size ui
 
 func GetE2WCashoutClaimRequest(requestID string) (welethModel.ClaimRequest, error) {
 	wo := client.StartWorkflowOptions{
-		TaskQueue: msweleth.TaskQueue,
+		TaskQueue: msweleth.WFQueue,
 	}
 
 	var claimRequest welethModel.ClaimRequest
