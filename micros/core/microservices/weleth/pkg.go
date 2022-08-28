@@ -1,11 +1,7 @@
 package msweleth
 
-import (
-	welethService "bridge/micros/weleth/temporal"
-)
-
 const (
-	WFQueue = welethService.WelethServiceQueue
+	WFQueue = "TEMPORAL_BRIDGE_QUEUE_CORE_WFWELETH"
 
 	GetWelToEthCashinByTxHash  = "GetWelToEthCashinByTxHashWF"
 	GetEthToWelCashoutByTxHash = "GetEthToWelCashoutByTxHashWF"
