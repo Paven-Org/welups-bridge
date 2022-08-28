@@ -491,6 +491,28 @@ func GetE2WCashinTransByEthTxHash(txhash string) (*welethModel.EthCashinWelTrans
 	return &tx, nil
 }
 
+func GetE2WCashinWithTx2Treasury(sender, receiver, status string, offset, size uint64) ([]welethModel.EthCashinWelWithTx2Treasury, error) {
+	wo := client.StartWorkflowOptions{
+		TaskQueue: msweleth.WFQueue,
+	}
+
+	var tx []welethModel.EthCashinWelWithTx2Treasury
+	ctx := context.Background()
+
+	we, err := tempcli.ExecuteWorkflow(ctx, wo, msweleth.GetEthToWelCashinWithTx2Treasury, sender, receiver, status, offset, size)
+	if err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to execute Get E2W cashin with tx2treasury workflow")
+		return nil, err
+	}
+	if err = we.Get(ctx, &tx); err != nil {
+		log.Err(err).Msgf("[Eth logic internal] Failed to get E2W cashin with tx2treasury")
+		return nil, err
+	}
+	log.Info().Msgf("[Eth logic internal] Retrieved E2W cashin with tx2treasury")
+
+	return tx, nil
+}
+
 func GetE2WCashinTrans(sender, receiver, status string, offset, size uint64) ([]welethModel.EthCashinWelTrans, []welethModel.TxToTreasury, error) {
 	wo := client.StartWorkflowOptions{
 		TaskQueue: msweleth.WFQueue,

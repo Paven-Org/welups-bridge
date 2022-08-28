@@ -112,7 +112,7 @@ func getE2WCashinTx(c *gin.Context) {
 	}
 
 	// process
-	txs, tx2tr, err := ethLogic.GetE2WCashinTrans(sender, receiver, status, (page-1)*pageSize, pageSize)
+	txs, err := ethLogic.GetE2WCashinWithTx2Treasury(sender, receiver, status, (page-1)*pageSize, pageSize)
 	if err != nil {
 		logger.Err(err).Msgf("[Get E2W cashin] Unable to get E2W cashin transactions")
 		c.JSON(http.StatusInternalServerError, "Unable to get E2W cashin transactions")
@@ -121,12 +121,10 @@ func getE2WCashinTx(c *gin.Context) {
 
 	// response
 	type response struct {
-		CashinTx     []welethModel.EthCashinWelTrans `json:"cashin_tx"`
-		TxToTreasury []welethModel.TxToTreasury      `json:"to_treasury_tx"`
+		CashinTx []welethModel.EthCashinWelWithTx2Treasury `json:"cashin_tx"`
 	}
 	resp := response{
-		CashinTx:     txs,
-		TxToTreasury: tx2tr,
+		CashinTx: txs,
 	}
 
 	logger.Info().Msg("[Get E2W cashin] successfully get E2W cashin transactions")

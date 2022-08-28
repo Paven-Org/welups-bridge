@@ -43,9 +43,10 @@ const (
 	UpdateClaimWelCashinEth       = "UpdateClaimWelCashinEth"
 	GetWelToEthCashinClaimRequest = "W2E_CASHIN_GENERAL_GET_CLAIM_REQUEST"
 
-	CreateE2WCashoutClaimRequest   = "CreateE2WCashoutClaimRequest"
-	UpdateClaimEthCashoutWel       = "UpdateClaimEthCashoutWel"
-	GetEthToWelCashoutClaimRequest = "E2W_CASHOUT_GENERAL_GET_CLAIM_REQUEST"
+	CreateE2WCashoutClaimRequest     = "CreateE2WCashoutClaimRequest"
+	UpdateClaimEthCashoutWel         = "UpdateClaimEthCashoutWel"
+	GetEthToWelCashoutClaimRequest   = "E2W_CASHOUT_GENERAL_GET_CLAIM_REQUEST"
+	GetEthToWelCashinWithTx2Treasury = "GetEthToWelCashinWithTx2Treasury"
 
 	//--------------------------------------------------------------------//
 	GetTx2Treasury          = "GetUnconfirmedTx2Treasury"
@@ -77,6 +78,7 @@ type ClaimRequest = model.ClaimRequest
 type EthCashinWelTrans = model.EthCashinWelTrans
 type WelCashoutEthTrans = model.WelCashoutEthTrans
 type TxToTreasury = model.TxToTreasury
+type EthCashinWelWithTx2Treasury = model.EthCashinWelWithTx2Treasury
 
 type WelethBridgeService struct {
 	Wel2EthCashinTransDAO  dao.IWelCashinEthTransDAO
@@ -313,6 +315,26 @@ func (s *WelethBridgeService) GetEthToWelCashin(ctx context.Context, sender, rec
 	return txs, nil
 }
 
+func (s *WelethBridgeService) GetEthToWelCashinWithTx2Treasury(ctx context.Context, sender, receiver, status string, offset, size uint64) (txs []model.EthCashinWelWithTx2Treasury, err error) {
+	log := logger.Get()
+	log.Info().Msgf("[E2W transaction get] getting cashin transaction")
+	_txs, err := s.Eth2WelCashinTransDAO.SelectTrans(sender, receiver, status, offset, size)
+	if err != nil {
+		log.Err(err).Msg("[E2W transaction get] failed to get cashin transactions")
+		return
+	}
+	for _, _tx := range _txs {
+		tx2tr, err := s.Eth2WelCashinTransDAO.GetTx2TreasuryByTxHash(_tx.EthTxHash)
+		if err != nil {
+			log.Err(err).Msg("[E2W transaction get] failed to get transaction to treasury for cashin transactions")
+			return nil, err
+		}
+		tx := model.EthCashinWelWithTx2Treasury{EthCashinWelTrans: _tx, Tx2Treasury: *tx2tr}
+		txs = append(txs, tx)
+	}
+	return txs, nil
+}
+
 func (s *WelethBridgeService) GetEthToWelCashinByTxHash(ctx context.Context, txhash string) (model.EthCashinWelTrans, error) {
 	log := logger.Get()
 	log.Info().Msgf("[E2W get cashin tx] getting cashin transaction with eth tx hash %s", txhash)
@@ -443,6 +465,7 @@ func (s *WelethBridgeService) registerService(w worker.Worker) {
 	w.RegisterActivityWithOptions(s.GetEthToWelCashinByTxHash, activity.RegisterOptions{Name: GetEthToWelCashinByTxHash})
 	w.RegisterActivityWithOptions(s.GetWelToEthCashoutByTxHash, activity.RegisterOptions{Name: GetWelToEthCashoutByTxHash})
 	w.RegisterActivityWithOptions(s.GetEthToWelCashin, activity.RegisterOptions{Name: GetEthToWelCashin})
+	w.RegisterActivityWithOptions(s.GetEthToWelCashinWithTx2Treasury, activity.RegisterOptions{Name: GetEthToWelCashinWithTx2Treasury})
 	w.RegisterActivityWithOptions(s.GetWelToEthCashout, activity.RegisterOptions{Name: GetWelToEthCashout})
 
 	w.RegisterActivityWithOptions(s.CreateW2ECashinClaimRequest, activity.RegisterOptions{Name: CreateW2ECashinClaimRequest})

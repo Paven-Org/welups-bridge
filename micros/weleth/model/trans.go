@@ -157,6 +157,11 @@ type EthCashinWelTrans struct {
 	IssuedAt  sql.NullTime `json:"issued_at" db:"issued_at,omitempty"`
 }
 
+type EthCashinWelWithTx2Treasury struct {
+	EthCashinWelTrans
+	Tx2Treasury TxToTreasury `json:"tx_to_treasury,omitempty"`
+}
+
 type WelCashoutEthTrans struct {
 	ID int64 `json:"id,omitempty" db:"id,omitempty"`
 

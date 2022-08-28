@@ -11,10 +11,11 @@ const (
 	GetWelToEthCashinClaimRequest  = "GetWelToEthCashinClaimRequestWF"
 	GetEthToWelCashoutClaimRequest = "GetEthToWelCashoutClaimRequestWF"
 
-	GetEthToWelCashinByTxHash  = "GetEthToWelCashinByTxHashWF"
-	GetWelToEthCashoutByTxHash = "GetWelToEthCashoutByTxHashWF"
-	GetEthToWelCashin          = "GetEthToWelCashinWF"
-	GetWelToEthCashout         = "GetWelToEthCashoutWF"
+	GetEthToWelCashinByTxHash        = "GetEthToWelCashinByTxHashWF"
+	GetWelToEthCashoutByTxHash       = "GetWelToEthCashoutByTxHashWF"
+	GetEthToWelCashin                = "GetEthToWelCashinWF"
+	GetEthToWelCashinWithTx2Treasury = "GetEthToWelCashinWithTx2TreasuryWF"
+	GetWelToEthCashout               = "GetWelToEthCashoutWF"
 
 	GetTx2TreasuryBySender = "GetTx2TreasuryBySenderWF"
 

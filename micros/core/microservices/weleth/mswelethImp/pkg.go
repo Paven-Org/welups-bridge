@@ -27,10 +27,11 @@ const (
 	GetWelToEthCashinClaimRequest  = msweleth.GetWelToEthCashinClaimRequest
 	GetEthToWelCashoutClaimRequest = msweleth.GetEthToWelCashoutClaimRequest
 
-	GetEthToWelCashinByTxHash  = msweleth.GetEthToWelCashinByTxHash
-	GetWelToEthCashoutByTxHash = msweleth.GetWelToEthCashoutByTxHash
-	GetEthToWelCashin          = msweleth.GetEthToWelCashin
-	GetWelToEthCashout         = msweleth.GetWelToEthCashout
+	GetEthToWelCashinByTxHash        = msweleth.GetEthToWelCashinByTxHash
+	GetWelToEthCashoutByTxHash       = msweleth.GetWelToEthCashoutByTxHash
+	GetEthToWelCashin                = msweleth.GetEthToWelCashin
+	GetWelToEthCashout               = msweleth.GetWelToEthCashout
+	GetEthToWelCashinWithTx2Treasury = msweleth.GetEthToWelCashinWithTx2Treasury
 
 	GetTx2TreasuryBySender = msweleth.GetTx2TreasuryBySender
 
@@ -456,6 +457,37 @@ func (cli *Weleth) GetEthToWelCashinWF(ctx workflow.Context, sender, receiver, s
 	return tx, nil
 }
 
+func (cli *Weleth) GetEthToWelCashinWithTx2TreasuryWF(ctx workflow.Context, sender, receiver, status string, offset, size uint64) (tx []welethService.EthCashinWelWithTx2Treasury, err error) {
+	log := workflow.GetLogger(ctx)
+	log.Info("[Core MSWeleth] Getting cashin transactions (plus tx2treasury) from eth to wel")
+
+	ao := workflow.ActivityOptions{
+		TaskQueue:              welethService.WelethServiceQueue,
+		ScheduleToCloseTimeout: time.Second * 60,
+		ScheduleToStartTimeout: time.Second * 60,
+		StartToCloseTimeout:    time.Second * 60,
+		HeartbeatTimeout:       time.Second * 10,
+		WaitForCancellation:    false,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumInterval: time.Second * 100,
+			MaximumAttempts: 10,
+		},
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, ao)
+
+	// call weleth
+	log.Info("[Core MSWeleth] Call weleth...")
+	res := workflow.ExecuteActivity(ctx, welethService.GetEthToWelCashinWithTx2Treasury, sender, receiver, status, offset, size)
+	if err = res.Get(ctx, &tx); err != nil {
+		log.Error("[Core MSWeleth] Error while executing activity GetEthToWelCashinWithTx2Treasury in weleth microservice", err.Error())
+		return
+	}
+
+	log.Info("[Core MSWeleth] Call weleth successfully, result: ", tx)
+	return tx, nil
+}
+
 func (cli *Weleth) GetWelToEthCashoutByTxHashWF(ctx workflow.Context, txhash string) (tx welethService.WelCashoutEthTrans, err error) {
 	log := workflow.GetLogger(ctx)
 	log.Info("[Core MSWeleth] Getting cashout transaction from wel to eth with wel's side txhash: " + txhash)
@@ -560,6 +592,7 @@ func (cli *Weleth) registerService(w worker.Worker) {
 	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashinWF, workflow.RegisterOptions{Name: GetWelToEthCashin})
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashoutWF, workflow.RegisterOptions{Name: GetEthToWelCashout})
 	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashinWF, workflow.RegisterOptions{Name: GetEthToWelCashin})
+	w.RegisterWorkflowWithOptions(cli.GetEthToWelCashinWithTx2TreasuryWF, workflow.RegisterOptions{Name: GetEthToWelCashinWithTx2Treasury})
 	w.RegisterWorkflowWithOptions(cli.GetWelToEthCashoutWF, workflow.RegisterOptions{Name: GetWelToEthCashout})
 
 	w.RegisterWorkflowWithOptions(cli.GetTx2TreasuryBySenderWF, workflow.RegisterOptions{Name: GetTx2TreasuryBySender})
