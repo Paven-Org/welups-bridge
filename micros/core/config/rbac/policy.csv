@@ -1,5 +1,4 @@
 g,admin,admin
-g,admin,service
 g,service,service
 p,root,*,*,allow
 p,*,/v1/u/*,GET,allow
@@ -8,18 +7,16 @@ p,*,/v1/p/*,GET,allow
 p,*,/v1/p/*,POST,allow
 p,admin,/v1/a/*,GET,allow
 p,admin,/v1/a/*,POST,allow
+p,admin,/v1/s/*,POST,allow
+p,admin,/v1/s/*,GET,allow
 p,service,/v1/a/*,*,deny
 p,service,/v1/s/*,GET,allow
 p,service,/v1/s/*,POST,allow
 p,admin,/v1/a/m/eth/unset/authenticator-prikey,POST,deny
 p,admin,/v1/a/m/eth/set/authenticator-prikey,POST,deny
-p,service,/v1/a/m/eth/unset/authenticator-prikey,POST,deny
-p,service,/v1/a/m/eth/set/authenticator-prikey,POST,deny
 p,root,/v1/a/m/eth/unset/authenticator-prikey,POST,allow
 p,root,/v1/a/m/eth/set/authenticator-prikey,POST,allow
 p,admin,/v1/a/m/wel/unset/authenticator-prikey,POST,deny
 p,admin,/v1/a/m/wel/set/authenticator-prikey,POST,deny
-p,service,/v1/a/m/wel/unset/authenticator-prikey,POST,deny
-p,service,/v1/a/m/wel/set/authenticator-prikey,POST,deny
 p,root,/v1/a/m/wel/unset/authenticator-prikey,POST,allow
 p,root,/v1/a/m/wel/set/authenticator-prikey,POST,allow
